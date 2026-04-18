@@ -1,0 +1,8 @@
+{
+  "track_id": "build_video_v1_20260418",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-04-18T17:43:00Z",
+  "updated_at": "2026-04-18T17:43:00Z",
+  "description": "Build core Video Project orchestration and arnectl CLI (v1)"
+}
