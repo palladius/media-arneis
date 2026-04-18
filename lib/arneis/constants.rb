@@ -11,7 +11,7 @@ module Arneis
     
     # Veo Video Generation
     VEO_2       = 'veo-2.0-generate-001'
-    VEO_DEFAULT = 'veo-3.0-generate-preview' # Latest recommended
+    VEO_DEFAULT = 'veo-3.0-generate-001' # confirmed via list_models
     
     # Lyria Music Generation
     LYRIA_CLIP  = 'lyria-3-clip-preview'

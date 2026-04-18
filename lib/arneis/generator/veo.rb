@@ -13,7 +13,7 @@ module Arneis
 
       def initialize(options = {})
         super
-        @model = Models::VEO_2
+        @model = Models::VEO_DEFAULT
         @client = ::Gemini.new(
           credentials: {
             service: 'vertex-ai-api',

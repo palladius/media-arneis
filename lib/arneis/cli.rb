@@ -42,7 +42,7 @@ module Arneis
         return
       end
 
-      puts Rainbow("🔍 Checking status of #{folder_path}...").yellow
+      puts Rainbow("🔍 Checking status of #{folder_path}").yellow
       state_file = File.join(folder_path, '.state.yaml')
       unless File.exist?(state_file)
         puts Rainbow("❌ No state file found in #{folder_path}").red
