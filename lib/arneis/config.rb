@@ -15,14 +15,19 @@ module Arneis
     end
 
     def self.google_cloud_project
-      ENV['GOOGLE_CLOUD_PROJECT'] || 'ric-cccwiki'
+      ENV['GOOGLE_CLOUD_PROJECT'] || raise("Missing GOOGLE_CLOUD_PROJECT environment variable")
     end
 
     def self.sanitize(text)
       return text unless text.is_a?(String)
+      
       key = ENV['GEMINI_API_KEY']
-      return text if key.nil? || key.empty?
-      text.gsub(key, "[REDACTED]")
+      text = text.gsub(key, "[REDACTED_KEY]") if key && !key.empty?
+      
+      project = ENV['GOOGLE_CLOUD_PROJECT']
+      text = text.gsub(project, "[REDACTED_PROJECT]") if project && !project.empty?
+      
+      text
     end
   end
 end
