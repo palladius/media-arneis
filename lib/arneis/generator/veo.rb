@@ -8,6 +8,9 @@ require 'gemini-ai'
 module Arneis
   module Generator
     class Veo < Base
+      @@last_launch_at = nil
+      @@launch_mutex = Mutex.new
+
       def initialize(options = {})
         super
         @client = ::Gemini.new(
@@ -22,6 +25,19 @@ module Arneis
       end
 
       def generate(prompt, output_file, timeout: 90)
+        # Ensure at least 2 seconds between video launches
+        @@launch_mutex.synchronize do
+          if @@last_launch_at
+            elapsed = Time.now - @@last_launch_at
+            if elapsed < 2.0
+              wait_time = 2.0 - elapsed
+              puts Rainbow("  ⏳ [THROTTLE] Waiting #{wait_time.round(2)}s for next video launch...").yellow
+              sleep(wait_time)
+            end
+          end
+          @@last_launch_at = Time.now
+        end
+
         puts Rainbow("  🎥 [VEO] Starting video generation for prompt: '#{prompt[0..40]}...'").magenta
         start_time = Time.now
         
@@ -51,7 +67,7 @@ module Arneis
           puts Rainbow("  ⚠️ [VEO] Real API call failed: #{sanitized_msg}. Falling back to mock for this scene.").yellow
           json_error = { error: sanitized_msg, prompt: prompt }.to_json
           File.write("#{output_file}.error.json", Config.sanitize(json_error))
-          File.write(output_file, "MOCK_VEO_VIDEO_FOR: #{prompt}")
+          File.write("#{output_file}.mock", "MOCK_VEO_VIDEO_FOR: #{prompt}")
           return { tokens: 0, cost: 0.0, time: 0 }
         end
       end

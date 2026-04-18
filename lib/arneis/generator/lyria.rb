@@ -50,7 +50,7 @@ module Arneis
           puts Rainbow("  ⚠️ [LYRIA] API call failed: #{sanitized_msg}. Falling back to mock.").yellow
           json_error = { error: sanitized_msg, prompt: prompt }.to_json
           File.write("#{output_file}.error.json", Config.sanitize(json_error))
-          File.write(output_file, "MOCK_LYRIA_DATA")
+          File.write("#{output_file}.mock", "MOCK_LYRIA_DATA")
           return { tokens: 0, cost: 0.0, time: 0 }
         end
       end

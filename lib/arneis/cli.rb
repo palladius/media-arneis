@@ -52,6 +52,14 @@ module Arneis
       state = YAML.load_file(state_file)
       puts "Project: #{state['project_title']}"
       puts "Status: #{status_emoji(state['status'])} #{state['status']}"
+      
+      # Calculate stats
+      total_tokens = 0
+      total_cost = 0.0
+      input_tokens = 0
+      output_tokens = 0
+
+      # Scenes
       puts "\nScenes:"
       state['scenes'].each do |scene|
         puts "  #{status_emoji(scene['status'])} Scene #{scene['scene']}: #{scene['description']}"
@@ -60,10 +68,40 @@ module Arneis
         output_base = File.join(folder_path, "scene_#{scene['scene']}")
         Dir.glob("#{output_base}.*.error.json").each do |error_file|
           error_data = ::JSON.parse(File.read(error_file))
-          sanitized_error = Config.sanitize(error_data['error'])
-          puts Rainbow("    ❌ Error: #{sanitized_error}").red
+          err_msg = error_data['error']
+          
+          if err_msg.include?('429')
+            # Extract model name from filename or assume from context
+            model_name = error_file.split('.').first.split('_').last # Rough heuristic
+            puts Rainbow("    ❌ 429 (#{model_name})").red
+          else
+            puts Rainbow("    ❌ Error: #{Config.sanitize(err_msg)}").red
+          end
+        end
+
+        # Aggregate stats from receipts
+        Dir.glob("#{output_base}.*.receipt.json").each do |receipt_file|
+          receipt = ::JSON.parse(File.read(receipt_file))
+          usage = receipt['usageMetadata'] || {}
+          in_t = usage['promptTokenCount'] || 0
+          out_t = usage['candidatesTokenCount'] || 0
+          
+          input_tokens += in_t
+          output_tokens += out_t
+          total_tokens += (usage['totalTokenCount'] || (in_t + out_t))
+          
+          # Cost calculation based on model type (very rough heuristic)
+          if receipt_file.include?('mp4')
+            total_cost += Pricing::COST_PER_VEO_GEN
+          elsif receipt_file.include?('png')
+            total_cost += Pricing::COST_PER_IMAGEN_GEN
+          else
+            total_cost += (total_tokens.to_f / 1000) * Pricing::COST_PER_1K_TOKENS
+          end
         end
       end
+
+      puts Rainbow("\n📊 Stats: 🪙 #{total_tokens} (⬆️ #{input_tokens} ⬇️ #{output_tokens}) | 💸 $#{'%.2f' % total_cost}").cyan.bold
     end
 
     desc "stats FOLDER_PATH", "Show resource usage and cost for a media project"
