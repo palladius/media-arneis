@@ -46,6 +46,12 @@ module Arneis
       veo_result = veo.generate("A cinematic sweep of the Rimini coast at sunset.", "#{test_dir}/test_video.mp4")
       Validator.verify("#{test_dir}/test_video.mp4", :video)
 
+      # 4. Test Lyria (Music)
+      puts Rainbow("\n4. Testing Lyria Music Generation...").yellow
+      lyria = Generator::Lyria.new
+      lyria_result = lyria.generate("A happy upbeat song for a children's story.", "#{test_dir}/test_music.wav")
+      Validator.verify("#{test_dir}/test_music.wav", :audio)
+
       puts Rainbow("\n✅ Model tests completed! Artifacts in #{test_dir}").green.bold
     end
   end

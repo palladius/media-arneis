@@ -34,7 +34,7 @@ module Arneis
         begin
           # gemini-ai gem doesn't support timeout per request directly in initialize, 
           # so we use Ruby's Timeout if needed, but for now assuming Faraday handles it.
-          response = @client.generate_content(payload)
+          response = with_retry { @client.generate_content(payload) }
           duration = Time.now - start_time
           
           # Save metadata if output_file is provided

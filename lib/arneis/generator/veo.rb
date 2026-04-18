@@ -32,7 +32,7 @@ module Arneis
 
         # Use predict for Veo on Vertex AI
         begin
-          response = @client.predict(payload)
+          response = with_retry { @client.predict(payload) }
           duration = Time.now - start_time
           receipt_file = "#{output_file}.receipt.json"
           File.write(receipt_file, Config.sanitize(response.to_json))
