@@ -51,7 +51,7 @@ module Arneis
 
       state = YAML.load_file(state_file)
       puts "Project: #{state['project_title']}"
-      puts "Status: #{status_emoji(state['status'])} #{state['status']}"
+      puts "Status: #{status_emoji(state['status'])} #{state['status']} | Auth: #{Config.auth_method_emoji}"
       
       # Calculate stats
       total_tokens = 0

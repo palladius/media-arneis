@@ -22,6 +22,13 @@ module Arneis
       ENV['GOOGLE_CLOUD_REGION'] || 'us-central1'
     end
 
+    def self.auth_method_emoji
+      # Heuristic: if we have a key but no explicit project override for Gemini, 
+      # we usually use 🔑 for GenAI and ☁️ for Vertex.
+      # Since we use both in this project, I'll show what's primary.
+      ENV['GOOGLE_APPLICATION_CREDENTIALS'] || system("gcloud auth application-default print-access-token > /dev/null 2>&1") ? "☁️ (Vertex)" : "🔑 (ApiKey)"
+    end
+
     def self.sanitize(text)
       return text unless text.is_a?(String)
       
