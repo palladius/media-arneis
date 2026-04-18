@@ -19,7 +19,7 @@ module Arneis
         )
       end
 
-      def generate(prompt, _output_file = nil, system_instruction: nil)
+      def generate(prompt, output_file = nil, system_instruction: nil)
         puts "  [GEMINI] Generating text for prompt: '#{prompt[0..50]}...'"
         
         payload = {
@@ -30,17 +30,31 @@ module Arneis
           payload[:system_instruction] = { parts: [{ text: system_instruction }] }
         end
 
-        response = @client.generate_content(payload)
-        
-        # Extract content from response
-        content = response['candidates'][0]['content']['parts'][0]['text']
-        
-        { 
-          content: content,
-          # gemini-ai response structure for tokens/usage
-          tokens: response.dig('usageMetadata', 'totalTokenCount') || 0,
-          time: 0 # gemini-ai doesn't seem to provide latency directly
-        }
+        begin
+          response = @client.generate_content(payload)
+          
+          # Save metadata if output_file is provided
+          if output_file
+            receipt_file = "#{output_file}.receipt.json"
+            File.write(receipt_file, response.to_json)
+          end
+
+          # Extract content from response
+          content = response['candidates'][0]['content']['parts'][0]['text']
+          
+          { 
+            content: content,
+            tokens: response.dig('usageMetadata', 'totalTokenCount') || 0,
+            time: 0
+          }
+        rescue => e
+          puts Rainbow("  ❌ [GEMINI] Error: #{e.message}").red
+          # Save error to receipt if possible
+          if output_file
+            File.write("#{output_file}.error.json", { error: e.message, prompt: prompt }.to_json)
+          end
+          raise e
+        end
       end
     end
   end

@@ -53,14 +53,17 @@ module Arneis
           
           # Enhance the description with Gemini using the template's system prompt
           puts "  ✨ Enhancing scene #{scene['scene']} description using template guardrails..."
+          scene_output_base = File.join(@output_path, "scene_#{scene['scene']}")
           enhancement = gemini_generator.generate(
             "Enhance this video scene description: #{scene['description']}",
+            "#{scene_output_base}.txt",
             system_instruction: system_prompt
           )
           enhanced_prompt = enhancement[:content]
+          File.write("#{scene_output_base}.txt", enhanced_prompt)
           
           # Generate real video with Veo
-          veo_generator.generate(enhanced_prompt, File.join(@output_path, "scene_#{scene['scene']}.mp4"))
+          veo_generator.generate(enhanced_prompt, "#{scene_output_base}.mp4")
           update_scene_status(scene['scene'], 'done')
         end
       end

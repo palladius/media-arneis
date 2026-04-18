@@ -6,6 +6,19 @@ Use Conductor extension to manage the BDD and SW dev
 * Do not use any Gemini model before 2.5 (no 2. and no 1.5). So 2.5 is the minimum that I want to use.
 * `gemini-flash-latest` should be a good model to start with. It is cheap and fast.
 
+### GenMedia Recommended Models
+
+* **Veo (Video)**:
+    * `veo-2.0-generate-001`: Default Veo 2 model.
+    * `veo-3.0-generate-preview`: Newest Veo 3 with ambient audio and voice-overs.
+* **Lyria (Music)**:
+    * `lyria-002`: Standard for music.
+    * `lyria-3-clip-preview`: ~30sec clips with lyrics.
+    * `lyria-3-pro-preview`: ~2min high-quality with lyrics.
+* **Chirp (Speech)**:
+    * `chirp_2`: Highly recommended for most use cases (GA).
+    * `chirp_3`: Latest speech model, GA in US and EU.
+
 ## Software progress
 
 * Use Conductor for new features. If they're not trivial, couple this with a GH Issue for external obesrvability.

@@ -33,8 +33,11 @@ module Arneis
         # Use predict for Veo on Vertex AI
         begin
           response = @client.predict(payload)
+          receipt_file = "#{output_file}.receipt.json"
+          File.write(receipt_file, response.to_json)
         rescue => e
           puts Rainbow("  ⚠️ [VEO] Real API call failed: #{e.message}. Falling back to mock for this scene.").yellow
+          File.write("#{output_file}.error.json", { error: e.message, prompt: prompt }.to_json)
           File.write(output_file, "MOCK_VEO_VIDEO_FOR: #{prompt}")
           return { tokens: 0, cost: 0.0, time: 0 }
         end
