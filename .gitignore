@@ -3,3 +3,4 @@
 /out/
 /spec/fixtures/out_test/
 /.env
+.git-privatize

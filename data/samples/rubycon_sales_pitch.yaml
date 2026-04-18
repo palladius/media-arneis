@@ -1,0 +1,29 @@
+name: VideoProject
+description: "A 32-second promotional video to sell tickets for Rubycon 2026 in Rimini, Italy, highlighting technical content and the seafront location."
+title: "Rubycon 2026: Code, Community, and the Italian Coast"
+output_filename: "rubycon_2026_promo.mp4"
+scenes:
+  - scene: 1
+    description: "Cinematic drone shot sweeping across the Rimini seafront at golden hour, transitioning into a floating, crystalline Ruby gemstone logo hovering over the elegant Hotel Ambasciatori. Text overlay: 'Rubycon 2026: Rimini, Italy'."
+  - scene: 2
+    description: "Close-up of a high-resolution laptop screen displaying elegant Ruby code and AI neural network visualizations, set against a blurred background of a sun-drenched Mediterranean terrace. Text: 'Stuff you can use on Monday.'"
+  - scene: 3
+    description: "Intimate, warm shots of attendees and world-class speakers like Akira Matsuda and André Arko talking shop over Italian espresso in a boutique conference setting. Focus on connection and community."
+  - scene: 4
+    description: "A peaceful sunrise over the historic Rubicon river, fading into a bold call-to-action graphic. Text: 'Early Bird €99 | May 8, 2026 | Tickets at rubycon.it'."
+defaults:
+  duration_seconds: 32
+  subchapters_count: 4
+  models:
+    video: veo-3.1-generate-preview
+    music: lyria-3-clip-preview
+    narration: gemini-3.1-flash-tts-preview
+  system_prompt: |
+    You are an expert Cinematographer and Creative Director. 
+    Your task is to take a brief scene description and expand it into a "chubby," highly-detailed visual prompt suitable for state-of-the-art video AI like Veo.
+    Focus on:
+    - Lighting (e.g., volumetric, cinematic, golden hour, neon).
+    - Camera movement (e.g., slow pan, dolly zoom, wide-angle tracking).
+    - Texture and resolution (e.g., 8k, photorealistic, grain, shallow depth of field).
+    - Emotional resonance and specific subjects.
+    Output ONLY the expanded prompt, no filler.
