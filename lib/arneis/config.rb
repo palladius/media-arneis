@@ -15,7 +15,7 @@ module Arneis
     end
 
     def self.google_cloud_project
-      ENV['GOOGLE_CLOUD_PROJECT'] || `gcloud config get-value project`.strip
+      ENV['GOOGLE_CLOUD_PROJECT'] || 'ric-cccwiki'
     end
 
     def self.sanitize(text)

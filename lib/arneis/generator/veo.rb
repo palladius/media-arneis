@@ -13,7 +13,6 @@ module Arneis
         @client = ::Gemini.new(
           credentials: {
             service: 'vertex-ai-api',
-            api_key: Config.gemini_api_key,
             project_id: Config.google_cloud_project,
             region: 'us-central1',
             version: 'v1'
