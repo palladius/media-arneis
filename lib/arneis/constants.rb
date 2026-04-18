@@ -30,7 +30,7 @@ module Arneis
   
   # Resource Pricing (Rough estimates)
   module Pricing
-    COST_PER_VEO_GEN = 0.50
+    COST_PER_VEO_GEN = 4.00
     COST_PER_LYRIA_GEN = 0.10
     COST_PER_IMAGEN_GEN = 0.05
     COST_PER_1K_TOKENS = 0.01

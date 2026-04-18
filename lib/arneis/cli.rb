@@ -32,8 +32,15 @@ module Arneis
       puts Rainbow("✅ Generation complete!").green
     end
 
-    desc "status FOLDER_PATH", "Show real-time status of a media project"
-    def status(folder_path)
+    desc "status [FOLDER_PATH]", "Show real-time status of a media project (defaults to latest in out/)"
+    def status(folder_path = nil)
+      folder_path ||= Dir.glob("out/*/").select { |f| File.exist?(File.join(f, '.state.yaml')) }.max_by { |f| File.mtime(f) }
+      
+      if folder_path.nil?
+        puts Rainbow("❌ No project folders found in out/").red
+        return
+      end
+
       puts Rainbow("🔍 Checking status of #{folder_path}...").yellow
       state_file = File.join(folder_path, '.state.yaml')
       unless File.exist?(state_file)
