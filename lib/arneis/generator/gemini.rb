@@ -9,13 +9,14 @@ module Arneis
     class Gemini < Base
       def initialize(options = {})
         super
+        @model = Models::GEMINI_FLASH
         @client = ::Gemini.new(
           credentials: {
             service: 'generative-language-api',
             api_key: Config.gemini_api_key,
             version: 'v1beta'
           },
-          options: { model: 'gemini-2.5-flash', server_sent_events: true }
+          options: { model: @model, server_sent_events: true }
         )
       end
 
@@ -57,7 +58,7 @@ module Arneis
           sanitized_msg = Config.sanitize(e.message)
           puts Rainbow("  ❌ [GEMINI] Error: #{sanitized_msg}").red
           if output_file
-            json_error = { error: sanitized_msg, prompt: prompt }.to_json
+            json_error = { error: sanitized_msg, prompt: prompt, model: @model }.to_json
             File.write("#{output_file}.error.json", Config.sanitize(json_error))
           end
           raise e

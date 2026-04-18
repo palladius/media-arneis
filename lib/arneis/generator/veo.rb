@@ -13,6 +13,7 @@ module Arneis
 
       def initialize(options = {})
         super
+        @model = Models::VEO_2
         @client = ::Gemini.new(
           credentials: {
             service: 'vertex-ai-api',
@@ -20,7 +21,7 @@ module Arneis
             region: Config.google_cloud_region,
             version: 'v1'
           },
-          options: { model: 'veo-2.0-generate-001' }
+          options: { model: @model }
         )
       end
 
@@ -65,7 +66,7 @@ module Arneis
         rescue => e
           sanitized_msg = Config.sanitize(e.message)
           puts Rainbow("  ⚠️ [VEO] Real API call failed: #{sanitized_msg}. Falling back to mock for this scene.").yellow
-          json_error = { error: sanitized_msg, prompt: prompt }.to_json
+          json_error = { error: sanitized_msg, prompt: prompt, model: @model }.to_json
           File.write("#{output_file}.error.json", Config.sanitize(json_error))
           File.write("#{output_file}.mock", "MOCK_VEO_VIDEO_FOR: #{prompt}")
           return { tokens: 0, cost: 0.0, time: 0 }

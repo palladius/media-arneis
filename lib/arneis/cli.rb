@@ -69,13 +69,12 @@ module Arneis
         Dir.glob("#{output_base}.*.error.json").each do |error_file|
           error_data = ::JSON.parse(File.read(error_file))
           err_msg = error_data['error']
+          model_name = error_data['model'] || error_file.split('.').first.split('_').last
           
           if err_msg.include?('429')
-            # Extract model name from filename or assume from context
-            model_name = error_file.split('.').first.split('_').last # Rough heuristic
             puts Rainbow("    ❌ 429 (#{model_name})").red
           else
-            puts Rainbow("    ❌ Error: #{Config.sanitize(err_msg)}").red
+            puts Rainbow("    ❌ Error (#{model_name}): #{Config.sanitize(err_msg)}").red
           end
         end
 

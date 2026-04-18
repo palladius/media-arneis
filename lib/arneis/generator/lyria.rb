@@ -10,13 +10,14 @@ module Arneis
     class Lyria < Base
       def initialize(options = {})
         super
+        @model = Models::LYRIA_CLIP
         @client = ::Gemini.new(
           credentials: {
             service: 'generative-language-api',
             api_key: Config.gemini_api_key,
             version: 'v1beta'
           },
-          options: { model: Models::LYRIA_CLIP }
+          options: { model: @model }
         )
       end
 
@@ -48,7 +49,7 @@ module Arneis
         rescue => e
           sanitized_msg = Config.sanitize(e.message)
           puts Rainbow("  ⚠️ [LYRIA] API call failed: #{sanitized_msg}. Falling back to mock.").yellow
-          json_error = { error: sanitized_msg, prompt: prompt }.to_json
+          json_error = { error: sanitized_msg, prompt: prompt, model: @model }.to_json
           File.write("#{output_file}.error.json", Config.sanitize(json_error))
           File.write("#{output_file}.mock", "MOCK_LYRIA_DATA")
           return { tokens: 0, cost: 0.0, time: 0 }
