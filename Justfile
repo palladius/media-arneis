@@ -1,5 +1,5 @@
 # media-arneis - Justfile
-BUNDLE := "/home/riccardo/.rbenv/shims/bundle"
+BUNDLE := "~/.rbenv/shims/bundle"
 
 # Default task: list all commands
 default:

@@ -21,7 +21,7 @@ structure:
 defaults:
   models:
     image: gemini-3.1-flash-image-preview
-    text: gemini-flash-latest
+    text: gemini-2.5-flash
   system_prompt: |
     You are a professional Comic Book Artist and Scripter.
     Your task is to transform a row number and panel description into a vivid comic panel.

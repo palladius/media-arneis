@@ -87,6 +87,31 @@ module Arneis
       puts Rainbow("✅ Graph generated and saved to #{output_file}").green
     end
 
+    desc "research-pitch RESEARCH_PATH", "Generate a compelling sales pitch YAML from a research document"
+    def research_pitch(research_path)
+      puts Rainbow("🧠 Researching #{research_path}...").cyan
+      research_content = File.read(research_path)
+      template_content = File.read('data/templates/VideoProject.yaml')
+      
+      gemini = Generator::Gemini.new
+      system_prompt = "You are an expert Copywriter and Video Producer. Create a VideoProject YAML based on the provided research.
+      The goal is to sell tickets. 
+      CRITICAL: You MUST follow the schema provided in the template.
+      
+      TEMPLATE SCHEMA:
+      #{template_content}
+      
+      Output ONLY the YAML."
+      
+      response = gemini.generate(research_content, system_instruction: system_prompt)
+      yaml_content = response[:content].gsub(/```yaml\n|```/, '') # Clean up markdown
+      
+      output_file = "data/samples/#{File.basename(research_path, '.*')}.yaml"
+      File.write(output_file, yaml_content)
+      
+      puts Rainbow("✅ Pitch generated and saved to #{output_file}").green
+    end
+
     no_commands do
       def status_emoji(status)
         case status

@@ -13,5 +13,9 @@ module Arneis
     def self.gemini_api_key
       ENV['GEMINI_API_KEY'] || raise("Missing GEMINI_API_KEY environment variable")
     end
+
+    def self.google_cloud_project
+      ENV['GOOGLE_CLOUD_PROJECT'] || `gcloud config get-value project`.strip
+    end
   end
 end

@@ -42,7 +42,7 @@ module Arneis
 
     def process
       orchestrator = Orchestrator.new
-      mock_generator = Generator::Mock.new
+      veo_generator = Generator::Veo.new
       gemini_generator = Generator::Gemini.new
       system_prompt = @template.dig('defaults', 'system_prompt')
 
@@ -59,7 +59,8 @@ module Arneis
           )
           enhanced_prompt = enhancement[:content]
           
-          mock_generator.generate(enhanced_prompt, File.join(@output_path, "scene_#{scene['scene']}.mp4"))
+          # Generate real video with Veo
+          veo_generator.generate(enhanced_prompt, File.join(@output_path, "scene_#{scene['scene']}.mp4"))
           update_scene_status(scene['scene'], 'done')
         end
       end

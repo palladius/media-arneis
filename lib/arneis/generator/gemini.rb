@@ -15,7 +15,7 @@ module Arneis
             api_key: Config.gemini_api_key,
             version: 'v1beta'
           },
-          options: { model: 'gemini-flash-latest', server_sent_events: true }
+          options: { model: 'gemini-2.5-flash', server_sent_events: true }
         )
       end
 
