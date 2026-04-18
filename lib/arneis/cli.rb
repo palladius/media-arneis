@@ -59,7 +59,7 @@ module Arneis
         # Check for errors in the output folder
         output_base = File.join(folder_path, "scene_#{scene['scene']}")
         Dir.glob("#{output_base}.*.error.json").each do |error_file|
-          error_data = JSON.parse(File.read(error_file))
+          error_data = ::JSON.parse(File.read(error_file))
           puts Rainbow("    ❌ Error: #{error_data['error']}").red
         end
       end
