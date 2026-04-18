@@ -19,6 +19,11 @@ lint:
 	@echo "🟢 Running linter..."
 	{{BUNDLE}} exec standardrb
 
+# Run model verification
+test-all-models:
+	@echo "🟢 Verifying all models..."
+	{{BUNDLE}} exec bin/test_models.rb
+
 # Run the CLI
 arnectl *args:
 	{{BUNDLE}} exec bin/arnectl {{args}}
