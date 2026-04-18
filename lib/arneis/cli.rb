@@ -59,6 +59,28 @@ module Arneis
       puts "Time Elapsed: 0s"
     end
 
+    desc "verify FOLDER_PATH", "Verify the integrity of all media artifacts in a project folder"
+    def verify(folder_path)
+      puts Rainbow("🛡️  Verifying artifacts in #{folder_path}...").cyan
+      state_file = File.join(folder_path, '.state.yaml')
+      unless File.exist?(state_file)
+        puts Rainbow("❌ No state file found in #{folder_path}").red
+        return
+      end
+
+      state = YAML.load_file(state_file)
+      state['scenes'].each do |scene|
+        video_file = File.join(folder_path, "scene_#{scene['scene']}.mp4")
+        puts "Scene #{scene['scene']}:"
+        result = Validator.verify(video_file, :video)
+        if result[:success]
+          puts Rainbow("  ✅ Video: #{result[:info]}").green
+        else
+          puts Rainbow("  ❌ Video: #{result[:message]}").red
+        end
+      end
+    end
+
     desc "graph YAML_PATH", "Generate a Mermaid.js dependency graph for a project"
     method_option :output, type: :string, aliases: "-o", desc: "Output file (default: graph.md)"
     def graph(yaml_path)

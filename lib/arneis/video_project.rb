@@ -63,7 +63,18 @@ module Arneis
           File.write("#{scene_output_base}.txt", enhanced_prompt)
           
           # Generate real video with Veo
-          veo_generator.generate(enhanced_prompt, "#{scene_output_base}.mp4")
+          veo_output = "#{scene_output_base}.mp4"
+          veo_generator.generate(enhanced_prompt, veo_output)
+          
+          # Validate artifact
+          puts "  🛡️  Validating scene #{scene['scene']} artifact..."
+          v_result = Validator.verify(veo_output, :video)
+          if v_result[:success]
+            puts Rainbow("    ✅ Validated: #{v_result[:info]}").green
+          else
+            puts Rainbow("    ⚠️  Validation failed: #{v_result[:message]}").yellow
+          end
+          
           update_scene_status(scene['scene'], 'done')
         end
       end
