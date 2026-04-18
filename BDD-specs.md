@@ -117,3 +117,9 @@ The CLI should be able to track the status, so when we create a complex object t
 I’d like this arneis to be created in ruby, and use ruby fiber for async.
 We can use rubyllm as gem for Gemini and LLM invocation, but you choose, Im not fuzzy.
 We can also have a simple web app written in rails to show all the stuff.
+
+## Additional readings
+
+* I've done something similar in the past if you wanna look: ~/git/gemini-cli-demos/demos/mcp-video-creation/ . You can find A LOT of existing materials, videos, stories there. This is basically the "grown up, cubic version" of it :)
+    * one example here: ./stories/20250911-1230-CUJ03-rubycon-pitch/video_plan.yaml
+* See Hussain MCP Multimedia: https://github.com/GoogleCloudPlatform/vertex-ai-creative-studio/tree/main/experiments/mcp-genmedia and my skill to install it! ~/git/gemini-cli-custom-commands/skills/genmedia-setup/SKILL.md
