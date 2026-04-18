@@ -1,0 +1,22 @@
+# VideoProject Template (Class)
+---
+name: VideoProject
+description: "A 32-second video project with 4 subchapters, music, and narration."
+required_fields:
+  - title
+  - output_filename
+  - scenes
+structure:
+  scenes:
+    min_count: 1
+    max_count: 10
+    fields:
+      - scene
+      - description
+defaults:
+  duration_seconds: 32
+  subchapters_count: 4
+  models:
+    video: veo-3.1-generate-preview
+    music: lyria-3-clip-preview
+    narration: gemini-3.1-flash-tts-preview

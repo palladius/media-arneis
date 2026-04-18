@@ -1,0 +1,24 @@
+# ComicStrip Template (Class)
+---
+name: ComicStrip
+description: "A comic strip with N rows, each containing 1 to 5 parts with dialogue bubbles."
+required_fields:
+  - title
+  - rows
+structure:
+  rows:
+    min_count: 1
+    fields:
+      - row_number
+      - panels
+  panels:
+    min_count: 1
+    max_count: 5
+    fields:
+      - panel_number
+      - description
+      - dialogue
+defaults:
+  models:
+    image: gemini-3.1-flash-image-preview
+    text: gemini-flash-latest

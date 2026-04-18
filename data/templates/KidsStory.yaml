@@ -1,0 +1,25 @@
+# KidsStory Template (Class)
+---
+name: KidsStory
+description: "A story for children with N chapters, each containing a sub-story and multiple images."
+required_fields:
+  - title
+  - author
+  - chapters
+structure:
+  chapters:
+    min_count: 1
+    fields:
+      - chapter_number
+      - title
+      - sub_story
+      - images
+  images:
+    min_count: 1
+    fields:
+      - prompt
+      - style
+defaults:
+  models:
+    text: gemini-flash-latest
+    image: gemini-3.1-flash-image-preview
