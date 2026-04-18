@@ -16,7 +16,7 @@ Use Conductor extension to manage the BDD and SW dev
     * Use Nano Banana skill for all of the above, and <nano-banana-ricc> for Riccardo character consistency.
 * **Veo (Video)**:
     * `veo-2.0-generate-001`: Default Veo 2 model.
-    * `veo-3.0-generate-preview`: Newest Veo 3 with ambient audio and voice-overs.
+    * `veo-3.0-generate-001`: Newest Veo 3 with ambient audio and voice-overs.
 * **Lyria (Music)**:
     * `lyria-002`: Standard for music.
     * `lyria-3-clip-preview`: ~30sec clips with lyrics.
