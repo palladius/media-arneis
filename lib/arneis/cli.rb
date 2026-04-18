@@ -172,10 +172,20 @@ module Arneis
         # Check if file exists or is mocked
         video_file = File.join(folder_path, "scene_#{scene['scene']}.mp4")
         mock_file = "#{video_file}.mock"
-        scene_status = scene['status']
-        scene_status = "done (mocked 🤡)" if File.exist?(mock_file) && !File.exist?(video_file)
+        asset_json = "#{video_file}.asset.json"
         
-        puts "  #{status_emoji(scene['status'])} 🎥 " + Rainbow("Scene #{scene['scene']}:").orange + " " + Rainbow(desc).white + (File.exist?(mock_file) ? Rainbow(" 🤡").yellow : "")
+        # Eval indicators
+        eval_indicator = "🟣" # Not evaluated
+        eval_score = ""
+        if File.exist?(asset_json)
+          asset_data = ::JSON.parse(File.read(asset_json))
+          if asset_data['eval']
+            eval_indicator = asset_data['eval']['success'] ? "👍" : "👎"
+            eval_score = " (⭐ #{asset_data['eval']['score']}/10)"
+          end
+        end
+
+        puts "  #{status_emoji(scene['status'])} 🎥 #{eval_indicator}" + Rainbow(" Scene #{scene['scene']}:").orange + " " + Rainbow(desc).white + eval_score + (File.exist?(mock_file) ? Rainbow(" 🤡").yellow : "")
         
         # Check for errors in the output folder
         output_base = File.join(folder_path, "scene_#{scene['scene']}")

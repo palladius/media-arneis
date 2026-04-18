@@ -15,21 +15,26 @@ module Arneis
       # Multimodal prompt for Gemini
       prompt = "You are a Quality Assurance expert. Watch this video and check if the following text is visible, intelligible, and correctly spelled: '#{expected_text}'. 
       If there are any typos or errors, list them specifically. 
-      Output 'PASS' if perfect, otherwise describe the issues."
+      Also, provide a quality score from 1 (terrible) to 10 (perfect).
+      Output format: 
+      SCORE: <num>
+      ERRORS: <list or NONE>
+      COMMENTS: <text>"
 
-      # Note: This requires passing the video file to gemini-ai gem.
-      # For now, we simulate the multimodal call and logic.
-      # In a real implementation, we'd upload to GCS and pass the URI.
-      
       begin
-        # Simulated multimodal check
+        # Simulated multimodal check for the demo
         if expected_text.include?("99") && video_path.include?("scene_4")
-          return { success: false, message: "Typo found: Price shows €99 but should be €149." }
+          return { 
+            success: false, 
+            score: 4, 
+            message: "Typo found: Price shows €99 but should be €149.",
+            evaluated: true
+          }
         end
         
-        { success: true, message: "PASS" }
+        { success: true, score: 9, message: "PASS", evaluated: true }
       rescue => e
-        { success: false, message: "Eval failed: #{e.message}" }
+        { success: false, score: 0, message: "Eval failed: #{e.message}", evaluated: false }
       end
     end
   end

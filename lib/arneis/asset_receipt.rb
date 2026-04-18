@@ -7,7 +7,7 @@ require 'json'
 
 module Arneis
   class AssetReceipt
-    attr_accessor :asset_id, :ts_started, :ts_ended, :model, :prompt, :status, :error_msg, :input_tokens, :output_tokens, :cost_usd
+    attr_accessor :asset_id, :ts_started, :ts_ended, :model, :prompt, :status, :error_msg, :input_tokens, :output_tokens, :cost_usd, :eval_data
 
     def initialize(asset_id:, model:, prompt:)
       @asset_id = asset_id
@@ -18,6 +18,16 @@ module Arneis
       @input_tokens = 0
       @output_tokens = 0
       @cost_usd = 0.0
+      @eval_data = nil
+    end
+
+    def record_eval!(success:, score:, message:)
+      @eval_data = {
+        success: success,
+        score: score,
+        message: message,
+        ts: Time.now.iso8601
+      }
     end
 
     def complete!(output_tokens: 0, input_tokens: 0, cost_usd: 0.0)
@@ -48,7 +58,8 @@ module Arneis
         error_msg: @error_msg,
         input_tokens: @input_tokens,
         output_tokens: @output_tokens,
-        cost_usd: @cost_usd
+        cost_usd: @cost_usd,
+        eval: @eval_data
       }
       # Redact entire JSON just to be safe
       File.write("#{path}.asset.json", Config.sanitize(data.to_json))

@@ -95,12 +95,29 @@ module Arneis
             # Run QA Eval
             evaluator = Evaluator.new
             eval_result = evaluator.evaluate_video_text(veo_output, scene['description'])
+            
+            # Update receipt with eval data if possible
+            # Note: We need the receipt object here. 
+            # Refactoring to keep receipt accessible.
+            
             if eval_result[:success]
               puts Rainbow("    ⚖️  EVAL: #{eval_result[:message]}").green
             else
-              puts Rainbow("    ⚖️  EVAL FAILED: #{eval_result[:message]}").red
-              # Store eval failure in state
+              puts Rainbow("    ⚖️  EVAL FAILED: #{eval_result[:message]} (Score: #{eval_result[:score]})").red
               update_scene_status(scene['scene'], 'done_with_warnings', eval_result[:message])
+            end
+
+            # Update the existing asset.json with eval data
+            asset_json_path = "#{veo_output}.asset.json"
+            if File.exist?(asset_json_path)
+              asset_data = ::JSON.parse(File.read(asset_json_path))
+              asset_data['eval'] = {
+                'success' => eval_result[:success],
+                'score' => eval_result[:score],
+                'message' => eval_result[:message],
+                'ts' => Time.now.iso8601
+              }
+              File.write(asset_json_path, asset_data.to_json)
             end
 
             update_scene_status(scene['scene'], 'done') unless eval_result[:success] == false
