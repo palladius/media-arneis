@@ -2,3 +2,4 @@
 /vendor/bundle/
 /out/
 /spec/fixtures/out_test/
+/.env
