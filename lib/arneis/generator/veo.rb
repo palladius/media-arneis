@@ -14,7 +14,7 @@ module Arneis
           credentials: {
             service: 'vertex-ai-api',
             project_id: Config.google_cloud_project,
-            region: 'us-central1',
+            region: Config.google_cloud_region,
             version: 'v1'
           },
           options: { model: 'veo-2.0-generate-001' }

@@ -18,6 +18,10 @@ module Arneis
       ENV['GOOGLE_CLOUD_PROJECT'] || raise("Missing GOOGLE_CLOUD_PROJECT environment variable")
     end
 
+    def self.google_cloud_region
+      ENV['GOOGLE_CLOUD_REGION'] || 'us-central1'
+    end
+
     def self.sanitize(text)
       return text unless text.is_a?(String)
       
@@ -26,6 +30,9 @@ module Arneis
       
       project = ENV['GOOGLE_CLOUD_PROJECT']
       text = text.gsub(project, "[REDACTED_PROJECT]") if project && !project.empty?
+
+      region = ENV['GOOGLE_CLOUD_REGION']
+      text = text.gsub(region, "[REDACTED_REGION]") if region && !region.empty?
       
       text
     end
