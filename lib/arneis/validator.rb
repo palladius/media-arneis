@@ -10,7 +10,9 @@ module Arneis
     VALID_TYPES = {
       video: [/ISO Media/, /MP4/, /MPEG/],
       audio: [/MPEG/, /Audio/, /WAV/],
-      image: [/PNG/, /JPEG/]
+      image: [/PNG/, /JPEG/],
+      text: [/text/, /ASCII/],
+      markdown: [/text/, /ASCII/, /Markdown/]
     }.freeze
 
     def self.verify(file_path, type)

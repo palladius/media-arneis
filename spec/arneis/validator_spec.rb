@@ -31,4 +31,24 @@ RSpec.describe Arneis::Validator do
       expect(result[:info]).to include('ISO Media')
     end
   end
+
+  it 'succeeds for text files' do
+    Dir.mktmpdir do |dir|
+      file = File.join(dir, 'test.txt')
+      File.write(file, 'Hello world')
+      result = described_class.verify(file, :text)
+      expect(result[:success]).to be true
+      expect(result[:info]).to include('text')
+    end
+  end
+
+  it 'succeeds for markdown files' do
+    Dir.mktmpdir do |dir|
+      file = File.join(dir, 'test.md')
+      File.write(file, '# Title')
+      result = described_class.verify(file, :markdown)
+      expect(result[:success]).to be true
+      expect(result[:info]).to include('text')
+    end
+  end
 end

@@ -8,6 +8,12 @@ Use Conductor extension to manage the BDD and SW dev
 
 ### GenMedia Recommended Models
 
+* **Imagen (Nano Banana)**:
+    * `gemini-2.5-flash-image`: Nano Banana.
+    * `gemini-3-pro-image-preview`: Nano Banana Pro.
+    * `gemini-3.1-flash-image-preview`: Nano Banana 2 (latest).
+    * Note NanoBanana support creation and EDITING! It also supports character consistency across generations. 
+    * Use Nano Banana skill for all of the above, and <nano-banana-ricc> for Riccardo character consistency.
 * **Veo (Video)**:
     * `veo-2.0-generate-001`: Default Veo 2 model.
     * `veo-3.0-generate-preview`: Newest Veo 3 with ambient audio and voice-overs.

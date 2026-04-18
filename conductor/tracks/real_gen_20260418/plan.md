@@ -21,3 +21,9 @@
 - [ ] Task: Implement token and cost logging in the state file.
 - [ ] Task: Update `arnectl stats` to report real usage metrics.
 - [ ] Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md)
+
+## Phase 5: Artifact Validation
+- [ ] Task: Implement `Arneis::Validator` to check media file integrity using the `file` command.
+- [ ] Task: Integrate validation into the post-processing orchestration.
+- [ ] Task: Write Tests for the validator (mock vs. real media).
+- [ ] Task: Conductor - User Manual Verification 'Phase 5' (Protocol in workflow.md)
