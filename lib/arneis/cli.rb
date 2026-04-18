@@ -54,6 +54,34 @@ module Arneis
       puts "Time Elapsed: 0s"
     end
 
+    desc "graph YAML_PATH", "Generate a Mermaid.js dependency graph for a project"
+    method_option :output, type: :string, aliases: "-o", desc: "Output file (default: graph.md)"
+    def graph(yaml_path)
+      puts Rainbow("📊 Generating graph for #{yaml_path}...").cyan
+      project = VideoProject.new(yaml_path)
+      
+      # We need a way to get the tasks from the project without running it
+      # For now, let's just use a simplified version of what process does
+      tasks = project.scenes.map do |scene|
+        Arneis::Task.new("scene_#{scene['scene']}".to_sym)
+      end
+      
+      # Add dependencies if they exist (need to update VideoProject or YAML to support them)
+      # For now, let's assume sequential dependencies for the demo
+      tasks.each_cons(2) do |prev, curr|
+        curr.dependencies << prev.id
+      end
+
+      visualizer = Visualizer.new(tasks)
+      mermaid = visualizer.to_mermaid
+      
+      output_file = options[:output] || "graph.md"
+      content = "# Dependency Graph: #{project.title}\n\n```mermaid\n#{mermaid}\n```"
+      File.write(output_file, content)
+      
+      puts Rainbow("✅ Graph generated and saved to #{output_file}").green
+    end
+
     no_commands do
       def status_emoji(status)
         case status
