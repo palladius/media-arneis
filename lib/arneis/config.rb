@@ -22,6 +22,14 @@ module Arneis
       ENV['GOOGLE_CLOUD_REGION'] || 'us-central1'
     end
 
+    def self.veo_script
+      '/home/riccardo/.gemini/extensions/palladius-public-goodies/skills/veo/scripts/generate_video.py'
+    end
+
+    def self.genmedia_bucket
+      ENV['GENMEDIA_BUCKET'] || raise("Missing GENMEDIA_BUCKET environment variable")
+    end
+
     def self.auth_method_emoji
       # Heuristic: if we have a key but no explicit project override for Gemini, 
       # we usually use 🔑 for GenAI and ☁️ for Vertex.
@@ -37,6 +45,9 @@ module Arneis
       
       project = ENV['GOOGLE_CLOUD_PROJECT']
       text = text.gsub(project, "[REDACTED_PROJECT]") if project && !project.empty?
+
+      bucket = ENV['GENMEDIA_BUCKET']
+      text = text.gsub(bucket, "[REDACTED_BUCKET]") if bucket && !bucket.empty?
 
       region = ENV['GOOGLE_CLOUD_REGION']
       text = text.gsub(region, "[REDACTED_REGION]") if region && !region.empty?

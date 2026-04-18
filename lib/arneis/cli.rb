@@ -42,7 +42,7 @@ module Arneis
         return
       end
 
-      puts Rainbow("🔍 Checking status of #{folder_path}").yellow
+      puts Rainbow("🔍 Checking status of ").yellow + Rainbow(folder_path).cyan
       state_file = File.join(folder_path, '.state.yaml')
       unless File.exist?(state_file)
         puts Rainbow("❌ No state file found in #{folder_path}").red
@@ -50,7 +50,7 @@ module Arneis
       end
 
       state = YAML.load_file(state_file)
-      puts "Project: #{state['project_title']}"
+      puts "Project: #{Rainbow(state['project_title']).yellow}"
       puts "Status: #{status_emoji(state['status'])} #{state['status']} | Auth: #{Config.auth_method_emoji}"
       
       # Calculate stats
@@ -62,7 +62,9 @@ module Arneis
       # Scenes
       puts "\nScenes:"
       state['scenes'].each do |scene|
-        puts "  #{status_emoji(scene['status'])} Scene #{scene['scene']}: #{scene['description']}"
+        desc = scene['description']
+        desc = "#{desc[0..76]}..." if desc.length > 80
+        puts "  #{status_emoji(scene['status'])} " + Rainbow("Scene #{scene['scene']}:").orange + " " + Rainbow(desc).white
         
         # Check for errors in the output folder
         output_base = File.join(folder_path, "scene_#{scene['scene']}")

@@ -3,6 +3,7 @@ Arneis::Generator::Imagen - Media generator using Google Imagen via gemini-ai ge
 =end
 
 require 'gemini-ai'
+require 'base64'
 
 module Arneis
   module Generator
