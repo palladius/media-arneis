@@ -1,9 +1,9 @@
 =begin
 Arneis::Orchestrator - Manages the execution of tasks based on their dependencies.
-Uses Ruby Fibers for concurrency.
+Uses Threads for true parallelism of blocking IO tasks.
 =end
 
-require 'fiber'
+require 'thread'
 
 module Arneis
   class Orchestrator
@@ -12,6 +12,7 @@ module Arneis
     def initialize
       @tasks = []
       @completed_tasks = []
+      @mutex = Mutex.new
     end
 
     def add_task(id, dependencies: [], &block)
@@ -19,19 +20,27 @@ module Arneis
     end
 
     def run
-      fibers = @tasks.map do |task|
-        Fiber.new do
-          until task.ready?(@completed_tasks)
-            Fiber.yield
+      threads = @tasks.map do |task|
+        Thread.new do
+          # Wait for dependencies to be completed
+          loop do
+            is_ready = false
+            @mutex.synchronize do
+              is_ready = task.ready?(@completed_tasks)
+            end
+            break if is_ready
+            sleep(0.2) # Wait a bit before checking again
           end
+
           task.execute
-          @completed_tasks << task.id
+
+          @mutex.synchronize do
+            @completed_tasks << task.id
+          end
         end
       end
 
-      until fibers.all? { |f| !f.alive? }
-        fibers.each { |f| f.resume if f.alive? }
-      end
+      threads.each(&:join)
     end
   end
 end

@@ -14,6 +14,7 @@ module Arneis
       validate!
       @title = @data['title']
       @scenes = @data['scenes']
+      @mutex = Mutex.new
     end
 
     def validate!
@@ -86,18 +87,22 @@ module Arneis
     private
 
     def update_scene_status(scene_num, status)
-      state_file = File.join(@output_path, '.state.yaml')
-      state = YAML.load_file(state_file)
-      scene = state['scenes'].find { |s| s['scene'] == scene_num }
-      scene['status'] = status if scene
-      File.write(state_file, state.to_yaml)
+      @mutex.synchronize do
+        state_file = File.join(@output_path, '.state.yaml')
+        state = YAML.load_file(state_file)
+        scene = state['scenes'].find { |s| s['scene'] == scene_num }
+        scene['status'] = status if scene
+        File.write(state_file, state.to_yaml)
+      end
     end
 
     def update_project_status(status)
-      state_file = File.join(@output_path, '.state.yaml')
-      state = YAML.load_file(state_file)
-      state['status'] = status
-      File.write(state_file, state.to_yaml)
+      @mutex.synchronize do
+        state_file = File.join(@output_path, '.state.yaml')
+        state = YAML.load_file(state_file)
+        state['status'] = status
+        File.write(state_file, state.to_yaml)
+      end
     end
   end
 end
