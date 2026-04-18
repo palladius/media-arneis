@@ -13,7 +13,7 @@
 2. **Deep Technical Content:** No sponsored talk slots; every session is selected for its learning value.
 3. **The "Friday" Weekend Strategy:** Perfect for a weekend stay in Rimini, including a Saturday trip to the Rubicon river.
 4. **AI & Modern Ruby:** Strong emphasis on AI integration ("Ruby is the best language for building AI web apps") and accessibility.
-5. **Affordability:** Early bird starts at €99.
+5. **Affordability:** Early bird starts at €149.
 
 ## Target Audience Personas
 - **Extroverts:** Will love the close-knit networking and easy access to "famous" speakers.

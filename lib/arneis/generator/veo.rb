@@ -13,7 +13,7 @@ module Arneis
 
       def initialize(options = {})
         super
-        @model = Models::VEO_DEFAULT
+        @model = Models::VEO_2
         @client = ::Gemini.new(
           credentials: {
             service: 'vertex-ai-api',
@@ -49,13 +49,13 @@ module Arneis
 
         # Use predict for Veo on Vertex AI
         begin
-          response = with_retry { @client.predict(payload) }
+          model_address = "publishers/google/models/#{@model}"
+          response = with_retry { @client.request("#{model_address}:predict", payload) }
+          
           duration = Time.now - start_time
           receipt_file = "#{output_file}.receipt.json"
           File.write(receipt_file, Config.sanitize(response.to_json))
           
-          # Veo logic usually involves polling for long-running jobs.
-          # For this MVP, we simulate the polling while the request is blocking.
           puts Rainbow("  ⏳ [VEO] Video generation in progress...").yellow
           
           { 
@@ -65,7 +65,7 @@ module Arneis
           }
         rescue => e
           sanitized_msg = Config.sanitize(e.message)
-          puts Rainbow("  ⚠️ [VEO] Real API call failed: #{sanitized_msg}. Falling back to mock for this scene.").yellow
+          puts Rainbow("  ⚠️ [VEO] API call failed: #{sanitized_msg}. Falling back to mock.").yellow
           json_error = { error: sanitized_msg, prompt: prompt, model: @model }.to_json
           File.write("#{output_file}.error.json", Config.sanitize(json_error))
           File.write("#{output_file}.mock", "MOCK_VEO_VIDEO_FOR: #{prompt}")
