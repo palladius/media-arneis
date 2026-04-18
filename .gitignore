@@ -1,1 +1,9 @@
-*.rb
+/.bundle/
+/vendor/bundle/
+/out/
+/spec/fixtures/out_test/
+/.env
+/list_models*.rb
+/test_*.rb
+/generate_*.rb
+.git-privatize

@@ -19,8 +19,9 @@ module Arneis
         )
       end
 
-      def generate(prompt, output_file)
+      def generate(prompt, output_file, timeout: 20)
         puts Rainbow("  🎨 [IMAGEN] Starting image generation for prompt: '#{prompt[0..40]}...'").magenta
+        start_time = Time.now
         
         payload = {
           contents: [{ role: 'user', parts: [{ text: prompt }] }]
@@ -28,13 +29,13 @@ module Arneis
 
         begin
           response = @client.generate_content(payload)
+          duration = Time.now - start_time
           
           # Save receipt
           receipt_file = "#{output_file}.receipt.json"
           File.write(receipt_file, response.to_json)
 
           # Extract base64 data from response
-          # Expected structure: candidates[0]/content/parts[0]/inlineData/data
           inline_data = response.dig('candidates', 0, 'content', 'parts', 0, 'inlineData')
           
           if inline_data && inline_data['data']
@@ -43,11 +44,16 @@ module Arneis
             File.write(output_file, binary_data, mode: 'wb')
             puts Rainbow("  ✅ [IMAGEN] Real image generated: #{output_file}").green
           else
-            puts Rainbow("  ⚠️ [IMAGEN] No image data found in response. Falling back to mock.").yellow
-            File.write(output_file, "MOCK_IMAGEN_DATA_NO_INLINE_DATA")
+            puts Rainbow("  ⚠️ [IMAGEN] No image data found. Falling back to mock.").yellow
+            File.write(output_file, "MOCK_IMAGEN_DATA")
           end
           
-          { tokens: 0, cost: Pricing::COST_PER_IMAGEN_GEN, time: 2.0 }
+          tokens = response.dig('usageMetadata', 'totalTokenCount') || 0
+          { 
+            tokens: tokens,
+            cost: Pricing::COST_PER_IMAGEN_GEN,
+            time: duration
+          }
         rescue => e
           puts Rainbow("  ⚠️ [IMAGEN] API call failed: #{e.message}. Falling back to mock.").yellow
           File.write("#{output_file}.error.json", { error: e.message, prompt: prompt }.to_json)

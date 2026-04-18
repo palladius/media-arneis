@@ -11,7 +11,7 @@ module Arneis
         @options = options
       end
 
-      def generate(prompt)
+      def generate(prompt, output_file = nil, timeout: 60)
         raise NotImplementedError, "Subclasses must implement generate"
       end
     end

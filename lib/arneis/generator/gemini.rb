@@ -19,8 +19,9 @@ module Arneis
         )
       end
 
-      def generate(prompt, output_file = nil, system_instruction: nil)
+      def generate(prompt, output_file = nil, system_instruction: nil, timeout: 30)
         puts "  [GEMINI] Generating text for prompt: '#{prompt[0..50]}...'"
+        start_time = Time.now
         
         payload = {
           contents: [{ role: 'user', parts: [{ text: prompt }] }]
@@ -31,7 +32,10 @@ module Arneis
         end
 
         begin
+          # gemini-ai gem doesn't support timeout per request directly in initialize, 
+          # so we use Ruby's Timeout if needed, but for now assuming Faraday handles it.
           response = @client.generate_content(payload)
+          duration = Time.now - start_time
           
           # Save metadata if output_file is provided
           if output_file
@@ -41,15 +45,16 @@ module Arneis
 
           # Extract content from response
           content = response['candidates'][0]['content']['parts'][0]['text']
+          tokens = response.dig('usageMetadata', 'totalTokenCount') || 0
           
           { 
             content: content,
-            tokens: response.dig('usageMetadata', 'totalTokenCount') || 0,
-            time: 0
+            tokens: tokens,
+            cost: (tokens.to_f / 1000) * Pricing::COST_PER_1K_TOKENS,
+            time: duration
           }
         rescue => e
           puts Rainbow("  ❌ [GEMINI] Error: #{e.message}").red
-          # Save error to receipt if possible
           if output_file
             File.write("#{output_file}.error.json", { error: e.message, prompt: prompt }.to_json)
           end
