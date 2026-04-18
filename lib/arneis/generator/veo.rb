@@ -36,7 +36,7 @@ module Arneis
           response = @client.predict(payload)
           duration = Time.now - start_time
           receipt_file = "#{output_file}.receipt.json"
-          File.write(receipt_file, response.to_json)
+          File.write(receipt_file, Config.sanitize(response.to_json))
           
           # Veo logic usually involves polling for long-running jobs.
           # For this MVP, we simulate the polling while the request is blocking.
@@ -50,7 +50,8 @@ module Arneis
         rescue => e
           sanitized_msg = Config.sanitize(e.message)
           puts Rainbow("  ⚠️ [VEO] Real API call failed: #{sanitized_msg}. Falling back to mock for this scene.").yellow
-          File.write("#{output_file}.error.json", { error: sanitized_msg, prompt: prompt }.to_json)
+          json_error = { error: sanitized_msg, prompt: prompt }.to_json
+          File.write("#{output_file}.error.json", Config.sanitize(json_error))
           File.write(output_file, "MOCK_VEO_VIDEO_FOR: #{prompt}")
           return { tokens: 0, cost: 0.0, time: 0 }
         end

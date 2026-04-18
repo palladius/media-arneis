@@ -40,7 +40,7 @@ module Arneis
           # Save metadata if output_file is provided
           if output_file
             receipt_file = "#{output_file}.receipt.json"
-            File.write(receipt_file, response.to_json)
+            File.write(receipt_file, Config.sanitize(response.to_json))
           end
 
           # Extract content from response
@@ -57,7 +57,8 @@ module Arneis
           sanitized_msg = Config.sanitize(e.message)
           puts Rainbow("  ❌ [GEMINI] Error: #{sanitized_msg}").red
           if output_file
-            File.write("#{output_file}.error.json", { error: sanitized_msg, prompt: prompt }.to_json)
+            json_error = { error: sanitized_msg, prompt: prompt }.to_json
+            File.write("#{output_file}.error.json", Config.sanitize(json_error))
           end
           raise e
         end

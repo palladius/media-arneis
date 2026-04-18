@@ -33,7 +33,7 @@ module Arneis
           
           # Save receipt
           receipt_file = "#{output_file}.receipt.json"
-          File.write(receipt_file, response.to_json)
+          File.write(receipt_file, Config.sanitize(response.to_json))
 
           # Extract base64 data from response
           inline_data = response.dig('candidates', 0, 'content', 'parts', 0, 'inlineData')
@@ -57,7 +57,8 @@ module Arneis
         rescue => e
           sanitized_msg = Config.sanitize(e.message)
           puts Rainbow("  ⚠️ [IMAGEN] API call failed: #{sanitized_msg}. Falling back to mock.").yellow
-          File.write("#{output_file}.error.json", { error: sanitized_msg, prompt: prompt }.to_json)
+          json_error = { error: sanitized_msg, prompt: prompt }.to_json
+          File.write("#{output_file}.error.json", Config.sanitize(json_error))
           File.write(output_file, "MOCK_IMAGEN_DATA")
           return { tokens: 0, cost: 0.0, time: 0 }
         end
