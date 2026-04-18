@@ -22,9 +22,9 @@ module Arneis
         )
       end
 
-      def generate(prompt, output_file, timeout: 60)
+      def generate(prompt, output_file, timeout: 60, asset_id: nil)
         puts Rainbow("  🎵 [LYRIA] Starting music generation for prompt: '#{prompt[0..40]}...'").magenta
-        start_time = Time.now
+        receipt = AssetReceipt.new(asset_id: asset_id || "music_#{Time.now.to_i}", model: @model, prompt: prompt)
         
         payload = {
           contents: [{ role: 'user', parts: [{ text: prompt }] }]
@@ -32,29 +32,32 @@ module Arneis
 
         begin
           response = with_retry { @client.generate_content(payload) }
-          duration = Time.now - start_time
           
-          # Save receipt
-          receipt_file = "#{output_file}.receipt.json"
-          File.write(receipt_file, Config.sanitize(response.to_json))
+          # Save metadata
+          receipt.complete!(cost_usd: Pricing::COST_PER_LYRIA_GEN)
+          receipt.save!(output_file)
 
-          # Extract data (speculative for Lyria in gemini-ai)
-          # Assuming standard generative response or binary
           puts Rainbow("  ⏳ [LYRIA] Saving music to #{output_file}...").yellow
           
-          # Mock the final write if the API response doesn't contain raw data directly
+          # Mock the final write for now
           File.write(output_file, "LYRIA_MUSIC_DATA_FOR: #{prompt}")
           
           puts Rainbow("  ✅ [LYRIA] Music generated: #{output_file}").green
-          { tokens: 0, cost: Pricing::COST_PER_LYRIA_GEN, time: duration }
+          { tokens: 0, cost: Pricing::COST_PER_LYRIA_GEN, time: duration_from(receipt.ts_started) }
         rescue => e
           sanitized_msg = Config.sanitize(e.message)
           puts Rainbow("  ⚠️ [LYRIA] API call failed: #{sanitized_msg}. Falling back to mock.").yellow
-          json_error = { error: sanitized_msg, prompt: prompt, model: @model }.to_json
-          File.write("#{output_file}.error.json", Config.sanitize(json_error))
+          receipt.fail!(error_msg: sanitized_msg)
+          receipt.save!(output_file)
           File.write("#{output_file}.mock", "MOCK_LYRIA_DATA")
           return { tokens: 0, cost: 0.0, time: 0 }
         end
+      end
+
+      private
+
+      def duration_from(ts)
+        (Time.now - Time.parse(ts)).round(2)
       end
     end
   end

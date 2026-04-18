@@ -26,6 +26,10 @@ module Arneis
       '/home/riccardo/.gemini/extensions/palladius-public-goodies/skills/veo/scripts/generate_video.py'
     end
 
+    def self.lyria_script
+      '/home/riccardo/.gemini/extensions/palladius-common-commands/skills/musicgen-lyria3/scripts/musicgen-lyria3-30sec.py'
+    end
+
     def self.genmedia_bucket
       ENV['GENMEDIA_BUCKET'] || raise("Missing GENMEDIA_BUCKET environment variable")
     end

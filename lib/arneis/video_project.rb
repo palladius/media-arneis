@@ -52,17 +52,19 @@ module Arneis
       orchestrator = Orchestrator.new
       veo_generator = Generator::Veo.new
       gemini_generator = Generator::Gemini.new
+      lyria_generator = Generator::Lyria.new
       system_prompt = @template.dig('defaults', 'system_prompt')
 
-      # Read current state to see what needs doing
       state_file = File.join(@output_path, '.state.yaml')
       current_state = YAML.load_file(state_file)
 
+      # 1. Scene Tasks
+      scene_task_ids = []
       @scenes.each do |scene|
         scene_id = "scene_#{scene['scene']}"
+        scene_task_ids << scene_id
         
-        # Check if this scene is already done in current_state
-        state_scene = current_state['scenes'].find { |s| s['scene'] == scene['scene'] }
+        state_scene = current_state['scenes']&.find { |s| s['scene'] == scene['scene'] }
         if state_scene && state_scene['status'] == 'done'
           puts Rainbow("  ⏭️  Skipping Scene #{scene['scene']} (already done)").blue
           next
@@ -70,10 +72,8 @@ module Arneis
 
         orchestrator.add_task(scene_id) do
           update_scene_status(scene['scene'], 'in_progress')
-          
-          # Enhance the description with Gemini using the template's system prompt
-          puts "  ✨ Enhancing scene #{scene['scene']} description using template guardrails..."
           scene_output_base = File.join(@output_path, "scene_#{scene['scene']}")
+          
           enhancement = gemini_generator.generate(
             "Enhance this video scene description: #{scene['description']}",
             "#{scene_output_base}.text",
@@ -83,11 +83,9 @@ module Arneis
           enhanced_prompt = enhancement[:content]
           File.write("#{scene_output_base}.text.txt", enhanced_prompt)
           
-          # Generate real video with Veo
           veo_output = "#{scene_output_base}.mp4"
           veo_generator.generate(enhanced_prompt, veo_output, asset_id: "Scene#{scene['scene']}.video")
           
-          # Validate artifact
           puts "  🛡️  Validating scene #{scene['scene']} artifact..."
           v_result = Validator.verify(veo_output, :video)
           
@@ -101,15 +99,78 @@ module Arneis
         end
       end
 
+      # 2. Project-wide Music Task
+      if @data['background_music']
+        music_id = 'background_music'
+        if current_state['background_music']&.[]('status') == 'done'
+          puts Rainbow("  ⏭️  Skipping Background Music (already done)").blue
+        else
+          orchestrator.add_task(music_id) do
+            update_project_task_status('background_music', 'in_progress')
+            music_output = File.join(@output_path, "background_music.wav")
+            lyria_generator.generate(@data['background_music']['prompt'], music_output, asset_id: "Project.music")
+            update_project_task_status('background_music', 'done')
+          end
+        end
+        scene_task_ids << music_id
+      end
+
+      # 3. Final Montage Task (depends on all scenes and music)
+      orchestrator.add_task('montage', dependencies: scene_task_ids) do
+        update_project_task_status('montage', 'in_progress')
+        puts Rainbow("  🎬 Starting final montage with ffmpeg...").magenta
+        output_file = File.join(@output_path, @data['output_filename'] || "final_video.mp4")
+        
+        video_inputs = @scenes.map { |s| File.join(@output_path, "scene_#{s['scene']}.mp4") }
+        audio_input = File.join(@output_path, 'background_music.wav') if @data['background_music']
+        
+        # Build ffmpeg command
+        input_args = video_inputs.map { |v| "-i #{v}" }.join(" ")
+        input_args += " -i #{audio_input}" if audio_input && File.exist?(audio_input)
+        
+        filter = ""
+        video_inputs.each_with_index { |_, i| filter += "[#{i}:v]" }
+        filter += "concat=n=#{video_inputs.size}:v=1:a=0[outv]"
+        
+        # Map audio if present, otherwise just video
+        map_args = "-map \"[outv]\""
+        if audio_input && File.exist?(audio_input)
+          map_args += " -map #{video_inputs.size}:a"
+        end
+        
+        cmd = "ffmpeg -y #{input_args} -filter_complex \"#{filter}\" #{map_args} -c:v libx264 -pix_fmt yuv420p -shortest #{output_file}"
+        
+        puts Rainbow("  🏗️  Executing: #{cmd}").yellow
+        success = system(cmd)
+        
+        if success && File.exist?(output_file)
+          puts Rainbow("  ✅ Montage complete: #{output_file}").green
+          update_project_task_status('montage', 'done')
+        else
+          puts Rainbow("  ❌ Montage failed!").red
+          update_project_task_status('montage', 'failed')
+        end
+      end
+
       orchestrator.run
       
-      # Determine final project status based on scenes
-      state_file = File.join(@output_path, '.state.yaml')
+      # Determine final project status
       state = YAML.load_file(state_file)
       any_failed = state['scenes'].any? { |s| s['status'] == 'failed' }
       final_status = any_failed ? 'failed' : 'done'
-      
       update_project_status(final_status)
+    end
+
+    private
+
+    def update_project_task_status(task_key, status)
+      @mutex.synchronize do
+        state_file = File.join(@output_path, '.state.yaml')
+        state = YAML.load_file(state_file)
+        state[task_key] ||= {}
+        state[task_key]['status'] = status
+        File.write(state_file, state.to_yaml)
+      end
     end
 
     private

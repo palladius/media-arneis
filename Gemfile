@@ -9,3 +9,5 @@ gem 'rspec'
 gem 'dotenv'
 gem 'standard'
 gem 'zeitwerk'
+
+# gem "ruby_llm"

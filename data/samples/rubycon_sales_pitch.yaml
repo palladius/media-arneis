@@ -1,7 +1,11 @@
 name: VideoProject
 description: "A 32-second promotional video to sell tickets for Rubycon 2026 in Rimini, Italy, highlighting technical content and the seafront location."
 title: "Rubycon 2026: Code, Community, and the Italian Coast"
-output_filename: "rubycon_2026_promo.mp4"
+output_filename: "rubycon_2026_pitch_final.mp4"
+
+background_music:
+  prompt: "A playful, energetic Italian tarantella, 120 BPM, with traditional accordion and mandolin, 32 seconds long."
+
 scenes:
   - scene: 1
     description: "Cinematic drone shot sweeping across the Rimini seafront at golden hour, transitioning into a floating, crystalline Ruby gemstone logo hovering over the elegant Hotel Ambasciatori. Text overlay: 'Rubycon 2026: Rimini, Italy'."

@@ -10,5 +10,9 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Implement dependency graph visualization using Mermaid.js**
   *Link: [./tracks/graph_viz_20260418/](./tracks/graph_viz_20260418/)*
 
-- [ ] **Track: Integrate Google AI Models for real media generation**
+- [x] **Track: Integrate Google AI Models for real media generation**
   *Link: [./tracks/real_gen_20260418/](./tracks/real_gen_20260418/)*
+
+- [ ] **Track: Implement Feedback Loop and Advanced Montage Orchestration**
+  *Link: [./tracks/feedback_loop_20260418/](./tracks/feedback_loop_20260418/)*
+

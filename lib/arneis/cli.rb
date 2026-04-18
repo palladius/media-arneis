@@ -33,6 +33,81 @@ module Arneis
       puts Rainbow("✅ Generation complete!").green
     end
 
+    desc "feedback [FOLDER_PATH]", "Provide natural language feedback on a specific asset (defaults to latest in out/)"
+    method_option :prompt, type: :string, required: true, aliases: "-p", desc: "Your feedback (e.g., 'I don't like video 3')"
+    def feedback(folder_path = nil)
+      folder_path ||= Dir.glob("out/*/").select { |f| File.exist?(File.join(f, '.state.yaml')) }.max_by { |f| File.mtime(f) }
+      
+      if folder_path.nil?
+        puts Rainbow("❌ No project folders found in out/").red
+        return
+      end
+
+      puts Rainbow("💬 Processing feedback for #{folder_path}...").cyan
+      
+      state_file = File.join(folder_path, '.state.yaml')
+      state = YAML.load_file(state_file)
+      
+      # Try direct mapping first (e.g., video3, text2)
+      asset_id = nil
+      if options[:prompt] =~ /^(video|text)(\d+)$/i
+        type = $1.downcase == 'video' ? 'video' : 'text'
+        scene_num = $2
+        asset_id = "Scene#{scene_num}.#{type}"
+      else
+        # Use Gemini to identify which asset the user is talking about
+        gemini = Generator::Gemini.new
+        system_prompt = "You are an expert Media Assistant. Given a user prompt and a list of project assets, identify the EXACT asset_id (e.g., 'Scene3.video' or 'Project.music') the user is talking about.
+        If it's a general project feedback, return 'Project'.
+        Output ONLY the asset_id, nothing else."
+        
+        asset_list = state['scenes'].map { |s| "Scene#{s['scene']}.video, Scene#{s['scene']}.text" }.join(", ")
+        asset_list += ", Project.music" if state['background_music']
+        
+        identification_prompt = "User Feedback: '#{options[:prompt]}'\nAsset List: #{asset_list}"
+        
+        resp = gemini.generate(identification_prompt, system_instruction: system_prompt)
+        asset_id = resp[:content].strip
+      end
+      
+      puts Rainbow("🎯 Identified target: #{asset_id}").yellow
+      
+      if asset_id == 'Project'
+        puts "  (General project feedback not yet implemented for automated regeneration)"
+        return
+      end
+
+      # Parse asset_id (e.g., Scene3.video)
+      if asset_id =~ /Scene(\d+)\.(video|text)/
+        scene_num = $1.to_i
+        type = $2
+        
+        # Archive to .trash/
+        trash_dir = File.join(folder_path, ".trash", Time.now.strftime('%Y%m%d_%H%M%S'))
+        FileUtils.mkdir_p(trash_dir)
+        
+        target_file = File.join(folder_path, "scene_#{scene_num}.#{type == 'video' ? 'mp4' : 'text.txt'}")
+        if File.exist?(target_file)
+          puts "  🗑️  Archiving #{File.basename(target_file)} to .trash/"
+          FileUtils.mv(target_file, trash_dir)
+          # Also move receipts and asset json
+          Dir.glob("#{target_file}*").each { |f| FileUtils.mv(f, trash_dir) }
+        end
+
+        # Reset status in .state.yaml
+        scene = state['scenes'].find { |s| s['scene'] == scene_num }
+        if scene
+          scene['status'] = 'pending'
+          # Also store feedback for future regeneration
+          scene['feedback'] = options[:prompt]
+          File.write(state_file, state.to_yaml)
+          puts Rainbow("✅ Scene #{scene_num} reset to pending. Run 'arnectl resume' to regenerate.").green
+        end
+      else
+        puts Rainbow("⚠️  Could not map '#{asset_id}' to an automated action.").yellow
+      end
+    end
+
     desc "resume [FOLDER_PATH]", "Resume a media project from its state file (defaults to latest in out/)"
     def resume(folder_path = nil)
       folder_path ||= Dir.glob("out/*/").select { |f| File.exist?(File.join(f, '.state.yaml')) }.max_by { |f| File.mtime(f) }
@@ -90,7 +165,14 @@ module Arneis
       state['scenes'].each do |scene|
         desc = scene['description']
         desc = "#{desc[0..76]}..." if desc.length > 80
-        puts "  #{status_emoji(scene['status'])} " + Rainbow("Scene #{scene['scene']}:").orange + " " + Rainbow(desc).white
+        
+        # Check if file exists or is mocked
+        video_file = File.join(folder_path, "scene_#{scene['scene']}.mp4")
+        mock_file = "#{video_file}.mock"
+        scene_status = scene['status']
+        scene_status = "done (mocked 🤡)" if File.exist?(mock_file) && !File.exist?(video_file)
+        
+        puts "  #{status_emoji(scene['status'])} 🎥 " + Rainbow("Scene #{scene['scene']}:").orange + " " + Rainbow(desc).white + (File.exist?(mock_file) ? Rainbow(" 🤡").yellow : "")
         
         # Check for errors in the output folder
         output_base = File.join(folder_path, "scene_#{scene['scene']}")
@@ -113,6 +195,31 @@ module Arneis
           output_tokens += receipt['output_tokens'] || 0
           total_tokens += (receipt['input_tokens'] || 0) + (receipt['output_tokens'] || 0)
           total_cost += receipt['cost_usd'] || 0.0
+        end
+      end
+
+      # Project-wide tasks
+      puts "\nProject Tasks:"
+      if state['background_music']
+        music_file = File.join(folder_path, "background_music.wav")
+        mock_music = "#{music_file}.mock"
+        puts "  #{status_emoji(state['background_music']['status'])} 🎵 Background Music" + (File.exist?(mock_music) ? Rainbow(" 🤡").yellow : "")
+        
+        # Check for music errors
+        Dir.glob(File.join(folder_path, "background_music.*.error.json")).each do |error_file|
+          error_data = ::JSON.parse(File.read(error_file))
+          puts Rainbow("    ❌ Error: #{Config.sanitize(error_data['error'])}").red
+        end
+      end
+      if state['montage']
+        montage_file = File.join(folder_path, state['output_filename'] || "final_video.mp4")
+        mock_montage = "#{montage_file}.mock"
+        puts "  #{status_emoji(state['montage']['status'])} 🎞️  Final Montage" + (File.exist?(mock_montage) ? Rainbow(" 🤡").yellow : "")
+        
+        # Check for montage errors
+        Dir.glob(File.join(folder_path, "montage.*.error.json")).each do |error_file|
+          error_data = ::JSON.parse(File.read(error_file))
+          puts Rainbow("    ❌ Error: #{Config.sanitize(error_data['error'])}").red
         end
       end
 
@@ -156,22 +263,35 @@ module Arneis
       puts Rainbow("📊 Generating graph for #{yaml_path}...").cyan
       project = VideoProject.new(yaml_path)
       
-      # We need a way to get the tasks from the project without running it
-      # For now, let's just use a simplified version of what process does
-      tasks = project.scenes.map do |scene|
-        Arneis::Task.new("scene_#{scene['scene']}".to_sym)
+      tasks = []
+      scene_task_ids = []
+
+      # 1. Scenes
+      project.scenes.each do |scene|
+        scene_id = "scene_#{scene['scene']}".to_sym
+        tasks << Arneis::Task.new(scene_id)
+        scene_task_ids << scene_id
       end
       
-      # Add dependencies if they exist (need to update VideoProject or YAML to support them)
-      # For now, let's assume sequential dependencies for the demo
-      tasks.each_cons(2) do |prev, curr|
-        curr.dependencies << prev.id
+      # 2. Music
+      if project.data['background_music']
+        tasks << Arneis::Task.new(:background_music)
+        scene_task_ids << :background_music
       end
+
+      # 3. Montage
+      tasks << Arneis::Task.new(:montage, dependencies: scene_task_ids)
 
       visualizer = Visualizer.new(tasks)
       mermaid = visualizer.to_mermaid
       
-      output_file = options[:output] || "graph.md"
+      # Determine output folder
+      # Heuristic: if we have a folder path in out/ with a state file, use it
+      latest_project = Dir.glob("out/*/").select { |f| File.exist?(File.join(f, '.state.yaml')) }.max_by { |f| File.mtime(f) }
+      output_dir = latest_project || "out/latest_graph"
+      FileUtils.mkdir_p(output_dir)
+      
+      output_file = options[:output] || File.join(output_dir, "DEPENDENCIES.md")
       content = "# Dependency Graph: #{project.title}\n\n```mermaid\n#{mermaid}\n```"
       File.write(output_file, content)
       
