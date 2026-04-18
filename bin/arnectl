@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+
+=begin
+Arneis (Media Harness) - A kubectl-like tool for media creation.
+This tool orchestrates complex media projects (Videos, Stories, Comic Books)
+using Google's AI models (Gemini, Lyria, Nanobanana, Veo, Chirp).
+
+Usage:
+  arnectl apply <yaml_path>
+  arnectl status <folder_path>
+  arnectl version
+=end
+
+require 'bundler/setup'
+require 'zeitwerk'
+
+loader = Zeitwerk::Loader.new
+loader.push_dir("#{__dir__}/../lib")
+loader.setup
+
+Arneis::Cli.start(ARGV)

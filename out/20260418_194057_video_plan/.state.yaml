@@ -1,0 +1,17 @@
+---
+status: initialized
+project_title: Rubycon Pitch Video
+created_at: '2026-04-18 19:40:57 +0200'
+scenes:
+- scene: 1
+  description: Opening scene with Rubycon logo and intro music.
+  video: scene1_final.mp4
+  music:
+    source: scene1_music_choir_rock.wav
+  text_overlay:
+    text: In 49 B.C. Caesar came across the Rubicon river...
+  status: pending
+- scene: 2
+  description: The creator of Ruby, Matz, says 'Rubycon? Sugoi!'
+  video: scene2_final_with_speech.mp4
+  status: pending
