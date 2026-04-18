@@ -28,10 +28,13 @@ Use Conductor extension to manage the BDD and SW dev
 ## Software progress
 
 * Use Conductor for new features. If they're not trivial, couple this with a GH Issue for external obesrvability.
-* Use VERSION file containing the latest version and a CHANGELOG.md using SemVer and SemVer-git.
+* Use `VERSION` file containing the latest version and a `CHANGELOG.md` using SemVer and SemVer-git.
 * Use gitmoji in commit messages and GH issues.
 
 ## Testing
 
 * Tests must be executable from `just test` command, using common naming conventions, and run with the latest Ruby version (for now).
-* All tests should pass before git commit and git push
+* All tests should pass before `git commit` and `git push`.
+* If you're testing something like "test_if_llm_works.rb", do NOT add it to git. To make sure you don't, use .gitignore for these files.
+    * Maybe use regexes like tmp_*.rb or test_llm_*.rb, etc. to ignore them.
+

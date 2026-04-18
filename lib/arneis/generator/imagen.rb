@@ -33,14 +33,20 @@ module Arneis
           receipt_file = "#{output_file}.receipt.json"
           File.write(receipt_file, response.to_json)
 
-          # Note: gemini-ai gem structure for image response might vary.
-          # Assuming standard response for now.
-          puts Rainbow("  ⏳ [IMAGEN] Saving image to #{output_file}...").yellow
+          # Extract base64 data from response
+          # Expected structure: candidates[0]/content/parts[0]/inlineData/data
+          inline_data = response.dig('candidates', 0, 'content', 'parts', 0, 'inlineData')
           
-          # Mock the final write if the API response doesn't contain raw data directly
-          File.write(output_file, "IMAGEN_IMAGE_DATA_FOR: #{prompt}")
+          if inline_data && inline_data['data']
+            puts Rainbow("  ⏳ [IMAGEN] Decoding and saving binary image to #{output_file}...").yellow
+            binary_data = Base64.decode64(inline_data['data'])
+            File.write(output_file, binary_data, mode: 'wb')
+            puts Rainbow("  ✅ [IMAGEN] Real image generated: #{output_file}").green
+          else
+            puts Rainbow("  ⚠️ [IMAGEN] No image data found in response. Falling back to mock.").yellow
+            File.write(output_file, "MOCK_IMAGEN_DATA_NO_INLINE_DATA")
+          end
           
-          puts Rainbow("  ✅ [IMAGEN] Image generated: #{output_file}").green
           { tokens: 0, cost: Pricing::COST_PER_IMAGEN_GEN, time: 2.0 }
         rescue => e
           puts Rainbow("  ⚠️ [IMAGEN] API call failed: #{e.message}. Falling back to mock.").yellow
