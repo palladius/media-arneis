@@ -70,18 +70,26 @@ module Arneis
           # Validate artifact
           puts "  🛡️  Validating scene #{scene['scene']} artifact..."
           v_result = Validator.verify(veo_output, :video)
+          
           if v_result[:success]
             puts Rainbow("    ✅ Validated: #{v_result[:info]}").green
+            update_scene_status(scene['scene'], 'done')
           else
             puts Rainbow("    ⚠️  Validation failed: #{v_result[:message]}").yellow
+            update_scene_status(scene['scene'], 'failed')
           end
-          
-          update_scene_status(scene['scene'], 'done')
         end
       end
 
       orchestrator.run
-      update_project_status('done')
+      
+      # Determine final project status based on scenes
+      state_file = File.join(@output_path, '.state.yaml')
+      state = YAML.load_file(state_file)
+      any_failed = state['scenes'].any? { |s| s['status'] == 'failed' }
+      final_status = any_failed ? 'failed' : 'done'
+      
+      update_project_status(final_status)
     end
 
     private

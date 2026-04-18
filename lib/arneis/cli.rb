@@ -5,6 +5,7 @@ Arneis::Cli - Implementation of the arnectl command-line interface.
 require 'thor'
 require 'rainbow'
 require 'yaml'
+require 'json'
 
 module Arneis
   class Cli < Thor
@@ -54,6 +55,13 @@ module Arneis
       puts "\nScenes:"
       state['scenes'].each do |scene|
         puts "  #{status_emoji(scene['status'])} Scene #{scene['scene']}: #{scene['description']}"
+        
+        # Check for errors in the output folder
+        output_base = File.join(folder_path, "scene_#{scene['scene']}")
+        Dir.glob("#{output_base}.*.error.json").each do |error_file|
+          error_data = JSON.parse(File.read(error_file))
+          puts Rainbow("    ❌ Error: #{error_data['error']}").red
+        end
       end
     end
 
