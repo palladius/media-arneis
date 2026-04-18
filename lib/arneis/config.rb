@@ -17,5 +17,12 @@ module Arneis
     def self.google_cloud_project
       ENV['GOOGLE_CLOUD_PROJECT'] || `gcloud config get-value project`.strip
     end
+
+    def self.sanitize(text)
+      return text unless text.is_a?(String)
+      key = ENV['GEMINI_API_KEY']
+      return text if key.nil? || key.empty?
+      text.gsub(key, "[REDACTED]")
+    end
   end
 end

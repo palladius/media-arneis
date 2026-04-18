@@ -54,9 +54,10 @@ module Arneis
             time: duration
           }
         rescue => e
-          puts Rainbow("  ❌ [GEMINI] Error: #{e.message}").red
+          sanitized_msg = Config.sanitize(e.message)
+          puts Rainbow("  ❌ [GEMINI] Error: #{sanitized_msg}").red
           if output_file
-            File.write("#{output_file}.error.json", { error: e.message, prompt: prompt }.to_json)
+            File.write("#{output_file}.error.json", { error: sanitized_msg, prompt: prompt }.to_json)
           end
           raise e
         end
