@@ -10,15 +10,21 @@ module Arneis
 
     def initialize(yaml_path)
       @data = YAML.load_file(yaml_path)
+      @template = YAML.load_file('data/templates/VideoProject.yaml')
       validate!
       @title = @data['title']
       @scenes = @data['scenes']
     end
 
     def validate!
-      raise "Invalid YAML: Missing 'title'" unless @data['title']
-      raise "Invalid YAML: Missing 'scenes'" unless @data['scenes'].is_a?(Array)
-      raise "Invalid YAML: 'scenes' cannot be empty" if @data['scenes'].empty?
+      @template['required_fields'].each do |field|
+        raise "Invalid YAML: Missing '#{field}'" unless @data[field]
+      end
+      
+      raise "Invalid YAML: 'scenes' must be an array" unless @data['scenes'].is_a?(Array)
+      
+      min_scenes = @template.dig('structure', 'scenes', 'min_count')
+      raise "Invalid YAML: 'scenes' must have at least #{min_scenes} items" if @data['scenes'].size < min_scenes
     end
 
     def initialize_output(output_path)
@@ -36,13 +42,24 @@ module Arneis
 
     def process
       orchestrator = Orchestrator.new
-      generator = Generator::Mock.new
+      mock_generator = Generator::Mock.new
+      gemini_generator = Generator::Gemini.new
+      system_prompt = @template.dig('defaults', 'system_prompt')
 
       @scenes.each do |scene|
         scene_id = "scene_#{scene['scene']}"
         orchestrator.add_task(scene_id) do
           update_scene_status(scene['scene'], 'in_progress')
-          generator.generate(scene['description'], File.join(@output_path, "scene_#{scene['scene']}.mp4"))
+          
+          # Enhance the description with Gemini using the template's system prompt
+          puts "  ✨ Enhancing scene #{scene['scene']} description using template guardrails..."
+          enhancement = gemini_generator.generate(
+            "Enhance this video scene description: #{scene['description']}",
+            system_instruction: system_prompt
+          )
+          enhanced_prompt = enhancement[:content]
+          
+          mock_generator.generate(enhanced_prompt, File.join(@output_path, "scene_#{scene['scene']}.mp4"))
           update_scene_status(scene['scene'], 'done')
         end
       end

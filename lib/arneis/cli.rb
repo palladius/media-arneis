@@ -8,6 +8,11 @@ require 'yaml'
 
 module Arneis
   class Cli < Thor
+    def initialize(*args)
+      super
+      Config.load!
+    end
+
     desc "version", "Show arnectl version"
     def version
       puts "arnectl version #{Arneis::VERSION} 🍷"

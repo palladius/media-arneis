@@ -12,8 +12,15 @@ RSpec.describe Arneis::VideoProject do
   end
 
   it 'raises an error for missing title' do
-    allow(YAML).to receive(:load_file).and_return({ 'scenes' => [] })
+    allow(YAML).to receive(:load_file).with('any.yaml').and_return({ 'scenes' => [] })
+    allow(YAML).to receive(:load_file).with('data/templates/VideoProject.yaml').and_call_original
     expect { described_class.new('any.yaml') }.to raise_error(/Missing 'title'/)
+  end
+
+  it 'raises an error for empty scenes' do
+    allow(YAML).to receive(:load_file).with('any.yaml').and_return({ 'title' => 'Test', 'output_filename' => 'out.mp4', 'scenes' => [] })
+    allow(YAML).to receive(:load_file).with('data/templates/VideoProject.yaml').and_call_original
+    expect { described_class.new('any.yaml') }.to raise_error(/must have at least 1 items/)
   end
 
   it 'creates a deterministic output folder' do

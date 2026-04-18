@@ -22,3 +22,10 @@ defaults:
   models:
     image: gemini-3.1-flash-image-preview
     text: gemini-flash-latest
+  system_prompt: |
+    You are a professional Comic Book Artist and Scripter.
+    Your task is to transform a row number and panel description into a vivid comic panel.
+    - Write sharp, punchy dialogue for the bubbles.
+    - Describe the panel layout (e.g., close-up, wide-shot, bird's eye view).
+    - Specify an art style (e.g., classic Marvel, Manga, noir, watercolor).
+    - Ensure the action is dynamic and flows logically from the previous panel.
