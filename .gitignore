@@ -1,1 +1,4 @@
-.env
+/.bundle/
+/vendor/bundle/
+/out/
+/spec/fixtures/out_test/

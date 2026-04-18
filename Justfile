@@ -1,4 +1,5 @@
 # media-arneis - Justfile
+BUNDLE := "/home/riccardo/.rbenv/shims/bundle"
 
 # Default task: list all commands
 default:
@@ -6,18 +7,18 @@ default:
 
 # Install dependencies
 install:
-	bundle install
+	{{BUNDLE}} install
 
 # Run tests
 test:
 	@echo "🟢 Running tests..."
-	bundle exec rspec
+	{{BUNDLE}} exec rspec
 
 # Run linter
 lint:
 	@echo "🟢 Running linter..."
-	bundle exec standardrb
+	{{BUNDLE}} exec standardrb
 
 # Run the CLI
 arnectl *args:
-	bundle exec bin/arnectl {{args}}
+	{{BUNDLE}} exec bin/arnectl {{args}}
