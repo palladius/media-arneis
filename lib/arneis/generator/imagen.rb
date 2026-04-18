@@ -12,9 +12,10 @@ module Arneis
         @model = Models::IMAGEN_DEFAULT
         @client = ::Gemini.new(
           credentials: {
-            service: 'generative-language-api',
-            api_key: Config.gemini_api_key,
-            version: 'v1beta'
+            service: 'vertex-ai-api',
+            project_id: Config.google_cloud_project,
+            region: Config.google_cloud_region,
+            version: 'v1'
           },
           options: { model: @model }
         )
