@@ -15,6 +15,7 @@
 4. **AI & Modern Ruby:** Strong emphasis on AI integration ("Ruby is the best language for building AI web apps") and accessibility.
 5. **Affordability:** Early bird starts at €149.
 
+
 ## Target Audience Personas
 - **Extroverts:** Will love the close-knit networking and easy access to "famous" speakers.
 - **Introverts:** The single-track format and smaller crowd make it less overwhelming and easier to follow.

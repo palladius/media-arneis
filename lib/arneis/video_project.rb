@@ -9,6 +9,7 @@ module Arneis
     attr_reader :data, :title, :scenes
 
     def initialize(yaml_path)
+      @yaml_path = yaml_path
       @data = YAML.load_file(yaml_path)
       @template = YAML.load_file('data/templates/VideoProject.yaml')
       validate!
@@ -31,7 +32,13 @@ module Arneis
     def initialize_output(output_path)
       Dir.mkdir(output_path) unless Dir.exist?(output_path)
       @output_path = output_path
+      
+      # Copy YAML to output folder for resumption
+      FileUtils.cp(@yaml_path, File.join(output_path, File.basename(@yaml_path))) if @yaml_path
+
       state_file = File.join(output_path, '.state.yaml')
+      return if File.exist?(state_file) # Don't overwrite if it exists
+
       initial_state = {
         'status' => 'initialized',
         'project_title' => @title,
@@ -47,8 +54,20 @@ module Arneis
       gemini_generator = Generator::Gemini.new
       system_prompt = @template.dig('defaults', 'system_prompt')
 
+      # Read current state to see what needs doing
+      state_file = File.join(@output_path, '.state.yaml')
+      current_state = YAML.load_file(state_file)
+
       @scenes.each do |scene|
         scene_id = "scene_#{scene['scene']}"
+        
+        # Check if this scene is already done in current_state
+        state_scene = current_state['scenes'].find { |s| s['scene'] == scene['scene'] }
+        if state_scene && state_scene['status'] == 'done'
+          puts Rainbow("  ⏭️  Skipping Scene #{scene['scene']} (already done)").blue
+          next
+        end
+
         orchestrator.add_task(scene_id) do
           update_scene_status(scene['scene'], 'in_progress')
           

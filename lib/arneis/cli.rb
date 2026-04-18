@@ -33,6 +33,32 @@ module Arneis
       puts Rainbow("✅ Generation complete!").green
     end
 
+    desc "resume [FOLDER_PATH]", "Resume a media project from its state file (defaults to latest in out/)"
+    def resume(folder_path = nil)
+      folder_path ||= Dir.glob("out/*/").select { |f| File.exist?(File.join(f, '.state.yaml')) }.max_by { |f| File.mtime(f) }
+      
+      if folder_path.nil?
+        puts Rainbow("❌ No project folders found in out/").red
+        return
+      end
+
+      puts Rainbow("🚀 Resuming #{folder_path}...").green
+      # Note: We need a way to load a project from an existing folder
+      # For now, let's assume the YAML is still there
+      yaml_files = Dir.glob(File.join(folder_path, "*.yaml"))
+      if yaml_files.empty?
+        puts Rainbow("❌ No YAML found in #{folder_path} to resume from").red
+        return
+      end
+
+      project = VideoProject.new(yaml_files.first)
+      project.instance_variable_set(:@output_path, folder_path) # Direct injection for resume
+      
+      puts Rainbow("⚙️ Resuming orchestration...").magenta
+      project.process
+      puts Rainbow("✅ Resume complete!").green
+    end
+
     desc "status [FOLDER_PATH]", "Show real-time status of a media project (defaults to latest in out/)"
     def status(folder_path = nil)
       folder_path ||= Dir.glob("out/*/").select { |f| File.exist?(File.join(f, '.state.yaml')) }.max_by { |f| File.mtime(f) }
