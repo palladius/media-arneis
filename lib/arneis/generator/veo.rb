@@ -5,6 +5,7 @@ Orchestrates generation via Hussain's Python script.
 
 require 'thread'
 require 'open3'
+require 'fileutils'
 
 module Arneis
   module Generator
@@ -47,26 +48,33 @@ module Arneis
 
         begin
           success = false
+          start_time = Time.now
+          
           Open3.popen3(env, cmd) do |stdin, stdout, stderr, wait_thr|
             stdin.close
             
-            # Print stderr to show polling progress
-            Thread.new do
+            # Use threads to capture output and log in real-time
+            t_err = Thread.new do
               while line = stderr.gets
                 puts "    [VEO SCRIPT] #{line.strip}"
               end
             end
             
-            # Look for MEDIA: path in stdout
-            while line = stdout.gets
-              if line =~ /^MEDIA:(.*)$/
-                media_path = $1.strip
-                puts Rainbow("  📥 Captured media path: #{media_path}").blue
-                FileUtils.mkdir_p(File.dirname(output_file))
-                FileUtils.mv(media_path, output_file)
-                success = true
+            t_out = Thread.new do
+              while line = stdout.gets
+                if line =~ /^MEDIA:(.*)$/
+                  media_path = $1.strip
+                  puts Rainbow("  📥 Captured media path: #{media_path}").blue
+                  FileUtils.mkdir_p(File.dirname(output_file))
+                  FileUtils.mv(media_path, output_file)
+                  success = true
+                end
               end
             end
+            
+            # Wait for all threads to finish before closing streams
+            t_err.join
+            t_out.join
             
             success = wait_thr.value.success? if success.nil?
           end

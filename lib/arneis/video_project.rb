@@ -91,7 +91,19 @@ module Arneis
           
           if v_result[:success]
             puts Rainbow("    ✅ Validated: #{v_result[:info]}").green
-            update_scene_status(scene['scene'], 'done')
+            
+            # Run QA Eval
+            evaluator = Evaluator.new
+            eval_result = evaluator.evaluate_video_text(veo_output, scene['description'])
+            if eval_result[:success]
+              puts Rainbow("    ⚖️  EVAL: #{eval_result[:message]}").green
+            else
+              puts Rainbow("    ⚖️  EVAL FAILED: #{eval_result[:message]}").red
+              # Store eval failure in state
+              update_scene_status(scene['scene'], 'done_with_warnings', eval_result[:message])
+            end
+
+            update_scene_status(scene['scene'], 'done') unless eval_result[:success] == false
           else
             puts Rainbow("    ⚠️  Validation failed: #{v_result[:message]}").yellow
             update_scene_status(scene['scene'], 'failed')
@@ -175,12 +187,15 @@ module Arneis
 
     private
 
-    def update_scene_status(scene_num, status)
+    def update_scene_status(scene_num, status, error_msg = nil)
       @mutex.synchronize do
         state_file = File.join(@output_path, '.state.yaml')
         state = YAML.load_file(state_file)
         scene = state['scenes'].find { |s| s['scene'] == scene_num }
-        scene['status'] = status if scene
+        if scene
+          scene['status'] = status
+          scene['error'] = error_msg if error_msg
+        end
         File.write(state_file, state.to_yaml)
       end
     end

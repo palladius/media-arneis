@@ -33,9 +33,12 @@ module Arneis
       puts Rainbow("✅ Generation complete!").green
     end
 
-    desc "feedback [FOLDER_PATH]", "Provide natural language feedback on a specific asset (defaults to latest in out/)"
-    method_option :prompt, type: :string, required: true, aliases: "-p", desc: "Your feedback (e.g., 'I don't like video 3')"
+    desc "feedback [FOLDER_PATH] -p, --prompt=PROMPT", "Provide natural language feedback on a specific asset"
+    method_option :prompt, type: :string, required: true, aliases: "-p", desc: "Your feedback"
     def feedback(folder_path = nil)
+      # If first argument isn't a folder, it might be the prompt if not using -p, 
+      # but Thor handles options separately.
+      # If folder_path is nil, default to latest
       folder_path ||= Dir.glob("out/*/").select { |f| File.exist?(File.join(f, '.state.yaml')) }.max_by { |f| File.mtime(f) }
       
       if folder_path.nil?
@@ -327,6 +330,7 @@ module Arneis
       def status_emoji(status)
         case status
         when 'done' then "🟢"
+        when 'done_with_warnings' then "⚖️ "
         when 'in_progress' then "🟡"
         when 'pending' then "⚪"
         when 'waiting' then "🩶"

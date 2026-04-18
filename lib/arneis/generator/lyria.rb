@@ -10,7 +10,7 @@ module Arneis
     class Lyria < Base
       def initialize(options = {})
         super
-        @model = Models::LYRIA_CLIP
+        @model = Models::LYRIA_DEFAULT
         @client = ::Gemini.new(
           credentials: {
             service: 'vertex-ai-api',
