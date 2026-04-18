@@ -22,9 +22,9 @@ module Arneis
         )
       end
 
-      def generate(prompt, output_file, timeout: 20)
+      def generate(prompt, output_file, timeout: 20, asset_id: nil)
         puts Rainbow("  🎨 [IMAGEN] Starting image generation for prompt: '#{prompt[0..40]}...'").magenta
-        start_time = Time.now
+        receipt = AssetReceipt.new(asset_id: asset_id || "image_#{Time.now.to_i}", model: @model, prompt: prompt)
         
         payload = {
           contents: [{ role: 'user', parts: [{ text: prompt }] }]
@@ -32,12 +32,7 @@ module Arneis
 
         begin
           response = @client.generate_content(payload)
-          duration = Time.now - start_time
           
-          # Save receipt
-          receipt_file = "#{output_file}.receipt.json"
-          File.write(receipt_file, Config.sanitize(response.to_json))
-
           # Extract base64 data from response
           inline_data = response.dig('candidates', 0, 'content', 'parts', 0, 'inlineData')
           
@@ -46,25 +41,31 @@ module Arneis
             binary_data = Base64.decode64(inline_data['data'])
             File.write(output_file, binary_data, mode: 'wb')
             puts Rainbow("  ✅ [IMAGEN] Real image generated: #{output_file}").green
+            
+            tokens = response.dig('usageMetadata', 'totalTokenCount') || 0
+            receipt.complete!(input_tokens: response.dig('usageMetadata', 'promptTokenCount') || 0, 
+                             output_tokens: response.dig('usageMetadata', 'candidatesTokenCount') || 0, 
+                             cost_usd: Pricing::COST_PER_IMAGEN_GEN)
+            receipt.save!(output_file)
+            
+            { tokens: tokens, cost: Pricing::COST_PER_IMAGEN_GEN, time: duration_from(receipt.ts_started) }
           else
-            puts Rainbow("  ⚠️ [IMAGEN] No image data found. Falling back to mock.").yellow
-            File.write(output_file, "MOCK_IMAGEN_DATA")
+            raise "No image data found in response"
           end
-          
-          tokens = response.dig('usageMetadata', 'totalTokenCount') || 0
-          { 
-            tokens: tokens,
-            cost: Pricing::COST_PER_IMAGEN_GEN,
-            time: duration
-          }
         rescue => e
           sanitized_msg = Config.sanitize(e.message)
           puts Rainbow("  ⚠️ [IMAGEN] API call failed: #{sanitized_msg}. Falling back to mock.").yellow
-          json_error = { error: sanitized_msg, prompt: prompt, model: @model }.to_json
-          File.write("#{output_file}.error.json", Config.sanitize(json_error))
+          receipt.fail!(error_msg: sanitized_msg)
+          receipt.save!(output_file)
           File.write("#{output_file}.mock", "MOCK_IMAGEN_DATA")
           return { tokens: 0, cost: 0.0, time: 0 }
         end
+      end
+
+      private
+
+      def duration_from(ts)
+        (Time.now - Time.parse(ts)).round(2)
       end
     end
   end

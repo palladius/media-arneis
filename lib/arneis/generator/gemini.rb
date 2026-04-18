@@ -21,9 +21,9 @@ module Arneis
         )
       end
 
-      def generate(prompt, output_file = nil, system_instruction: nil, timeout: 30)
+      def generate(prompt, output_file = nil, system_instruction: nil, timeout: 30, asset_id: nil)
         puts "  [GEMINI] Generating text for prompt: '#{prompt[0..50]}...'"
-        start_time = Time.now
+        receipt = AssetReceipt.new(asset_id: asset_id || "text_#{Time.now.to_i}", model: @model, prompt: prompt)
         
         payload = {
           contents: [{ role: 'user', parts: [{ text: prompt }] }]
@@ -34,36 +34,32 @@ module Arneis
         end
 
         begin
-          # gemini-ai gem doesn't support timeout per request directly in initialize, 
-          # so we use Ruby's Timeout if needed, but for now assuming Faraday handles it.
           response = with_retry { @client.generate_content(payload) }
-          duration = Time.now - start_time
           
-          # Save metadata if output_file is provided
-          if output_file
-            receipt_file = "#{output_file}.receipt.json"
-            File.write(receipt_file, Config.sanitize(response.to_json))
-          end
+          # Extract tokens
+          usage = response.dig('usageMetadata') || {}
+          in_t = usage['promptTokenCount'] || 0
+          out_t = usage['candidatesTokenCount'] || 0
+          cost = ((in_t + out_t).to_f / 1000) * Pricing::COST_PER_1K_TOKENS
 
-          # Extract content from response
+          receipt.complete!(input_tokens: in_t, output_tokens: out_t, cost_usd: cost)
+          receipt.save!(output_file) if output_file
+
+          # Extract content
           content = response['candidates'][0]['content']['parts'][0]['text']
-          tokens = response.dig('usageMetadata', 'totalTokenCount') || 0
           
-          { 
-            content: content,
-            tokens: tokens,
-            cost: (tokens.to_f / 1000) * Pricing::COST_PER_1K_TOKENS,
-            time: duration
-          }
+          { content: content, tokens: in_t + out_t, cost: cost, time: duration_from(receipt.ts_started) }
         rescue => e
-          sanitized_msg = Config.sanitize(e.message)
-          puts Rainbow("  ❌ [GEMINI] Error: #{sanitized_msg}").red
-          if output_file
-            json_error = { error: sanitized_msg, prompt: prompt, model: @model }.to_json
-            File.write("#{output_file}.error.json", Config.sanitize(json_error))
-          end
+          receipt.fail!(error_msg: e.message)
+          receipt.save!(output_file) if output_file
           raise e
         end
+      end
+
+      private
+
+      def duration_from(ts)
+        (Time.now - Time.parse(ts)).round(2)
       end
     end
   end

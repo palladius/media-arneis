@@ -4,6 +4,7 @@ Orchestrates generation via Hussain's Python script.
 =end
 
 require 'thread'
+require 'open3'
 
 module Arneis
   module Generator
@@ -16,7 +17,9 @@ module Arneis
         @model = Models::VEO_DEFAULT
       end
 
-      def generate(prompt, output_file, timeout: 600)
+      def generate(prompt, output_file, timeout: 600, asset_id: nil)
+        receipt = AssetReceipt.new(asset_id: asset_id || "video_#{Time.now.to_i}", model: @model, prompt: prompt)
+        
         # Ensure at least 2 seconds between video launches to avoid rate limits
         @@launch_mutex.synchronize do
           if @@last_launch_at
@@ -31,10 +34,8 @@ module Arneis
         end
 
         puts Rainbow("  🎥 [VEO] Starting real video generation via Python script...").magenta
-        start_time = Time.now
         
         # Call Hussain's script
-        # Escape double quotes in prompt
         escaped_prompt = prompt.gsub('"', '\"')
         cmd = "python3 #{Config.veo_script} \"#{escaped_prompt}\""
         
@@ -45,16 +46,11 @@ module Arneis
         }
 
         begin
-          # Use popen3 to capture stdout separately from stderr (which has polling logs)
-          require 'open3'
-          
-          # The script expects prompt as first argument
-          # We don't use -o as it's not supported, but we'll move the result
           success = false
           Open3.popen3(env, cmd) do |stdin, stdout, stderr, wait_thr|
             stdin.close
             
-            # Print stderr to show polling progress in real-time
+            # Print stderr to show polling progress
             Thread.new do
               while line = stderr.gets
                 puts "    [VEO SCRIPT] #{line.strip}"
@@ -75,22 +71,28 @@ module Arneis
             success = wait_thr.value.success? if success.nil?
           end
 
-          duration = Time.now - start_time
-          
           if success && File.exist?(output_file)
             puts Rainbow("  ✅ [VEO] Video generated successfully!").green
-            { tokens: 0, cost: Pricing::COST_PER_VEO_GEN, time: duration }
+            receipt.complete!(cost_usd: Pricing::COST_PER_VEO_GEN)
+            receipt.save!(output_file)
+            { tokens: 0, cost: Pricing::COST_PER_VEO_GEN, time: duration_from(receipt.ts_started) }
           else
             raise "Python script execution failed or output missing"
           end
         rescue => e
           sanitized_msg = Config.sanitize(e.message)
           puts Rainbow("  ⚠️ [VEO] Script failed: #{sanitized_msg}. Falling back to mock.").yellow
-          json_error = { error: sanitized_msg, prompt: prompt, model: @model }.to_json
-          File.write("#{output_file}.error.json", Config.sanitize(json_error))
+          receipt.fail!(error_msg: sanitized_msg)
+          receipt.save!(output_file)
           File.write("#{output_file}.mock", "MOCK_VEO_VIDEO_FOR: #{prompt}")
           return { tokens: 0, cost: 0.0, time: 0 }
         end
+      end
+
+      private
+
+      def duration_from(ts)
+        (Time.now - Time.parse(ts)).round(2)
       end
     end
   end

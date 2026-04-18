@@ -25,3 +25,11 @@ This track focuses on replacing the mock generators with actual implementations 
 - [ ] `arnectl apply rubycon_pitch.yaml` successfully generates at least one real media artifact (e.g., text or image) using a Google model.
 - [ ] API keys are correctly pulled from the environment.
 - [ ] Token usage and costs are reported in `arnectl stats`.
+
+## Feature Requests (FR)
+- **FR-OBS-01: Asset-Level Observability:** Every asset (video, image, text) MUST generate a standardized JSON receipt containing:
+  - `asset_id`: (e.g., "Scene4.video")
+  - `ts_started`, `ts_ended`, `duration`
+  - `model`, `prompt`
+  - `status`, `error_msg` (redacted)
+  - `input_tokens`, `output_tokens`, `cost_usd`

@@ -8,7 +8,7 @@ scenes:
   - scene: 2
     description: "Close-up of a high-resolution laptop screen displaying elegant Ruby code and AI neural network visualizations, set against a blurred background of a sun-drenched Mediterranean terrace. Text: 'Stuff you can use on Monday.'"
   - scene: 3
-    description: "Intimate, warm shots of attendees and world-class speakers like Akira Matsuda and André Arko talking shop over Italian espresso in a boutique conference setting. Focus on connection and community."
+    description: "Professional networking scene at a tech conference. Ruby developers and world-renowned speakers in a business lounge, engaging in technical discussions over coffee. Modern, sophisticated setting, high-end atmosphere."
   - scene: 4
     description: "A peaceful sunrise over the historic Rubicon river, fading into a bold call-to-action graphic. Text: 'Early Bird €99 | May 8, 2026 | Tickets at rubycon.it'."
 defaults:

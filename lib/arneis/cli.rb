@@ -106,25 +106,13 @@ module Arneis
           end
         end
 
-        # Aggregate stats from receipts
-        Dir.glob("#{output_base}.*.receipt.json").each do |receipt_file|
+        # Aggregate stats from standardized asset receipts
+        Dir.glob("#{output_base}.*.asset.json").each do |receipt_file|
           receipt = ::JSON.parse(File.read(receipt_file))
-          usage = receipt['usageMetadata'] || {}
-          in_t = usage['promptTokenCount'] || 0
-          out_t = usage['candidatesTokenCount'] || 0
-          
-          input_tokens += in_t
-          output_tokens += out_t
-          total_tokens += (usage['totalTokenCount'] || (in_t + out_t))
-          
-          # Cost calculation based on model type (very rough heuristic)
-          if receipt_file.include?('mp4')
-            total_cost += Pricing::COST_PER_VEO_GEN
-          elsif receipt_file.include?('png')
-            total_cost += Pricing::COST_PER_IMAGEN_GEN
-          else
-            total_cost += (total_tokens.to_f / 1000) * Pricing::COST_PER_1K_TOKENS
-          end
+          input_tokens += receipt['input_tokens'] || 0
+          output_tokens += receipt['output_tokens'] || 0
+          total_tokens += (receipt['input_tokens'] || 0) + (receipt['output_tokens'] || 0)
+          total_cost += receipt['cost_usd'] || 0.0
         end
       end
 

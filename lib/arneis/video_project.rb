@@ -76,15 +76,16 @@ module Arneis
           scene_output_base = File.join(@output_path, "scene_#{scene['scene']}")
           enhancement = gemini_generator.generate(
             "Enhance this video scene description: #{scene['description']}",
-            "#{scene_output_base}.txt",
-            system_instruction: system_prompt
+            "#{scene_output_base}.text",
+            system_instruction: system_prompt,
+            asset_id: "Scene#{scene['scene']}.text"
           )
           enhanced_prompt = enhancement[:content]
-          File.write("#{scene_output_base}.txt", enhanced_prompt)
+          File.write("#{scene_output_base}.text.txt", enhanced_prompt)
           
           # Generate real video with Veo
           veo_output = "#{scene_output_base}.mp4"
-          veo_generator.generate(enhanced_prompt, veo_output)
+          veo_generator.generate(enhanced_prompt, veo_output, asset_id: "Scene#{scene['scene']}.video")
           
           # Validate artifact
           puts "  🛡️  Validating scene #{scene['scene']} artifact..."
