@@ -7,3 +7,5 @@
 /test_*.rb
 /generate_*.rb
 .git-privatize
+*.receipt.json
+.git-privatize
