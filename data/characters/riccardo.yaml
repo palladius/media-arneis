@@ -1,8 +1,10 @@
 name: Riccardo
 surname: Carlesso
-nickname: Ricc
+nickname: palladius
 dob: 1976-12-29 # Age can be inferred from this
 gender: male
+nationality: italian # 🇮🇹
+emoji: 💛
 personality: |
   Creative, tech-savvy, and enthusiastic Rubyist. Loves high-quality media, Italian food, 
   and innovative AI tools. Has a great sense of humor and a "can-do" attitude.

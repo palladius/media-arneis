@@ -21,6 +21,9 @@ module Arneis
       puts "arnectl version #{Arneis::VERSION} 🍷"
     end
 
+    desc "characters SUBCOMMAND ...ARGS", "Manage characters"
+    subcommand "characters", CharactersCli
+
     desc "apply YAML_PATH", "Initialize and start a media project from a YAML specification"
     method_option :dryrun, type: :boolean, aliases: "-n", desc: "Validate YAML and dependencies without executing"
     method_option :output, type: :string, aliases: "-o", desc: "Custom output folder (defaults to timestamped)"
