@@ -9,5 +9,7 @@ gem 'rspec'
 gem 'dotenv'
 gem 'standard'
 gem 'zeitwerk'
+gem 'dry-validation'
+gem 'deep_merge'
 
 # gem "ruby_llm"

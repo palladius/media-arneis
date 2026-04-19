@@ -33,8 +33,9 @@ just test-all-models
 # Research a project and generate a pitch YAML
 just arnectl research-pitch data/samples/rubycon_research.md
 
-# Apply a media plan
+# Apply a media plan from 2 different examples.
 just arnectl apply data/samples/rubycon_sales_pitch.yaml
+just arnectl apply data/samples/rubycon_french_falling_rubies.yaml 
 
 # Check status
 just arnectl status out/latest_folder

@@ -12,8 +12,8 @@ RSpec.describe Arneis::Visualizer do
     mermaid = visualizer.to_mermaid
 
     expect(mermaid).to include('graph LR')
-    expect(mermaid).to include('task1["task1"]')
-    expect(mermaid).to include('task2["task2"]')
+    expect(mermaid).to include('task1["📝 task1"]')
+    expect(mermaid).to include('task2["📝 task2"]')
     expect(mermaid).to include('task1 --> task2')
   end
 end
