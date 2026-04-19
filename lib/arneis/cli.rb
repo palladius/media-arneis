@@ -127,7 +127,7 @@ module Arneis
         state = YAML.load_file(state_file)
         state['scenes'].each do |s|
           video_file = File.join(folder_path, "scene_#{s['scene']}.mp4")
-          if s['status'] == 'failed' || !File.exist?(video_file) || File.exist?("#{video_file}.mock")
+          if s['status'] == 'failed' || s['status'] == 'done_with_warnings' || !File.exist?(video_file) || File.exist?("#{video_file}.mock")
             s['status'] = 'pending'
           end
         end
@@ -383,6 +383,7 @@ module Arneis
     no_commands do
       def status_emoji(status)
         case status
+        when 'verified' then "⚖️ "
         when 'done' then "🟢"
         when 'mocked' then "🤡"
         when 'done_with_warnings' then "😟"

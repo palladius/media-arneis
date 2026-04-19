@@ -67,7 +67,7 @@ module Arneis
         scene_task_ids << scene_id
         
         state_scene = current_state['scenes']&.find { |s| s['scene'] == scene['scene'] }
-        if state_scene && (state_scene['status'] == 'done' || state_scene['status'] == 'done_with_warnings')
+        if state_scene && (state_scene['status'] == 'done' || state_scene['status'] == 'done_with_warnings' || state_scene['status'] == 'verified')
           puts Rainbow("  ⏭️  Skipping Scene #{scene['scene']} (already done)").blue
           next
         end
@@ -100,7 +100,7 @@ module Arneis
             
             if eval_result[:success]
               puts Rainbow("    👍  EVAL: #{eval_result[:message]}").green
-              update_scene_status(scene['scene'], 'done')
+              update_scene_status(scene['scene'], 'verified')
             else
               puts Rainbow("    😟  EVAL FAILED: #{eval_result[:message]} (Score: #{eval_result[:score]})").red
               
