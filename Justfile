@@ -24,6 +24,11 @@ test-all-models:
 	@echo "🟢 Verifying all models..."
 	{{BUNDLE}} exec bin/test_models.rb
 
+# Check for fake media files
+check-fake-media:
+	@echo "🟢 Checking for fake media..."
+	{{BUNDLE}} exec bin/arnectl check-fake-media
+
 # Run the CLI
 arnectl *args:
 	# Running safe arneis with limit of 60seconds

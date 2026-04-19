@@ -312,7 +312,7 @@ module Arneis
       projects = Dir.glob("out/*/").reject { |f| f.include?('archived') }
       archived_count = 0
       projects.each do |path|
-        media_files = Dir.glob(File.join(path, "*.{mp4,png}")).reject { |f| f.end_with?('.mock') || f.end_with?('.NOT_GOOD') }
+        media_files = Dir.glob(File.join(path, "*.{mp4,png,wav}")).reject { |f| f.end_with?('.mock') || f.end_with?('.NOT_GOOD') }
         if media_files.empty?
           puts "  📦 Archiving empty project: #{path}"
           FileUtils.mkdir_p("out/archived")
@@ -321,6 +321,42 @@ module Arneis
         end
       end
       puts Rainbow("✅ Cleanup complete. Archived #{archived_count} projects.").green
+    end
+
+    desc "check-fake-media [FOLDER_PATH]", "Rigorously verify all media files in a project or all projects"
+    def check_fake_media(folder_path = nil)
+      search_path = folder_path ? File.join(folder_path, "**", "*.{mp4,png,wav}") : "out/**/*.{mp4,png,wav}"
+      puts Rainbow("🛡️  Rigorously checking media artifacts in #{search_path}...").cyan.bold
+      
+      files = Dir.glob(search_path).reject { |f| f.include?('.mock') || f.include?('.NOT_GOOD') }
+      
+      if files.empty?
+        puts "No media files found to check."
+        return
+      end
+
+      found_fakes = 0
+      files.each do |file|
+        type = case File.extname(file).downcase
+               when '.mp4' then :video
+               when '.png' then :image
+               when '.wav' then :audio
+               end
+        
+        result = Validator.validate_and_rename!(file, type)
+        if result[:success]
+          puts "  ✅ #{file}: #{Rainbow("REAL").green} (#{result[:info]})"
+        else
+          puts "  ❌ #{file}: #{Rainbow("FAKE").red} (#{result[:info]}) -> Renamed to .NOT_GOOD"
+          found_fakes += 1
+        end
+      end
+
+      if found_fakes > 0
+        puts Rainbow("\n⚠️  Found and neutralized #{found_fakes} fake media files!").yellow.bold
+      else
+        puts Rainbow("\n✨ All checked media files are genuine.").green.bold
+      end
     end
 
     desc "graph YAML_PATH", "Generate a Mermaid.js dependency graph"
