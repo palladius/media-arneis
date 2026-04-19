@@ -226,14 +226,15 @@ module Arneis
     desc "list", "List all meaningful projects in out/"
     def list
       puts Rainbow("📂 Listing Arneis projects...").cyan.bold
-      projects = Dir.glob("out/*/").select { |f| File.exist?(File.join(f, '.state.yaml')) }
+      projects_paths = Dir.glob("out/*/").select { |f| File.exist?(File.join(f, '.state.yaml')) }
       
-      if projects.empty?
+      if projects_paths.empty?
         puts "No projects found."
         return
       end
 
-      projects.sort_by { |f| File.mtime(f) }.reverse.each do |path|
+      # Prepare data and find max path length
+      data = projects_paths.sort_by { |f| File.mtime(f) }.reverse.map do |path|
         state = YAML.load_file(File.join(path, '.state.yaml'))
         title = state['project_title'] || File.basename(path)
         status = state['status']
@@ -244,7 +245,37 @@ module Arneis
         end
 
         mtime = File.mtime(path).strftime("%Y-%m-%d %H:%M")
-        puts "#{Rainbow(mtime).blue} | #{status_emoji(status)} #{Rainbow(title.ljust(40)).yellow} | 💸 $#{'%.2f' % total_cost} | #{path}"
+        is_symlink = File.symlink?(path.chomp('/'))
+        
+        video_count = Dir.glob(File.join(path, "*.mp4")).reject { |f| f.end_with?('.mock') }.count
+        image_count = Dir.glob(File.join(path, "*.png")).reject { |f| f.end_with?('.mock') }.count
+        
+        {
+          path: path,
+          mtime: mtime,
+          is_symlink: is_symlink,
+          status: status,
+          title: title,
+          cost: total_cost,
+          video_count: video_count,
+          image_count: image_count
+        }
+      end
+
+      max_path = data.map { |d| d[:path].length }.max
+
+      data.each do |d|
+        folder_color = d[:is_symlink] ? :cyan : :blue
+        folder_emoji = d[:is_symlink] ? "🔗" : "📂"
+        
+        media_stats = []
+        media_stats << "#{d[:video_count]}🎥" if d[:video_count] > 0
+        media_stats << "#{d[:image_count]}🖼️" if d[:image_count] > 0
+        stats_str = media_stats.join(" ")
+        
+        display_title = d[:title].length > 12 ? "#{d[:title][0...12]}..." : d[:title].ljust(15)
+        
+        puts "#{Rainbow(d[:mtime]).blue} #{folder_emoji} #{Rainbow(d[:path].ljust(max_path + 1)).send(folder_color)} #{status_emoji(d[:status])} #{Rainbow(display_title).yellow} 💸 $#{'%.2f' % d[:cost]} #{stats_str}"
       end
     end
 
