@@ -67,7 +67,7 @@ module Arneis
         scene_task_ids << scene_id
         
         state_scene = current_state['scenes']&.find { |s| s['scene'] == scene['scene'] }
-        if state_scene && state_scene['status'] == 'done'
+        if state_scene && (state_scene['status'] == 'done' || state_scene['status'] == 'done_with_warnings')
           puts Rainbow("  ⏭️  Skipping Scene #{scene['scene']} (already done)").blue
           next
         end

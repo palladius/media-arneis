@@ -17,6 +17,18 @@ Arneis orchestrates Google's state-of-the-art AI models to generate complex mult
 
 ---
 
+## 🏗️ Supported Project Templates (CUJs)
+
+Arneis uses a template-based system to handle different Critical User Journeys (CUJs). Each template defines its own orchestration logic and artifact requirements.
+
+| Template | Description | Status |
+| :--- | :--- | :--- |
+| **VideoProject** | Multi-scene video with background music and montage. | ✅ **Done** |
+| **KidsStory** | Illustrated storybook with character consistency. | 🏗️ **WIP** |
+| **ComicStrip** (Fumetto) | Panel-by-panel comic narratives. | 🏗️ **WIP** |
+
+---
+
 ## 💻 Sample CLI Invocations
 
 Arneis is primarily interacted with via the `arnectl` command. For convenience, a `Justfile` is provided to wrap these commands.

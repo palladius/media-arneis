@@ -12,6 +12,14 @@ Arneis is a "kubectl-like" orchestration tool for complex media creation. It lev
 - **Visual Feedback:** Emoji-rich progress tracking and Mermaid.js dependency graphs.
 - **Technical Transparency:** Detailed resource tracking (tokens, cost) and artifact validation.
 
+## 🏗️ Supported Project Templates (CUJs)
+
+| Template | Description | Status |
+| :--- | :--- | :--- |
+| **VideoProject** | Multi-scene video with background music and montage. | ✅ **Done** |
+| **KidsStory** | Illustrated storybook with character consistency. | 🏗️ **WIP** |
+| **ComicStrip** (Fumetto) | Panel-by-panel comic narratives. | 🏗️ **WIP** |
+
 ## Documentation
 
 For a deeper dive into how Arneis works, check out the [User Manual](docs/user_manual.md).
