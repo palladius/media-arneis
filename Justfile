@@ -29,6 +29,11 @@ check-fake-media:
 	@echo "🟢 Checking for fake media..."
 	{{BUNDLE}} exec bin/arnectl check-fake-media
 
+# Archive projects with zero real media
+autoarchive:
+	@echo "🧹 Auto-archiving junk projects..."
+	{{BUNDLE}} exec bin/arnectl cleanup
+
 # Run the CLI
 arnectl *args:
 	# Running safe arneis with limit of 60seconds
