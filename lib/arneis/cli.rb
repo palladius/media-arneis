@@ -385,7 +385,7 @@ module Arneis
         case status
         when 'done' then "🟢"
         when 'mocked' then "🤡"
-        when 'done_with_warnings' then "⚖️ "
+        when 'done_with_warnings' then "😟"
         when 'in_progress' then "🟡"
         when 'pending' then "⚪"
         when 'waiting' then "🩶"

@@ -99,10 +99,10 @@ module Arneis
             eval_result = evaluator.evaluate_video_text(veo_output, scene['description'])
             
             if eval_result[:success]
-              puts Rainbow("    ⚖️  EVAL: #{eval_result[:message]}").green
+              puts Rainbow("    👍  EVAL: #{eval_result[:message]}").green
               update_scene_status(scene['scene'], 'done')
             else
-              puts Rainbow("    ⚖️  EVAL FAILED: #{eval_result[:message]} (Score: #{eval_result[:score]})").red
+              puts Rainbow("    😟  EVAL FAILED: #{eval_result[:message]} (Score: #{eval_result[:score]})").red
               
               if eval_result[:score] < 5
                 puts Rainbow("    ♻️  Score is low (< 5). Rescheduling scene for rework...").yellow
