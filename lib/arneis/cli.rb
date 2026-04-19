@@ -271,11 +271,17 @@ module Arneis
         video_count = Dir.glob(File.join(path, "*.mp4")).reject { |f| f.end_with?('.mock') }.count
         image_count = Dir.glob(File.join(path, "*.png")).reject { |f| f.end_with?('.mock') }.count
         
+        # Determine "Honest" status
+        honest_status = status
+        if status == 'done' && video_count == 0 && image_count == 0
+          honest_status = 'mocked'
+        end
+
         {
           path: path,
           mtime: mtime,
           is_symlink: is_symlink,
-          status: status,
+          status: honest_status,
           title: title,
           cost: total_cost,
           video_count: video_count,
@@ -378,6 +384,7 @@ module Arneis
       def status_emoji(status)
         case status
         when 'done' then "🟢"
+        when 'mocked' then "🤡"
         when 'done_with_warnings' then "⚖️ "
         when 'in_progress' then "🟡"
         when 'pending' then "⚪"
