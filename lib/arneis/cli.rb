@@ -328,7 +328,9 @@ module Arneis
       search_path = folder_path ? File.join(folder_path, "**", "*.{mp4,png,wav}") : "out/**/*.{mp4,png,wav}"
       puts Rainbow("🛡️  Rigorously checking media artifacts in #{search_path}...").cyan.bold
       
-      files = Dir.glob(search_path).reject { |f| f.include?('.mock') || f.include?('.NOT_GOOD') }
+      files = Dir.glob(search_path).reject do |f| 
+        f.include?('.mock') || f.include?('.NOT_GOOD') || f.include?('archived/')
+      end
       
       if files.empty?
         puts "No media files found to check."
