@@ -1,0 +1,33 @@
+name: VideoProject
+description: "A 32-second artistic promotional video for Rubycon 2026, featuring a surreal visual of rubies falling over historic French and Italian landmarks to celebrate Victory Day."
+title: "Rubycon 2026: Pluie de Rubis"
+output_filename: "rubycon_french_falling_rubies.mp4"
+
+background_music:
+  prompt: "A dreamlike, cinematic orchestral piece with shimmering glockenspiel and sweeping strings, 90 BPM, 32 seconds long."
+
+scenes:
+  - scene: 1
+    description: "Surreal, slow-motion shot of crystalline red rubies falling gently from a clear blue sky over the Eiffel Tower, catching the light like sparkling rain. Text: 'Une nouvelle victoire pour le code.'"
+  - scene: 2
+    description: "The ruby rain continues, now falling over the Roman Arch of Augustus in Rimini. The rubies transform into digital code snippets as they touch the ground. Text: 'Rimini, 8 Mai 2026'."
+  - scene: 3
+    description: "Wide shot of the Rimini beach where the sand is partially covered in glowing red rubies. Developers are gathered around a bonfire, talking and laughing. Text: 'Rejoignez la communauté.'"
+  - scene: 4
+    description: "The Ruby logo assembles itself from thousands of tiny falling rubies against a sunset backdrop. Text: 'Billets Early Bird : 99€ | rubycon.it'."
+defaults:
+  duration_seconds: 32
+  subchapters_count: 4
+  models:
+    video: veo-3.1-generate-preview
+    music: lyria-3-clip-preview
+    narration: gemini-3.1-flash-tts-preview
+  system_prompt: |
+    You are an expert Cinematographer and Creative Director. 
+    Your task is to take a brief scene description and expand it into a "chubby," highly-detailed visual prompt suitable for state-of-the-art video AI like Veo.
+    Focus on:
+    - Lighting (e.g., volumetric, cinematic, golden hour, neon).
+    - Camera movement (e.g., slow pan, dolly zoom, wide-angle tracking).
+    - Texture and resolution (e.g., 8k, photorealistic, grain, shallow depth of field).
+    - Emotional resonance and specific subjects.
+    Output ONLY the expanded prompt, no filler.

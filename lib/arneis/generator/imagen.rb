@@ -1,7 +1,9 @@
 =begin
-Arneis::Generator::Imagen - Media generator using Google Imagen via gemini-ai gem.
+Arneis::Generator::Imagen - Media generator using Google Imagen (Image).
+Orchestrates generation via the util/generate_image.py script.
 =end
 
+require 'thread'
 require 'open3'
 require 'fileutils'
 
@@ -13,17 +15,19 @@ module Arneis
         @model = Models::IMAGEN_DEFAULT
       end
 
-      def generate(prompt, output_file, timeout: 60, asset_id: nil)
-        puts Rainbow("  🎨 [IMAGEN] Starting image generation via Python script...").magenta
+      def generate(prompt, output_file, timeout: 300, asset_id: nil)
+        puts Rainbow("  🎨 [IMAGEN] Starting real image generation via Python script...").magenta
         receipt = AssetReceipt.new(asset_id: asset_id || "image_#{Time.now.to_i}", model: @model, prompt: prompt)
+        start_time = Time.now
         
-        # Prepare command
+        # Call Imagen script (uv run)
         escaped_prompt = prompt.gsub('"', '\"')
-        cmd = "uv run #{Config.imagen_script} --prompt \"#{escaped_prompt}\" --filename #{output_file}"
+        cmd = "uv run util/generate_image.py \"#{escaped_prompt}\" -o #{output_file}"
         
         env = {
-          'GEMINI_API_KEY' => Config.gemini_api_key,
-          'NANOBANANA_OUTPUT_FOLDER' => '' # We want it to use the absolute or relative path provided in --filename
+          'GOOGLE_CLOUD_PROJECT' => Config.google_cloud_project,
+          'GOOGLE_CLOUD_REGION' => Config.google_cloud_region,
+          'GEMINI_API_KEY' => ENV['GEMINI_API_KEY']
         }
 
         begin
@@ -31,7 +35,7 @@ module Arneis
           Open3.popen3(env, cmd) do |stdin, stdout, stderr, wait_thr|
             stdin.close
             
-            # Capture output
+            # Print stderr to show progress
             t_err = Thread.new do
               while line = stderr.gets
                 puts "    [IMAGEN SCRIPT] #{line.strip}"
@@ -41,10 +45,6 @@ module Arneis
             t_out = Thread.new do
               while line = stdout.gets
                 if line =~ /^MEDIA:(.*)$/
-                  media_path = $1.strip
-                  puts Rainbow("  📥 Captured image path: #{media_path}").blue
-                  # Note: the script might save to a different path if NANOBANANA_OUTPUT_FOLDER was set,
-                  # but here we pass the exact output_file to --filename.
                   success = true
                 end
               end
@@ -60,7 +60,11 @@ module Arneis
             puts Rainbow("  ✅ [IMAGEN] Image generated successfully!").green
             receipt.complete!(cost_usd: Pricing::COST_PER_IMAGEN_GEN)
             receipt.save!(output_file)
-            { tokens: 0, cost: Pricing::COST_PER_IMAGEN_GEN, time: duration_from(receipt.ts_started) }
+            
+            # Validate and Rename
+            Validator.validate_and_rename!(output_file, :image)
+            
+            { tokens: 0, cost: Pricing::COST_PER_IMAGEN_GEN, time: (Time.now - start_time).round(2) }
           else
             raise "Python script execution failed or output missing"
           end
@@ -69,7 +73,7 @@ module Arneis
           puts Rainbow("  ⚠️ [IMAGEN] Script failed: #{sanitized_msg}. Falling back to mock.").yellow
           receipt.fail!(error_msg: sanitized_msg)
           receipt.save!(output_file)
-          File.write("#{output_file}.mock", "MOCK_IMAGEN_DATA_FOR: #{prompt}")
+          File.write("#{output_file}.mock", "MOCK_IMAGEN_DATA: #{prompt}")
           return { tokens: 0, cost: 0.0, time: 0 }
         end
       end

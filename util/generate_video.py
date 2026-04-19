@@ -1,65 +1,17 @@
 # /// script
-# dependencies = [
-#   "requests",
-#   "google-auth",
-#   "google-cloud-storage",
-# ]
+# requires-python = ">=3.11"
+# dependencies = []
 # ///
 """
-Arneis Video Generator - Uses Google Veo via Vertex AI.
+Arneis Video Generator - Uses Google Veo via gcloud.
 """
 import argparse
 import base64
 import os
-import re
 import sys
 import time
-import requests
 import subprocess
-
-# Constants from Config or Environment
-LOCATION_ID = os.getenv("GOOGLE_CLOUD_REGION", "us-central1")
-VEO_MODEL_ID = "veo-3.1-fast-generate-001"
-VEO_PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
-
-def get_access_token():
-    try:
-        token = subprocess.check_output("gcloud auth print-access-token", shell=True, text=True).strip()
-        return token
-    except subprocess.CalledProcessError as e:
-        print(f"Error getting gcloud access token: {e}", file=sys.stderr)
-        sys.exit(1)
-
-def async_trigger_video_generation(prompt: str) -> str:
-    access_token = get_access_token()
-    headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
-    
-    request_data = {
-        "instances": [{"prompt": prompt}],
-        "parameters": {
-            "aspectRatio": "16:9",
-            "sampleCount": 1,
-            "durationSeconds": "8",
-            "fps": "24",
-            "generateAudio": True,
-        },
-    }
-
-    url = f"https://{LOCATION_ID}-aiplatform.googleapis.com/v1/projects/{VEO_PROJECT_ID}/locations/{LOCATION_ID}/publishers/google/models/{VEO_MODEL_ID}:predictLongRunning"
-    response = requests.post(url, headers=headers, json=request_data)
-    response.raise_for_status()
-    return response.json()["name"]
-
-def retrieve_video_status(operation_name: str) -> dict:
-    access_token = get_access_token()
-    headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
-    
-    # operation_name is projects/{project}/locations/{location}/operations/{id}
-    url = f"https://{LOCATION_ID}-aiplatform.googleapis.com/v1/{operation_name}"
-    
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
-    return response.json()
+import json
 
 def main():
     parser = argparse.ArgumentParser(description="Generate a video using Google's Veo model.")
@@ -67,34 +19,50 @@ def main():
     parser.add_argument("-o", "--output", type=str, required=True, help="Output path.")
     
     args = parser.parse_args()
+
+    project = os.getenv("GOOGLE_CLOUD_PROJECT")
+    location = os.getenv("GOOGLE_CLOUD_REGION", "us-central1")
+    model_id = "veo-2.0-generate-001" 
+
+    print(f"🎥 Generating video for prompt: '{args.prompt}'...", file=sys.stderr)
     
-    try:
-        operation_name = async_trigger_video_generation(args.prompt)
-        print(f"⏳ Video generation started. Operation: {operation_name}", file=sys.stderr)
+    payload = {
+        "instances": [{"prompt": args.prompt}],
+        "parameters": {"sampleCount": 1}
+    }
+    
+    with open("video_payload.json", "w") as f:
+        json.dump(payload, f)
         
-        for i in range(60):
-            print(f"Polling attempt {i+1}/60...", file=sys.stderr)
-            status = retrieve_video_status(operation_name)
-            
-            if status.get("done"):
-                if "error" in status:
-                    raise ValueError(f"API Error: {status['error'].get('message')}")
+    cmd = [
+        "gcloud", "ai", "models", "predict", model_id,
+        f"--region={location}",
+        f"--project={project}",
+        "--json-request=video_payload.json"
+    ]
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        resp = json.loads(result.stdout)
+        
+        if "predictions" in resp:
+            video_bytes = resp["predictions"][0].get("bytesBase64Encoded")
+            if video_bytes:
+                with open(args.output, "wb") as f:
+                    f.write(base64.b64decode(video_bytes))
+                print(f"🎞️ Video saved to {args.output}", file=sys.stderr)
+                print(f"MEDIA:{args.output}")
+                sys.exit(0)
                 
-                # Extract video data
-                video_data = status.get("response", {}).get("videos", [{}])[0]
-                if "bytesBase64Encoded" in video_data:
-                    with open(args.output, "wb") as f:
-                        f.write(base64.b64decode(video_data["bytesBase64Encoded"]))
-                    print(f"MEDIA:{args.output}")
-                    sys.exit(0)
-                else:
-                    raise ValueError("Video data not found in response.")
-            
-            time.sleep(10)
-            
-    except Exception as e:
-        print(f"An error occurred: {e}", file=sys.stderr)
+        print("⚠️ No video data in response.", file=sys.stderr)
         sys.exit(1)
+
+    except Exception as e:
+        print(f"❌ Error: {str(e)}", file=sys.stderr)
+        sys.exit(1)
+    finally:
+        if os.path.exists("video_payload.json"):
+            os.remove("video_payload.json")
 
 if __name__ == "__main__":
     main()

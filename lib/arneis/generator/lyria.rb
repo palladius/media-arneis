@@ -19,10 +19,11 @@ module Arneis
         puts Rainbow("  🎵 [LYRIA] Starting real music generation via Python script...").magenta
         receipt = AssetReceipt.new(asset_id: asset_id || "music_#{Time.now.to_i}", model: @model, prompt: prompt)
         start_time = Time.now
-        
+
         # Call Lyria script (uv run)
         escaped_prompt = prompt.gsub('"', '\"')
-        cmd = "uv run #{Config.lyria_script} \"#{escaped_prompt}\" -o #{output_file}"
+        cmd = "uv run util/generate_music.py --prompt \"#{escaped_prompt}\" -o #{output_file}"
+
         
         env = {
           'GOOGLE_CLOUD_PROJECT' => Config.google_cloud_project,
