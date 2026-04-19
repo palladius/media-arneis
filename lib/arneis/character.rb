@@ -8,7 +8,7 @@ module Arneis
   class Character
     CHARACTERS_DIR = File.expand_path("../../data/characters", __dir__)
 
-    attr_reader :name, :nickname, :surname, :personality, :visual_look, :consistency_images_dir
+    attr_reader :name, :nickname, :surname, :personality, :visual_look, :consistency_images_dir, :id
 
     def self.all
       # Case 1: data/characters/*.yaml
@@ -39,6 +39,11 @@ module Arneis
       @personality = @data['personality']
       @visual_look = @data['visual_look']
       @consistency_images_dir = @data['consistency_images']
+      @id = if yaml_path.end_with?('character.yaml')
+              File.basename(File.dirname(yaml_path))
+            else
+              File.basename(yaml_path, '.yaml')
+            end
     end
 
     def image_count

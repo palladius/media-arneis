@@ -1,6 +1,6 @@
 =begin
 Arneis::Generator::Lyria - Media generator using Google Lyria (Music).
-Orchestrates generation via the musicgen-lyria3 Python script.
+Orchestrates generation via the util/generate_music.py script.
 =end
 
 require 'thread'
@@ -19,11 +19,10 @@ module Arneis
         puts Rainbow("  🎵 [LYRIA] Starting real music generation via Python script...").magenta
         receipt = AssetReceipt.new(asset_id: asset_id || "music_#{Time.now.to_i}", model: @model, prompt: prompt)
         start_time = Time.now
-
+        
         # Call Lyria script (uv run)
         escaped_prompt = prompt.gsub('"', '\"')
         cmd = "uv run util/generate_music.py --prompt \"#{escaped_prompt}\" -o #{output_file}"
-
         
         env = {
           'GOOGLE_CLOUD_PROJECT' => Config.google_cloud_project,
@@ -32,46 +31,39 @@ module Arneis
 
         begin
           success = false
-          start_time = Time.now
-          
           Open3.popen3(env, cmd) do |stdin, stdout, stderr, wait_thr|
             stdin.close
             
-            # Print stderr to show polling progress
+            # Print stderr to show progress
             t_err = Thread.new do
               while line = stderr.gets
                 puts "    [LYRIA SCRIPT] #{line.strip}"
               end
             end
             
-            # The script might output the filename via MEDIA: prefix
+            # Script outputs MEDIA:path on success
             t_out = Thread.new do
               while line = stdout.gets
                 if line =~ /^MEDIA:(.*)$/
-                  media_path = $1.strip
-                  puts Rainbow("  📥 Captured music path: #{media_path}").blue
-                  # If the script already wrote to output_file, we don't need to move it
-                  # but let's be safe and ensure it's at the target location.
-                  unless File.identical?(media_path, output_file)
-                    FileUtils.mkdir_p(File.dirname(output_file))
-                    FileUtils.mv(media_path, output_file)
-                  end
                   success = true
                 end
               end
             end
-
+            
             t_err.join
             t_out.join
             
             success = wait_thr.value.success? if success.nil?
           end
-          
+
           if success && File.exist?(output_file)
             puts Rainbow("  ✅ [LYRIA] Music generated successfully!").green
-            
             receipt.complete!(cost_usd: Pricing::COST_PER_LYRIA_GEN)
             receipt.save!(output_file)
+            
+            # Validate and Rename
+            Validator.validate_and_rename!(output_file, :audio)
+            
             { tokens: 0, cost: Pricing::COST_PER_LYRIA_GEN, time: (Time.now - start_time).round(2) }
           else
             raise "Python script execution failed or output missing"

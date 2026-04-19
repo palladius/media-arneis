@@ -18,8 +18,10 @@ module Arneis
 
       characters.each do |c|
         img_str = c.image_count > 0 ? Rainbow("#{c.image_count} 🖼️").green : Rainbow("0 🖼️").red
-        folder_str = Rainbow("📂 #{c.consistency_images_dir.ljust(12)}").blue
-        puts "  #{c.emoji} #{c.nationality_emoji} #{Rainbow(c.name.ljust(12)).yellow} (#{Rainbow(c.nickname.ljust(10)).white}) | #{folder_str} | #{img_str}"
+        id_str = Rainbow("📂 #{c.id}/").blue.ljust(18)
+        name_str = "#{c.emoji} #{c.nationality_emoji} #{Rainbow(c.name.ljust(12)).yellow}"
+        nick_str = "(#{Rainbow(c.nickname.ljust(10)).white})"
+        puts "  #{id_str} #{name_str} #{nick_str} | #{img_str}"
       end
     end
 
