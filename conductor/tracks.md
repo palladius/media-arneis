@@ -22,3 +22,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [ ] **Track: Implement Robust Artifact Validation and Metadata Extraction**
   *Link: [./tracks/artifact_reliability_20260419/](./tracks/artifact_reliability_20260419/)*
 
+- [ ] **Track: [BUG] samples/video_pitches.yaml should inherit from templates!**
+  *Link: [./tracks/template_inheritance_20260419/](./tracks/template_inheritance_20260419/)*
+
