@@ -30,6 +30,8 @@ Use Conductor extension to manage the BDD and SW dev
 * Use Conductor for new features. If they're not trivial, couple this with a GH Issue for external obesrvability.
 * Use `VERSION` file containing the latest version and a `CHANGELOG.md` using SemVer and SemVer-git.
 * Use gitmoji in commit messages and GH issues.
+* Some activities take time! Prepend `timeout 60` if you foresee an activity lasting more than 60s.
+    * Use a Gemini cLI **SubAgent** when video/audio generation is involved.
 
 ## Testing
 

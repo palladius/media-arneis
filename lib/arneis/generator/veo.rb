@@ -38,7 +38,7 @@ module Arneis
         
         # Call Hussain's script
         escaped_prompt = prompt.gsub('"', '\"')
-        cmd = "python3 #{Config.veo_script} \"#{escaped_prompt}\""
+        cmd = "uv run #{Config.veo_script} \"#{escaped_prompt}\" -o #{output_file}"
         
         env = {
           'GOOGLE_CLOUD_PROJECT' => Config.google_cloud_project,

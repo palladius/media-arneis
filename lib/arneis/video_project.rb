@@ -113,7 +113,8 @@ module Arneis
             end
           else
             puts Rainbow("    ⚠️  Validation failed: #{v_result[:message]}").yellow
-            update_scene_status(scene['scene'], 'failed')
+            # If validation failed (file not found or mock), mark as failed so it can be retried
+            update_scene_status(scene['scene'], 'failed', v_result[:message])
           end
         end
       end

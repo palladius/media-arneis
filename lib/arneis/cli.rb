@@ -110,6 +110,7 @@ module Arneis
     end
 
     desc "resume [FOLDER_PATH]", "Resume a media project from its state file (defaults to latest in out/)"
+    method_option :force, type: :boolean, aliases: "-f", desc: "Force retry of failed or mocked tasks"
     def resume(folder_path = nil)
       folder_path ||= Dir.glob("out/*/").select { |f| File.exist?(File.join(f, '.state.yaml')) }.max_by { |f| File.mtime(f) }
       
@@ -119,6 +120,26 @@ module Arneis
       end
 
       puts Rainbow("🚀 Resuming #{folder_path}...").green
+      
+      state_file = File.join(folder_path, '.state.yaml')
+      if options[:force]
+        puts Rainbow("  🔥 Force flag detected. Resetting non-done tasks...").yellow
+        state = YAML.load_file(state_file)
+        state['scenes'].each do |s|
+          video_file = File.join(folder_path, "scene_#{s['scene']}.mp4")
+          if s['status'] == 'failed' || !File.exist?(video_file) || File.exist?("#{video_file}.mock")
+            s['status'] = 'pending'
+          end
+        end
+        if state['background_music']
+          music_file = File.join(folder_path, "background_music.wav")
+          if state['background_music']['status'] == 'failed' || !File.exist?(music_file) || File.exist?("#{music_file}.mock")
+            state['background_music']['status'] = 'pending'
+          end
+        end
+        File.write(state_file, state.to_yaml)
+      end
+
       yaml_files = Dir.glob(File.join(folder_path, "*.yaml"))
       if yaml_files.empty?
         puts Rainbow("❌ No YAML found in #{folder_path} to resume from").red

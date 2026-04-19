@@ -23,11 +23,11 @@ module Arneis
     end
 
     def self.veo_script
-      '/home/riccardo/.gemini/extensions/palladius-public-goodies/skills/veo/scripts/generate_video.py'
+      'util/generate_video.py'
     end
 
     def self.lyria_script
-      '/home/riccardo/.gemini/extensions/palladius-common-commands/skills/musicgen-lyria3/scripts/musicgen-lyria3-30sec.py'
+      'util/generate_music.py'
     end
 
     def self.genmedia_bucket
@@ -35,9 +35,6 @@ module Arneis
     end
 
     def self.auth_method_emoji
-      # Heuristic: if we have a key but no explicit project override for Gemini, 
-      # we usually use 🔑 for GenAI and ☁️ for Vertex.
-      # Since we use both in this project, I'll show what's primary.
       ENV['GOOGLE_APPLICATION_CREDENTIALS'] || system("gcloud auth application-default print-access-token > /dev/null 2>&1") ? "☁️ (Vertex)" : "🔑 (ApiKey)"
     end
 

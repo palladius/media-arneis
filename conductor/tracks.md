@@ -16,3 +16,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [ ] **Track: Implement Feedback Loop and Advanced Montage Orchestration**
   *Link: [./tracks/feedback_loop_20260418/](./tracks/feedback_loop_20260418/)*
 
+- [ ] **Track: Implement Real Background Music Generation using Lyria**
+  *Link: [./tracks/lyria_gen_20260418/](./tracks/lyria_gen_20260418/)*
+
