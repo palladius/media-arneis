@@ -50,17 +50,13 @@ def async_trigger_video_generation(prompt: str) -> str:
     response.raise_for_status()
     return response.json()["name"]
 
-def retrieve_video_status(operation_id: str) -> dict:
+def retrieve_video_status(operation_name: str) -> dict:
     access_token = get_access_token()
     headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
     
-    # Normalize operation_id to standard Vertex AI operation path
-    # Remove "publishers/google/models/..." from the operation name if it exists.
-    # Example input: projects/PROJ/locations/LOC/publishers/google/models/MODEL/operations/OP_ID
-    # Output: projects/PROJ/locations/LOC/operations/OP_ID
-    normalized_id = re.sub(r"/publishers/google/models/[^/]+/", "/", operation_id)
+    # operation_name is projects/{project}/locations/{location}/operations/{id}
+    url = f"https://{LOCATION_ID}-aiplatform.googleapis.com/v1/{operation_name}"
     
-    url = f"https://{LOCATION_ID}-aiplatform.googleapis.com/v1/{normalized_id}"
     response = requests.get(url, headers=headers)
     response.raise_for_status()
     return response.json()
@@ -84,7 +80,7 @@ def main():
                 if "error" in status:
                     raise ValueError(f"API Error: {status['error'].get('message')}")
                 
-                # Veo typically returns videos in the 'response' block
+                # Extract video data
                 video_data = status.get("response", {}).get("videos", [{}])[0]
                 if "bytesBase64Encoded" in video_data:
                     with open(args.output, "wb") as f:

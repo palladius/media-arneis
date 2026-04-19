@@ -151,6 +151,8 @@ module Arneis
         3. Ensure the audio is mixed (not replaced) and the music volume is adjusted to not overpower.
         4. The output filename MUST be: #{File.basename(output_file)}.
         
+        CRITICAL: Do NOT use bash-specific syntax like process substitution <( ). Use standard -i flags for all inputs and a filter_complex to merge them.
+        
         Assume we are running the command inside the folder: #{@output_path}
         Output ONLY the command, nothing else."
 
@@ -192,7 +194,9 @@ module Arneis
 
     def update_project_task_status(task_key, status)
       @mutex.synchronize do
-        state_file = File.join(@output_path, '.state.yaml')
+        # Use absolute path for state file to avoid Dir.chdir issues
+        # The @output_path is already set during initialize_output
+        state_file = File.join(File.expand_path(@output_path), '.state.yaml')
         state = YAML.load_file(state_file)
         state[task_key] ||= {}
         state[task_key]['status'] = status
@@ -202,7 +206,8 @@ module Arneis
 
     def update_scene_status(scene_num, status, error_msg = nil)
       @mutex.synchronize do
-        state_file = File.join(@output_path, '.state.yaml')
+        # Use absolute path for state file to avoid Dir.chdir issues
+        state_file = File.join(File.expand_path(@output_path), '.state.yaml')
         state = YAML.load_file(state_file)
         scene = state['scenes'].find { |s| s['scene'] == scene_num }
         if scene
@@ -215,7 +220,8 @@ module Arneis
 
     def update_project_status(status)
       @mutex.synchronize do
-        state_file = File.join(@output_path, '.state.yaml')
+        # Use absolute path for state file to avoid Dir.chdir issues
+        state_file = File.join(File.expand_path(@output_path), '.state.yaml')
         state = YAML.load_file(state_file)
         state['status'] = status
         File.write(state_file, state.to_yaml)

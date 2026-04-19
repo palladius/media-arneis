@@ -26,4 +26,5 @@ test-all-models:
 
 # Run the CLI
 arnectl *args:
-	{{BUNDLE}} exec bin/arnectl {{args}}
+	# Running safe arneis with limit of 60seconds
+	timeout 60 {{BUNDLE}} exec bin/arnectl {{args}}
