@@ -295,7 +295,9 @@ module Arneis
           title: title,
           cost: total_cost,
           video_count: real_media.select { |f| f.end_with?('.mp4') }.count,
-          image_count: real_media.select { |f| f.end_with?('.png') }.count
+          image_count: real_media.select { |f| f.end_with?('.png') }.count,
+          audio_count: real_media.select { |f| f.end_with?('.wav') || f.end_with?('.mp3') }.count,
+          text_count: Dir.glob(File.join(path, "*.{txt,md}")).count
         }
       end
 
@@ -303,30 +305,45 @@ module Arneis
       data.each do |d|
         folder_color = d[:is_symlink] ? :cyan : :blue
         folder_emoji = d[:is_symlink] ? "🔗" : "📂"
+        
         media_stats = []
         media_stats << "#{d[:video_count]}🎥" if d[:video_count] > 0
         media_stats << "#{d[:image_count]}🖼️" if d[:image_count] > 0
+        media_stats << "#{d[:audio_count]}🎵" if d[:audio_count] > 0
+        media_stats << "#{d[:text_count]}📝" if d[:text_count] > 0
+        
+        total_assets = d[:video_count] + d[:image_count] + d[:audio_count]
         stats_str = media_stats.join(" ")
+        stats_str += " | 💎 #{total_assets}" if total_assets > 0
+        
         display_title = d[:title].length > 40 ? "#{d[:title][0...37]}..." : d[:title].ljust(40)
         puts "#{folder_emoji} #{Rainbow(d[:path].ljust(max_path + 1)).send(folder_color)} #{status_emoji(d[:status])} #{Rainbow(display_title).yellow} 💸 $#{'%.2f' % d[:cost]} #{stats_str}"
       end
     end
 
-    desc "cleanup", "Archive projects without real media to out/archived/"
+    desc "cleanup", "Archive projects without any REAL media to out/archived/"
     def cleanup
-      puts Rainbow("🧹 Starting deterministic cleanup...").cyan
+      puts Rainbow("🧹 Starting aggressive deterministic cleanup...").cyan
       projects = Dir.glob("out/*/").reject { |f| f.include?('archived') }
       archived_count = 0
       projects.each do |path|
-        media_files = Dir.glob(File.join(path, "*.{mp4,png,wav}")).reject { |f| f.end_with?('.mock') || f.end_with?('.NOT_GOOD') }
-        if media_files.empty?
-          puts "  📦 Archiving empty project: #{path}"
+        # Real media = exists and no .mock / .NOT_GOOD
+        media_files = Dir.glob(File.join(path, "*.{mp4,png,wav,mp3}"))
+        real_media = media_files.reject { |f| File.exist?("#{f}.mock") || File.exist?("#{f}.NOT_GOOD") }
+        
+        if real_media.empty?
+          puts "  📦 Archiving project with ZERO real media: #{path}"
           FileUtils.mkdir_p("out/archived")
-          FileUtils.mv(path, File.join("out/archived", File.basename(path)))
-          archived_count += 1
+          # Handle potential symlinks or busy folders
+          begin
+            FileUtils.mv(path, File.join("out/archived", File.basename(path)))
+            archived_count += 1
+          rescue => e
+            puts Rainbow("    ⚠️  Failed to move #{path}: #{e.message}").yellow
+          end
         end
       end
-      puts Rainbow("✅ Cleanup complete. Archived #{archived_count} projects.").green
+      puts Rainbow("✅ Cleanup complete. Archived #{archived_count} junk projects.").green
     end
 
     desc "check-fake-media [FOLDER_PATH]", "Rigorously verify all media files in a project or all projects"
