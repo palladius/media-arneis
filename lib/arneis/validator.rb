@@ -25,10 +25,33 @@ module Arneis
       expected_patterns = VALID_TYPES[type]
 
       if expected_patterns.any? { |pattern| file_info =~ pattern }
-        { success: true, info: file_info.strip }
+        { success: true, info: file_info.strip, metadata: extract_metadata(file_path, file_info) }
       else
         { success: false, info: file_info.strip, message: "Type mismatch: expected #{type}, got #{file_info.strip}" }
       end
+    end
+
+    def self.validate_and_rename!(file_path, type)
+      result = verify(file_path, type)
+      unless result[:success]
+        if File.exist?(file_path)
+          new_path = "#{file_path}.NOT_GOOD"
+          puts Rainbow("    🚫 ARTIFACT INVALID! Renaming to #{File.basename(new_path)}").red
+          FileUtils.mv(file_path, new_path)
+          result[:renamed_to] = new_path
+        else
+          puts Rainbow("    ❌ ARTIFACT MISSING! Expected: #{File.basename(file_path)}").red
+        end
+      end
+      result
+    end
+
+    def self.extract_metadata(file_path, file_info)
+      {
+        size_bytes: File.size(file_path),
+        file_info: file_info.strip,
+        ts_verified: Time.now.iso8601
+      }
     end
   end
 end

@@ -2,8 +2,8 @@
 Arneis::Generator::Imagen - Media generator using Google Imagen via gemini-ai gem.
 =end
 
-require 'gemini-ai'
-require 'base64'
+require 'open3'
+require 'fileutils'
 
 module Arneis
   module Generator
@@ -11,53 +11,65 @@ module Arneis
       def initialize(options = {})
         super
         @model = Models::IMAGEN_DEFAULT
-        @client = ::Gemini.new(
-          credentials: {
-            service: 'vertex-ai-api',
-            project_id: Config.google_cloud_project,
-            region: Config.google_cloud_region,
-            version: 'v1'
-          },
-          options: { model: @model }
-        )
       end
 
-      def generate(prompt, output_file, timeout: 20, asset_id: nil)
-        puts Rainbow("  🎨 [IMAGEN] Starting image generation for prompt: '#{prompt[0..40]}...'").magenta
+      def generate(prompt, output_file, timeout: 60, asset_id: nil)
+        puts Rainbow("  🎨 [IMAGEN] Starting image generation via Python script...").magenta
         receipt = AssetReceipt.new(asset_id: asset_id || "image_#{Time.now.to_i}", model: @model, prompt: prompt)
         
-        payload = {
-          contents: [{ role: 'user', parts: [{ text: prompt }] }]
+        # Prepare command
+        escaped_prompt = prompt.gsub('"', '\"')
+        cmd = "uv run #{Config.imagen_script} --prompt \"#{escaped_prompt}\" --filename #{output_file}"
+        
+        env = {
+          'GEMINI_API_KEY' => Config.gemini_api_key,
+          'NANOBANANA_OUTPUT_FOLDER' => '' # We want it to use the absolute or relative path provided in --filename
         }
 
         begin
-          response = @client.generate_content(payload)
-          
-          # Extract base64 data from response
-          inline_data = response.dig('candidates', 0, 'content', 'parts', 0, 'inlineData')
-          
-          if inline_data && inline_data['data']
-            puts Rainbow("  ⏳ [IMAGEN] Decoding and saving binary image to #{output_file}...").yellow
-            binary_data = Base64.decode64(inline_data['data'])
-            File.write(output_file, binary_data, mode: 'wb')
-            puts Rainbow("  ✅ [IMAGEN] Real image generated: #{output_file}").green
+          success = false
+          Open3.popen3(env, cmd) do |stdin, stdout, stderr, wait_thr|
+            stdin.close
             
-            tokens = response.dig('usageMetadata', 'totalTokenCount') || 0
-            receipt.complete!(input_tokens: response.dig('usageMetadata', 'promptTokenCount') || 0, 
-                             output_tokens: response.dig('usageMetadata', 'candidatesTokenCount') || 0, 
-                             cost_usd: Pricing::COST_PER_IMAGEN_GEN)
+            # Capture output
+            t_err = Thread.new do
+              while line = stderr.gets
+                puts "    [IMAGEN SCRIPT] #{line.strip}"
+              end
+            end
+            
+            t_out = Thread.new do
+              while line = stdout.gets
+                if line =~ /^MEDIA:(.*)$/
+                  media_path = $1.strip
+                  puts Rainbow("  📥 Captured image path: #{media_path}").blue
+                  # Note: the script might save to a different path if NANOBANANA_OUTPUT_FOLDER was set,
+                  # but here we pass the exact output_file to --filename.
+                  success = true
+                end
+              end
+            end
+            
+            t_err.join
+            t_out.join
+            
+            success = wait_thr.value.success? if success.nil?
+          end
+
+          if success && File.exist?(output_file)
+            puts Rainbow("  ✅ [IMAGEN] Image generated successfully!").green
+            receipt.complete!(cost_usd: Pricing::COST_PER_IMAGEN_GEN)
             receipt.save!(output_file)
-            
-            { tokens: tokens, cost: Pricing::COST_PER_IMAGEN_GEN, time: duration_from(receipt.ts_started) }
+            { tokens: 0, cost: Pricing::COST_PER_IMAGEN_GEN, time: duration_from(receipt.ts_started) }
           else
-            raise "No image data found in response"
+            raise "Python script execution failed or output missing"
           end
         rescue => e
           sanitized_msg = Config.sanitize(e.message)
-          puts Rainbow("  ⚠️ [IMAGEN] API call failed: #{sanitized_msg}. Falling back to mock.").yellow
+          puts Rainbow("  ⚠️ [IMAGEN] Script failed: #{sanitized_msg}. Falling back to mock.").yellow
           receipt.fail!(error_msg: sanitized_msg)
           receipt.save!(output_file)
-          File.write("#{output_file}.mock", "MOCK_IMAGEN_DATA")
+          File.write("#{output_file}.mock", "MOCK_IMAGEN_DATA_FOR: #{prompt}")
           return { tokens: 0, cost: 0.0, time: 0 }
         end
       end

@@ -185,11 +185,12 @@ module Arneis
       state['scenes'].each do |scene|
         desc = scene['description']
         desc = "#{desc[0..76]}..." if desc.length > 80
-        
         video_file = File.join(folder_path, "scene_#{scene['scene']}.mp4")
         mock_file = "#{video_file}.mock"
+        bad_file = "#{video_file}.NOT_GOOD"
         asset_json = "#{video_file}.asset.json"
-        
+
+        # Eval indicators
         eval_indicator = "🟣"
         eval_score = ""
         if File.exist?(asset_json)
@@ -200,7 +201,12 @@ module Arneis
           end
         end
 
-        puts "  #{status_emoji(scene['status'])} 🎥 #{eval_indicator}" + Rainbow(" Scene #{scene['scene']}:").orange + " " + Rainbow(desc).white + eval_score + (File.exist?(mock_file) ? Rainbow(" 🤡").yellow : "")
+        suffix = ""
+        suffix = Rainbow(" 🤡").yellow if File.exist?(mock_file)
+        suffix = Rainbow(" 🚫 INVALID").red if File.exist?(bad_file)
+
+        puts "  #{status_emoji(scene['status'])} 🎥 #{eval_indicator}" + Rainbow(" Scene #{scene['scene']}:").orange + " " + Rainbow(desc).white + eval_score + suffix
+
         
         output_base = File.join(folder_path, "scene_#{scene['scene']}")
         Dir.glob("#{output_base}.*.error.json").each do |error_file|
@@ -229,16 +235,28 @@ module Arneis
       if state['background_music']
         music_file = File.join(folder_path, "background_music.wav")
         mock_music = "#{music_file}.mock"
+        bad_music = "#{music_file}.NOT_GOOD"
         asset_json = "#{music_file}.asset.json"
+        
         eval_indicator = File.exist?(asset_json) ? "👍" : "🟣"
-        puts "  #{status_emoji(state['background_music']['status'])} 🎵 #{eval_indicator} Background Music" + (File.exist?(mock_music) ? Rainbow(" 🤡").yellow : "")
+        suffix = ""
+        suffix = Rainbow(" 🤡").yellow if File.exist?(mock_music)
+        suffix = Rainbow(" 🚫 INVALID").red if File.exist?(bad_music)
+        
+        puts "  #{status_emoji(state['background_music']['status'])} 🎵 #{eval_indicator} Background Music" + suffix
       end
       if state['montage']
         montage_file = File.join(folder_path, state['output_filename'] || "final_video.mp4")
         mock_montage = "#{montage_file}.mock"
+        bad_montage = "#{montage_file}.NOT_GOOD"
         asset_json = "#{montage_file}.asset.json"
+        
         eval_indicator = File.exist?(asset_json) ? "👍" : "🟣"
-        puts "  #{status_emoji(state['montage']['status'])} 🎞️  #{eval_indicator} Final Montage" + (File.exist?(mock_montage) ? Rainbow(" 🤡").yellow : "")
+        suffix = ""
+        suffix = Rainbow(" 🤡").yellow if File.exist?(mock_montage)
+        suffix = Rainbow(" 🚫 INVALID").red if File.exist?(bad_montage)
+        
+        puts "  #{status_emoji(state['montage']['status'])} 🎞️  #{eval_indicator} Final Montage" + suffix
       end
 
       puts Rainbow("\n📊 Stats: 🪙 #{total_tokens} (⬆️ #{input_tokens} ⬇️ #{output_tokens}) | 💸 $#{'%.2f' % total_cost}").cyan.bold
@@ -268,13 +286,18 @@ module Arneis
         mtime = File.mtime(path).strftime("%Y-%m-%d %H:%M")
         is_symlink = File.symlink?(path.chomp('/'))
         
-        video_count = Dir.glob(File.join(path, "*.mp4")).reject { |f| f.end_with?('.mock') }.count
-        image_count = Dir.glob(File.join(path, "*.png")).reject { |f| f.end_with?('.mock') }.count
-        
         # Determine "Honest" status
+        media_files = Dir.glob(File.join(path, "*.{mp4,png,wav}"))
+        real_media = media_files.reject { |f| File.exist?("#{f}.mock") || f.include?('.mock') || File.exist?("#{f}.NOT_GOOD") || f.include?('.NOT_GOOD') }
+        mock_media = media_files.select { |f| File.exist?("#{f}.mock") || f.include?('.mock') }
+        bad_media = media_files.select { |f| File.exist?("#{f}.NOT_GOOD") || f.include?('.NOT_GOOD') }
+        
         honest_status = status
-        if status == 'done' && video_count == 0 && image_count == 0
-          honest_status = 'mocked'
+        if status == 'done' && real_media.empty?
+          honest_status = bad_media.empty? ? 'mocked' : 'failed'
+        end
+        if !bad_media.empty?
+          honest_status = 'failed'
         end
 
         {
@@ -284,8 +307,8 @@ module Arneis
           status: honest_status,
           title: title,
           cost: total_cost,
-          video_count: video_count,
-          image_count: image_count
+          video_count: real_media.select { |f| f.end_with?('.mp4') }.count,
+          image_count: real_media.select { |f| f.end_with?('.png') }.count
         }
       end
 

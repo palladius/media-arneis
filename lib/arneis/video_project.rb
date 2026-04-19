@@ -87,12 +87,21 @@ module Arneis
           
           veo_output = "#{scene_output_base}.mp4"
           veo_generator.generate(enhanced_prompt, veo_output, asset_id: "Scene#{scene['scene']}.video")
-          
+          # Validate and Rename if invalid
           puts "  🛡️  Validating scene #{scene['scene']} artifact..."
-          v_result = Validator.verify(veo_output, :video)
-          
+          v_result = Validator.validate_and_rename!(veo_output, :video)
+
           if v_result[:success]
             puts Rainbow("    ✅ Validated: #{v_result[:info]}").green
+
+            # Update the asset.json with physical metadata
+            asset_json_path = "#{veo_output}.asset.json"
+            if File.exist?(asset_json_path)
+              asset_data = ::JSON.parse(File.read(asset_json_path))
+              asset_data['metadata'] = v_result[:metadata]
+              File.write(asset_json_path, asset_data.to_json)
+            end
+
             
             # Run QA Eval
             evaluator = Evaluator.new
@@ -129,7 +138,21 @@ module Arneis
             update_project_task_status('background_music', 'in_progress')
             music_output = File.join(@output_path, "background_music.wav")
             lyria_generator.generate(@data['background_music']['prompt'], music_output, asset_id: "Project.music")
-            update_project_task_status('background_music', 'done')
+            
+            # Validate and Rename
+            v_result = Validator.validate_and_rename!(music_output, :audio)
+            if v_result[:success]
+              # Update asset.json with metadata
+              asset_json_path = "#{music_output}.asset.json"
+              if File.exist?(asset_json_path)
+                asset_data = ::JSON.parse(File.read(asset_json_path))
+                asset_data['metadata'] = v_result[:metadata]
+                File.write(asset_json_path, asset_data.to_json)
+              end
+              update_project_task_status('background_music', 'done')
+            else
+              update_project_task_status('background_music', 'failed')
+            end
           end
         end
         scene_task_ids << music_id
@@ -167,15 +190,25 @@ module Arneis
         Dir.chdir(@output_path) do
           success = system(ffmpeg_cmd)
           if success && File.exist?(File.basename(output_file))
-            puts Rainbow("  ✅ [MONTAGE] Final video generated successfully!").green
-            receipt.complete!(cost_usd: 0.0)
-            receipt.save!(File.basename(output_file))
-            update_project_task_status('montage', 'done')
+            # Validate and Rename
+            v_result = Validator.validate_and_rename!(File.basename(output_file), :video)
+            if v_result[:success]
+              puts Rainbow("  ✅ [MONTAGE] Final video generated successfully!").green
+              receipt.metadata = v_result[:metadata]
+              receipt.complete!(cost_usd: 0.0)
+              receipt.save!(File.basename(output_file))
+              update_project_task_status('montage', 'done')
+            else
+              puts Rainbow("  ⚠️  [MONTAGE] Final video is INVALID!").red
+              receipt.fail!(error_msg: v_result[:message])
+              receipt.save!(File.basename(output_file))
+              update_project_task_status('montage', 'failed')
+            end
           else
             puts Rainbow("  ⚠️  [MONTAGE] Real ffmpeg failed. Mocking final output.").yellow
             receipt.fail!(error_msg: "ffmpeg failed or files missing")
             receipt.save!(File.basename(output_file))
-            File.write(File.basename(output_file), "MOCK_FINAL_MONTAGE_DATA")
+            File.write("#{File.basename(output_file)}.mock", "MOCK_FINAL_MONTAGE_DATA")
             update_project_task_status('montage', 'done')
           end
         end

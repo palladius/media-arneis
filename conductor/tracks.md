@@ -19,3 +19,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [ ] **Track: Implement Real Background Music Generation using Lyria**
   *Link: [./tracks/lyria_gen_20260418/](./tracks/lyria_gen_20260418/)*
 
+- [ ] **Track: Implement Robust Artifact Validation and Metadata Extraction**
+  *Link: [./tracks/artifact_reliability_20260419/](./tracks/artifact_reliability_20260419/)*
+

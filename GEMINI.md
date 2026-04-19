@@ -32,6 +32,7 @@ Use Conductor extension to manage the BDD and SW dev
 * Use gitmoji in commit messages and GH issues.
 * Some activities take time! Prepend `timeout 60` if you foresee an activity lasting more than 60s.
     * Use a Gemini cLI **SubAgent** when video/audio generation is involved.
+* Do not break POLA - Principles of Least Astonishment.
 
 ## Testing
 

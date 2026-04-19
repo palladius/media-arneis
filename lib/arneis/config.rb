@@ -26,6 +26,10 @@ module Arneis
       'util/generate_video.py'
     end
 
+    def self.imagen_script
+      'util/generate_image.py'
+    end
+
     def self.lyria_script
       'util/generate_music.py'
     end
