@@ -1,33 +1,19 @@
-name: VideoProject
-description: "A 32-second promotional video to sell tickets for Rubycon 2026 in Rimini, Italy, highlighting technical content and the seafront location."
-title: "Rubycon 2026: Code, Community, and the Italian Coast"
-output_filename: "rubycon_2026_pitch_final.mp4"
-
-background_music:
-  prompt: "A playful, energetic Italian tarantella, 120 BPM, with traditional accordion and mandolin, 32 seconds long."
-
-scenes:
-  - scene: 1
-    description: "Cinematic drone shot sweeping across the Rimini seafront at golden hour, transitioning into a floating, crystalline Ruby gemstone logo hovering over the elegant Hotel Ambasciatori. Text overlay: 'Rubycon 2026: Rimini, Italy'."
-  - scene: 2
-    description: "Close-up of a high-resolution laptop screen displaying elegant Ruby code and AI neural network visualizations, set against a blurred background of a sun-drenched Mediterranean terrace. Text: 'Stuff you can use on Monday.'"
-  - scene: 3
-    description: "Professional networking scene at a tech conference. Ruby developers and world-renowned speakers in a business lounge, engaging in technical discussions over coffee. Modern, sophisticated setting, high-end atmosphere."
-  - scene: 4
-    description: "A peaceful sunrise over the historic Rubicon river, fading into a bold call-to-action graphic. Text: 'Early Bird €99 | May 8, 2026 | Tickets at rubycon.it'."
-defaults:
-  duration_seconds: 32
-  subchapters_count: 4
-  models:
-    video: veo-3.1-generate-preview
-    music: lyria-3-clip-preview
-    narration: gemini-3.1-flash-tts-preview
-  system_prompt: |
-    You are an expert Cinematographer and Creative Director. 
-    Your task is to take a brief scene description and expand it into a "chubby," highly-detailed visual prompt suitable for state-of-the-art video AI like Veo.
-    Focus on:
-    - Lighting (e.g., volumetric, cinematic, golden hour, neon).
-    - Camera movement (e.g., slow pan, dolly zoom, wide-angle tracking).
-    - Texture and resolution (e.g., 8k, photorealistic, grain, shallow depth of field).
-    - Emotional resonance and specific subjects.
-    Output ONLY the expanded prompt, no filler.
+apiVersion: media-arneis.palladius.it/v1
+kind: VideoProject
+metadata:
+  name: rubycon-2026-sales-pitch
+  template: VideoProject
+spec:
+  project_title: "Rubycon 2026: Code, Community, and the Italian Coast"
+  output_filename: "rubycon_2026_pitch_final.mp4"
+  scenes:
+    - scene: 1
+      description: "Cinematic drone shot sweeping across the Rimini seafront at golden hour, transitioning into a vibrant crowd of Ruby developers laughing and networking outside the conference venue."
+    - scene: 2
+      description: "Close-up of a high-resolution laptop screen displaying elegant Ruby code and the Rubycon logo, with the reflected lights of the Adriatic coast in the background."
+    - scene: 3
+      description: "Intimate, warm shots of attendees and world-class speakers like Akira Matsuda and Matz (if possible/placeholder) sharing insights over espresso and piadina."
+    - scene: 4
+      description: "A peaceful sunrise over the historic Rubicon river, fading into a bold call-to-action: 'Rubycon 2026: Cross your own Rubicon. Early bird tickets €149. Join us in Rimini.'"
+  background_music:
+    prompt: "A joyful, slightly rustic Italian tarantella played on accordion and mandolin, with a modern, upbeat tempo to match the tech energy."

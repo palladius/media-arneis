@@ -11,7 +11,11 @@ module Arneis
     attr_reader :name, :nickname, :surname, :personality, :visual_look, :consistency_images_dir
 
     def self.all
-      Dir.glob(File.join(CHARACTERS_DIR, "*.yaml")).map do |file|
+      # Case 1: data/characters/*.yaml
+      # Case 2: data/characters/*/character.yaml
+      files = Dir.glob(File.join(CHARACTERS_DIR, "*.yaml")) + 
+              Dir.glob(File.join(CHARACTERS_DIR, "*/character.yaml"))
+      files.uniq.map do |file|
         new(file)
       end.sort_by(&:name)
     end
@@ -39,7 +43,10 @@ module Arneis
 
     def image_count
       return 0 unless @consistency_images_dir
-      dir = File.expand_path(@consistency_images_dir, CHARACTERS_DIR)
+      # If relative to YAML path (starts with .)
+      base_dir = @yaml_path.end_with?('character.yaml') ? File.dirname(@yaml_path) : CHARACTERS_DIR
+      dir = File.expand_path(@consistency_images_dir, base_dir)
+      
       return 0 unless Dir.exist?(dir)
       # Count images but exclude hidden files
       Dir.glob(File.join(dir, "*")).reject { |f| File.directory?(f) || File.basename(f).start_with?('.') }.count
@@ -58,6 +65,8 @@ module Arneis
       when 'italian', 'italy' then "🇮🇹"
       when 'french', 'france' then "🇫🇷"
       when 'american', 'usa' then "🇺🇸"
+      when 'japanese', 'japan' then "🇯🇵"
+      when 'south african', 'south africa' then "🇿🇦"
       else ""
       end
     end
