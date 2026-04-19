@@ -308,7 +308,7 @@ module Arneis
         media_stats << "#{d[:image_count]}🖼️" if d[:image_count] > 0
         stats_str = media_stats.join(" ")
         display_title = d[:title].length > 40 ? "#{d[:title][0...37]}..." : d[:title].ljust(40)
-        puts "#{Rainbow(d[:mtime]).blue} #{folder_emoji} #{Rainbow(d[:path].ljust(max_path + 1)).send(folder_color)} #{status_emoji(d[:status])} #{Rainbow(display_title).yellow} 💸 $#{'%.2f' % d[:cost]} #{stats_str}"
+        puts "#{folder_emoji} #{Rainbow(d[:path].ljust(max_path + 1)).send(folder_color)} #{status_emoji(d[:status])} #{Rainbow(display_title).yellow} 💸 $#{'%.2f' % d[:cost]} #{stats_str}"
       end
     end
 
