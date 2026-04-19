@@ -6,6 +6,7 @@ require 'thor'
 require 'rainbow'
 require 'yaml'
 require 'json'
+require 'fileutils'
 
 module Arneis
   class Cli < Thor
@@ -36,9 +37,6 @@ module Arneis
     desc "feedback [FOLDER_PATH] -p, --prompt=PROMPT", "Provide natural language feedback on a specific asset"
     method_option :prompt, type: :string, required: true, aliases: "-p", desc: "Your feedback"
     def feedback(folder_path = nil)
-      # If first argument isn't a folder, it might be the prompt if not using -p, 
-      # but Thor handles options separately.
-      # If folder_path is nil, default to latest
       folder_path ||= Dir.glob("out/*/").select { |f| File.exist?(File.join(f, '.state.yaml')) }.max_by { |f| File.mtime(f) }
       
       if folder_path.nil?
@@ -101,8 +99,8 @@ module Arneis
         scene = state['scenes'].find { |s| s['scene'] == scene_num }
         if scene
           scene['status'] = 'pending'
-          # Also store feedback for future regeneration
           scene['feedback'] = options[:prompt]
+          scene['human_score'] = 5
           File.write(state_file, state.to_yaml)
           puts Rainbow("✅ Scene #{scene_num} reset to pending. Run 'arnectl resume' to regenerate.").green
         end
@@ -121,8 +119,6 @@ module Arneis
       end
 
       puts Rainbow("🚀 Resuming #{folder_path}...").green
-      # Note: We need a way to load a project from an existing folder
-      # For now, let's assume the YAML is still there
       yaml_files = Dir.glob(File.join(folder_path, "*.yaml"))
       if yaml_files.empty?
         puts Rainbow("❌ No YAML found in #{folder_path} to resume from").red
@@ -130,7 +126,7 @@ module Arneis
       end
 
       project = VideoProject.new(yaml_files.first)
-      project.instance_variable_set(:@output_path, folder_path) # Direct injection for resume
+      project.instance_variable_set(:@output_path, folder_path)
       
       puts Rainbow("⚙️ Resuming orchestration...").magenta
       project.process
@@ -169,13 +165,11 @@ module Arneis
         desc = scene['description']
         desc = "#{desc[0..76]}..." if desc.length > 80
         
-        # Check if file exists or is mocked
         video_file = File.join(folder_path, "scene_#{scene['scene']}.mp4")
         mock_file = "#{video_file}.mock"
         asset_json = "#{video_file}.asset.json"
         
-        # Eval indicators
-        eval_indicator = "🟣" # Not evaluated
+        eval_indicator = "🟣"
         eval_score = ""
         if File.exist?(asset_json)
           asset_data = ::JSON.parse(File.read(asset_json))
@@ -187,7 +181,6 @@ module Arneis
 
         puts "  #{status_emoji(scene['status'])} 🎥 #{eval_indicator}" + Rainbow(" Scene #{scene['scene']}:").orange + " " + Rainbow(desc).white + eval_score + (File.exist?(mock_file) ? Rainbow(" 🤡").yellow : "")
         
-        # Check for errors in the output folder
         output_base = File.join(folder_path, "scene_#{scene['scene']}")
         Dir.glob("#{output_base}.*.error.json").each do |error_file|
           error_data = ::JSON.parse(File.read(error_file))
@@ -201,7 +194,6 @@ module Arneis
           end
         end
 
-        # Aggregate stats from standardized asset receipts
         Dir.glob("#{output_base}.*.asset.json").each do |receipt_file|
           receipt = ::JSON.parse(File.read(receipt_file))
           input_tokens += receipt['input_tokens'] || 0
@@ -216,58 +208,64 @@ module Arneis
       if state['background_music']
         music_file = File.join(folder_path, "background_music.wav")
         mock_music = "#{music_file}.mock"
-        puts "  #{status_emoji(state['background_music']['status'])} 🎵 Background Music" + (File.exist?(mock_music) ? Rainbow(" 🤡").yellow : "")
-        
-        # Check for music errors
-        Dir.glob(File.join(folder_path, "background_music.*.error.json")).each do |error_file|
-          error_data = ::JSON.parse(File.read(error_file))
-          puts Rainbow("    ❌ Error: #{Config.sanitize(error_data['error'])}").red
-        end
+        asset_json = "#{music_file}.asset.json"
+        eval_indicator = File.exist?(asset_json) ? "👍" : "🟣"
+        puts "  #{status_emoji(state['background_music']['status'])} 🎵 #{eval_indicator} Background Music" + (File.exist?(mock_music) ? Rainbow(" 🤡").yellow : "")
       end
       if state['montage']
         montage_file = File.join(folder_path, state['output_filename'] || "final_video.mp4")
         mock_montage = "#{montage_file}.mock"
-        puts "  #{status_emoji(state['montage']['status'])} 🎞️  Final Montage" + (File.exist?(mock_montage) ? Rainbow(" 🤡").yellow : "")
-        
-        # Check for montage errors
-        Dir.glob(File.join(folder_path, "montage.*.error.json")).each do |error_file|
-          error_data = ::JSON.parse(File.read(error_file))
-          puts Rainbow("    ❌ Error: #{Config.sanitize(error_data['error'])}").red
-        end
+        asset_json = "#{montage_file}.asset.json"
+        eval_indicator = File.exist?(asset_json) ? "👍" : "🟣"
+        puts "  #{status_emoji(state['montage']['status'])} 🎞️  #{eval_indicator} Final Montage" + (File.exist?(mock_montage) ? Rainbow(" 🤡").yellow : "")
       end
 
       puts Rainbow("\n📊 Stats: 🪙 #{total_tokens} (⬆️ #{input_tokens} ⬇️ #{output_tokens}) | 💸 $#{'%.2f' % total_cost}").cyan.bold
     end
 
-    desc "stats FOLDER_PATH", "Show resource usage and cost for a media project"
-    def stats(folder_path)
-      puts Rainbow("📊 Calculating stats for #{folder_path}...").cyan
-      # This will eventually pull from the state file and logs
-      puts "Total Tokens: 0"
-      puts "Estimated Cost: $0.00"
-      puts "Time Elapsed: 0s"
-    end
-
-    desc "verify FOLDER_PATH", "Verify the integrity of all media artifacts in a project folder"
-    def verify(folder_path)
-      puts Rainbow("🛡️  Verifying artifacts in #{folder_path}...").cyan
-      state_file = File.join(folder_path, '.state.yaml')
-      unless File.exist?(state_file)
-        puts Rainbow("❌ No state file found in #{folder_path}").red
+    desc "list", "List all meaningful projects in out/"
+    def list
+      puts Rainbow("📂 Listing Arneis projects...").cyan.bold
+      projects = Dir.glob("out/*/").select { |f| File.exist?(File.join(f, '.state.yaml')) }
+      
+      if projects.empty?
+        puts "No projects found."
         return
       end
 
-      state = YAML.load_file(state_file)
-      state['scenes'].each do |scene|
-        video_file = File.join(folder_path, "scene_#{scene['scene']}.mp4")
-        puts "Scene #{scene['scene']}:"
-        result = Validator.verify(video_file, :video)
-        if result[:success]
-          puts Rainbow("  ✅ Video: #{result[:info]}").green
-        else
-          puts Rainbow("  ❌ Video: #{result[:message]}").red
+      projects.sort_by { |f| File.mtime(f) }.reverse.each do |path|
+        state = YAML.load_file(File.join(path, '.state.yaml'))
+        title = state['project_title'] || File.basename(path)
+        status = state['status']
+        
+        total_cost = 0.0
+        Dir.glob(File.join(path, "*.asset.json")).each do |f|
+          total_cost += ::JSON.parse(File.read(f))['cost_usd'] || 0.0
+        end
+
+        mtime = File.mtime(path).strftime("%Y-%m-%d %H:%M")
+        puts "#{Rainbow(mtime).blue} | #{status_emoji(status)} #{Rainbow(title.ljust(40)).yellow} | 💸 $#{'%.2f' % total_cost} | #{path}"
+      end
+    end
+
+    desc "cleanup", "Archive projects without real media to out/archived/"
+    def cleanup
+      puts Rainbow("🧹 Starting deterministic cleanup...").cyan
+      projects = Dir.glob("out/*/").reject { |f| f.include?('archived') }
+      archived_count = 0
+
+      projects.each do |path|
+        media_files = Dir.glob(File.join(path, "*.{mp4,png}")).reject { |f| f.end_with?('.mock') }
+        
+        if media_files.empty?
+          puts "  📦 Archiving empty project: #{path}"
+          FileUtils.mkdir_p("out/archived")
+          FileUtils.mv(path, File.join("out/archived", File.basename(path)))
+          archived_count += 1
         end
       end
+      
+      puts Rainbow("✅ Cleanup complete. Archived #{archived_count} projects.").green
     end
 
     desc "graph YAML_PATH", "Generate a Mermaid.js dependency graph for a project"
@@ -279,27 +277,22 @@ module Arneis
       tasks = []
       scene_task_ids = []
 
-      # 1. Scenes
       project.scenes.each do |scene|
         scene_id = "scene_#{scene['scene']}".to_sym
         tasks << Arneis::Task.new(scene_id)
         scene_task_ids << scene_id
       end
       
-      # 2. Music
       if project.data['background_music']
         tasks << Arneis::Task.new(:background_music)
         scene_task_ids << :background_music
       end
 
-      # 3. Montage
       tasks << Arneis::Task.new(:montage, dependencies: scene_task_ids)
 
       visualizer = Visualizer.new(tasks)
       mermaid = visualizer.to_mermaid
       
-      # Determine output folder
-      # Heuristic: if we have a folder path in out/ with a state file, use it
       latest_project = Dir.glob("out/*/").select { |f| File.exist?(File.join(f, '.state.yaml')) }.max_by { |f| File.mtime(f) }
       output_dir = latest_project || "out/latest_graph"
       FileUtils.mkdir_p(output_dir)
@@ -318,17 +311,10 @@ module Arneis
       template_content = File.read('data/templates/VideoProject.yaml')
       
       gemini = Generator::Gemini.new
-      system_prompt = "You are an expert Copywriter and Video Producer. Create a VideoProject YAML based on the provided research.
-      The goal is to sell tickets. 
-      CRITICAL: You MUST follow the schema provided in the template.
+      system_prompt = "You are an expert Copywriter and Video Producer. Create a VideoProject YAML based on the provided research. The goal is to sell tickets. Follow the schema provided. Output ONLY the YAML."
       
-      TEMPLATE SCHEMA:
-      #{template_content}
-      
-      Output ONLY the YAML."
-      
-      response = gemini.generate(research_content, system_instruction: system_prompt)
-      yaml_content = response[:content].gsub(/```yaml\n|```/, '') # Clean up markdown
+      response = gemini.generate(identification_prompt, system_instruction: system_prompt)
+      yaml_content = response[:content].gsub(/```yaml\n|```/, '')
       
       output_file = "data/samples/#{File.basename(research_path, '.*')}.yaml"
       File.write(output_file, yaml_content)

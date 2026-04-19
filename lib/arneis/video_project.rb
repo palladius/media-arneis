@@ -100,25 +100,17 @@ module Arneis
             
             if eval_result[:success]
               puts Rainbow("    ⚖️  EVAL: #{eval_result[:message]}").green
+              update_scene_status(scene['scene'], 'done')
             else
               puts Rainbow("    ⚖️  EVAL FAILED: #{eval_result[:message]} (Score: #{eval_result[:score]})").red
-              update_scene_status(scene['scene'], 'done_with_warnings', eval_result[:message])
+              
+              if eval_result[:score] < 5
+                puts Rainbow("    ♻️  Score is low (< 5). Rescheduling scene for rework...").yellow
+                update_scene_status(scene['scene'], 'pending', eval_result[:message])
+              else
+                update_scene_status(scene['scene'], 'done_with_warnings', eval_result[:message])
+              end
             end
-
-            # Update the existing asset.json with eval data
-            asset_json_path = "#{veo_output}.asset.json"
-            if File.exist?(asset_json_path)
-              asset_data = ::JSON.parse(File.read(asset_json_path))
-              asset_data['eval'] = {
-                'success' => eval_result[:success],
-                'score' => eval_result[:score],
-                'message' => eval_result[:message],
-                'ts' => Time.now.iso8601
-              }
-              File.write(asset_json_path, asset_data.to_json)
-            end
-
-            update_scene_status(scene['scene'], 'done') unless eval_result[:success] == false
           else
             puts Rainbow("    ⚠️  Validation failed: #{v_result[:message]}").yellow
             update_scene_status(scene['scene'], 'failed')
