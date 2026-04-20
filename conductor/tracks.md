@@ -31,3 +31,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [ ] **Track: BETTER PRODUCER STRATEGY #12**
   *Link: [./tracks/better_producer_20260419/](./tracks/better_producer_20260419/)*
 
+- [ ] **Track: Implement KidsStory Class for multi-page illustrated children's stories**
+  *Link: [./tracks/kids_story_20260419/](./tracks/kids_story_20260419/)*
+

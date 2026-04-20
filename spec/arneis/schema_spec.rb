@@ -50,6 +50,27 @@ RSpec.describe Arneis::Schema do
       expect(result[:success]).to be false
       expect(result[:message]).to include('scenes')
     end
+
+    it 'passes for a valid KidsStory' do
+      valid_story = {
+        'apiVersion' => 'media-arneis.palladius.it/v1',
+        'kind' => 'KidsStory',
+        'metadata' => { 'name' => 'test-story' },
+        'spec' => {
+          'story_title' => 'The Little Ruby',
+          'character_id' => 'yukihiro',
+          'pages' => [
+            { 'page' => 1, 'description' => 'The Dojo', 'text' => 'Once upon a time...' }
+          ]
+        }
+      }
+      file = Tempfile.new(['story', '.yaml'])
+      file.write(valid_story.to_yaml)
+      file.close
+      
+      result = described_class.validate_template(file.path)
+      expect(result[:success]).to be true
+    end
   end
 end
 

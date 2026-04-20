@@ -1,33 +1,10 @@
-# KidsStory Template (Class)
----
-name: KidsStory
-description: "A story for children with N chapters, each containing a sub-story and multiple images."
-required_fields:
-  - title
-  - author
-  - chapters
-structure:
-  chapters:
-    min_count: 1
-    fields:
-      - chapter_number
-      - title
-      - sub_story
-      - images
-  images:
-    min_count: 1
-    fields:
-      - prompt
-      - style
-defaults:
-  models:
-    text: gemini-2.5-flash
-    image: gemini-3.1-flash-image-preview
-  system_prompt: |
-    You are a world-class Children's Book Author and Illustrator.
-    Your goal is to weave magical, educational, and engaging tales for kids.
-    When generating a chapter:
-    - Use whimsical, rhythmic language.
-    - Ensure the sub-story has a clear lesson or "a-ha" moment.
-    - For images, create descriptive prompts that emphasize a "Pixar-like" 3D animation style, vibrant colors, and cute, expressive characters.
-    Output the story and image prompts in a structured format.
+apiVersion: media-arneis.palladius.it/v1
+kind: KidsStory
+metadata:
+  name: KidsStory
+spec:
+  story_title: "A New Adventure"
+  character_id: "yukihiro"
+  pages: []
+  background_music:
+    prompt: "Gentle, magical, and enchanting orchestral background music for a children's story"

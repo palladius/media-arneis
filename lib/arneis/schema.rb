@@ -51,6 +51,30 @@ module Arneis
       end
     end
 
+    # Specific schema for KidsStory
+    class KidsStoryContract < BaseContract
+      params(BaseContract.schema) do
+        required(:spec).hash do
+          required(:story_title).filled(:string)
+          required(:character_id).filled(:string) # Protagonist
+          required(:pages).array(:hash) do
+            required(:page).filled(:integer)
+            required(:description).filled(:string) # Visual prompt context
+            required(:text).filled(:string)        # Story text for this page
+          end
+          optional(:background_music).hash do
+            required(:prompt).filled(:string)
+          end
+        end
+      end
+
+      rule(:kind) do
+        unless value == 'KidsStory'
+          key.failure("must be KidsStory")
+        end
+      end
+    end
+
     def self.validate_template(yaml_path)
       data = YAML.load_file(yaml_path)
       # For now, identify contract by kind
@@ -73,6 +97,7 @@ module Arneis
     def self.contract_for(kind)
       case kind
       when 'VideoProject' then VideoProjectContract
+      when 'KidsStory' then KidsStoryContract
       else nil
       end
     end

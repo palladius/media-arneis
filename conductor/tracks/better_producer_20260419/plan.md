@@ -20,8 +20,8 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)
 
 ## Phase 4: Folder Refurbishment & Orchestration
-- [~] Task: Update `Arneis::VideoProject` to use the new subfolder structure (`video/scenex/`, `marketing/`).
-- [ ] Task: Ensure all generators respect the unified project folder while writing to subdirectories.
-- [ ] Task: Integrate marketing and GIF tasks into the main `Orchestrator` flow.
-- [ ] Task: Final end-to-end verification with `just arnectl apply`.
+- [x] Task: Update `Arneis::VideoProject` to use the new subfolder structure (`video/scenex/`, `marketing/`). f6c933d
+- [x] Task: Ensure all generators respect the unified project folder while writing to subdirectories. f6c933d
+- [x] Task: Integrate marketing and GIF tasks into the main `Orchestrator` flow. f6c933d
+- [x] Task: Final end-to-end verification with `just arnectl apply`. f6c933d
 - [ ] Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md)
