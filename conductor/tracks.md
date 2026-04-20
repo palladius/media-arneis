@@ -28,3 +28,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [ ] **Track: Implement expensive, end-to-end LLM integration tests (just-llm-tests)**
   *Link: [./tracks/expensive_tests_20260419/](./tracks/expensive_tests_20260419/)*
 
+- [ ] **Track: BETTER PRODUCER STRATEGY #12**
+  *Link: [./tracks/better_producer_20260419/](./tracks/better_producer_20260419/)*
+
