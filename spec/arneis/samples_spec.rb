@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'arneis/video_project'
+require 'arneis'
 
 RSpec.describe 'Data Samples' do
   Dir.glob('data/samples/*.yaml').each do |sample_path|

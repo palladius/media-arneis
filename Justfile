@@ -33,6 +33,7 @@ check-fake-media:
 autoarchive:
 	@echo "🧹 Auto-archiving junk projects..."
 	{{BUNDLE}} exec bin/arnectl cleanup
+archive: autoarchive
 
 # Run the CLI
 arnectl *args:
@@ -41,3 +42,6 @@ arnectl *args:
 
 status:
 	just arnectl status
+
+list:
+	just arnectl list

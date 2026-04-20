@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-04-20
+
+### Added
+- 🧪 Added `spec/arneis/samples_spec.rb` to dynamically validate all sample YAML files.
+- 🛠️ Fixed missing dependencies for `CharactersCli` and `Character` in the main library entry point.
+
+### Changed
+- 🫘 refactor(cli): updated `arnectl list` to show asset counts (beans) first (e.g., `🫘 7: 2🎥 5📝`).
+- 🔄 Migrated outdated sample YAML files to the current `VideoProject` schema.
+
 ## [0.1.3] - 2026-04-19
 
 ### Added

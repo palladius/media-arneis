@@ -68,6 +68,7 @@ RSpec.describe Arneis::Hydrator do
       }
       
       # Mock file system for test
+      allow(File).to receive(:exist?).with('data/samples/pitch.yaml').and_return(true)
       allow(YAML).to receive(:load_file).with('data/samples/pitch.yaml').and_return(sample)
       allow(File).to receive(:exist?).with('data/templates/VideoProject.yaml').and_return(true)
       allow(YAML).to receive(:load_file).with('data/templates/VideoProject.yaml').and_return(template)

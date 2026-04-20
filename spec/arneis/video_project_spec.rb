@@ -22,6 +22,7 @@ RSpec.describe Arneis::VideoProject do
       }
       template = { 'apiVersion' => 'media-arneis.palladius.it/v1', 'kind' => 'VideoProject', 'metadata' => { 'name' => 'VideoProject' } }
       
+      allow(File).to receive(:exist?).with(invalid_yaml).and_return(true)
       allow(YAML).to receive(:load_file).with(invalid_yaml).and_return(content)
       allow(File).to receive(:exist?).with('data/templates/VideoProject.yaml').and_return(true)
       allow(YAML).to receive(:load_file).with('data/templates/VideoProject.yaml').and_return(template)

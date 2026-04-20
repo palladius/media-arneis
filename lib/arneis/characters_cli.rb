@@ -27,6 +27,10 @@ module Arneis
 
     desc "show NAME", "Show details for a character"
     def show(name)
+      if %w[--help -h].include?(name)
+        help("show")
+        return
+      end
       char = Character.find(name)
       unless char
         puts Rainbow("❌ Character not found: #{name}").red

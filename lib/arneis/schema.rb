@@ -80,6 +80,9 @@ module Arneis
 
   module Hydrator
     def self.hydrate(sample_path)
+      unless File.exist?(sample_path)
+        return { success: false, message: "File not found: #{sample_path}" }
+      end
       sample_data = YAML.load_file(sample_path)
       template_name = sample_data.dig('metadata', 'template') || sample_data['template']
       

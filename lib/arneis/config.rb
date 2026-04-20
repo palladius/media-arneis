@@ -39,7 +39,7 @@ module Arneis
     end
 
     def self.max_concurrent_tasks
-      (ENV['MAX_CONCURRENT_TASKS'] || 3).to_i
+      (ENV['MAX_CONCURRENT_TASKS'] || 5).to_i
     end
 
     def self.auth_method_emoji

@@ -30,6 +30,10 @@ module Arneis
     method_option :dryrun, type: :boolean, aliases: "-n", desc: "Validate YAML and dependencies without executing"
     method_option :output, type: :string, aliases: "-o", desc: "Custom output folder (defaults to timestamped)"
     def apply(yaml_path)
+      if %w[--help -h].include?(yaml_path)
+        help("apply")
+        return
+      end
       puts Rainbow("🎨 Applying #{yaml_path}...").green
       project = VideoProject.new(yaml_path)
       
@@ -315,8 +319,9 @@ module Arneis
         media_stats << "#{d[:text_count]}📝" if d[:text_count] > 0
         
         total_assets = d[:video_count] + d[:image_count] + d[:audio_count] + d[:text_count]
-        stats_str = media_stats.join(" ")
-        stats_str += " | 🫘 #{total_assets}" if total_assets > 0
+        stats_str = ""
+        stats_str += "🫘 #{total_assets}: " if total_assets > 0
+        stats_str += media_stats.join(" ")
         
         display_title = d[:title].length > 40 ? "#{d[:title][0...37]}..." : d[:title].ljust(40)
         puts "#{folder_emoji} #{Rainbow(d[:path].ljust(max_path + 1)).send(folder_color)} #{status_emoji(d[:status])} #{Rainbow(display_title).yellow} 💸 $#{'%.2f' % d[:cost]} #{stats_str}"
@@ -389,6 +394,10 @@ module Arneis
     desc "graph YAML_PATH", "Generate a Mermaid.js dependency graph"
     method_option :output, type: :string, aliases: "-o", desc: "Output file"
     def graph(yaml_path)
+      if %w[--help -h].include?(yaml_path)
+        help("graph")
+        return
+      end
       puts Rainbow("📊 Generating graph for #{yaml_path}...").cyan
       project = VideoProject.new(yaml_path)
       tasks = []
@@ -416,6 +425,10 @@ module Arneis
 
     desc "research-pitch RESEARCH_PATH", "Generate a sales pitch YAML"
     def research_pitch(research_path)
+      if %w[--help -h].include?(research_path)
+        help("research_pitch")
+        return
+      end
       puts Rainbow("🧠 Researching #{research_path}...").cyan
       research_content = File.read(research_path)
       template_content = File.read('data/templates/VideoProject.yaml')
