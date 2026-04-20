@@ -4,11 +4,11 @@
 - [x] Task: Create `Arneis::Planner` class to manage versioned Markdown plans. f5ab175
 - [x] Task: Implement `__revN.md` naming and `rev: N` metadata extraction. f5ab175
 - [x] Task: Write Tests for `Arneis::Planner` (Revision invalidation and versioning). f5ab175
-- [~] Task: Implement hydration logic to detect segment changes between revisions.
+- [x] Task: Implement hydration logic to detect segment changes between revisions. 8e3a2b6
 - [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
 
 ## Phase 2: Post-Production (GIFs)
-- [ ] Task: Implement `Arneis::Generator::Gif` using `ffmpeg`.
+- [~] Task: Implement `Arneis::Generator::Gif` using `ffmpeg`.
 - [ ] Task: Add task dependency to trigger GIF generation after final video assembly.
 - [ ] Task: Write Tests for `Arneis::Generator::Gif` (Ensuring real .gif output).
 - [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
