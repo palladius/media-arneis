@@ -11,6 +11,8 @@ require 'time'
 
 module Arneis
   class Cli < Thor
+    class_option :async, type: :boolean, default: true, desc: "Run media generation asynchronously using Fibers"
+
     def initialize(*args)
       super
       Config.load!
@@ -37,7 +39,7 @@ module Arneis
       puts Rainbow("🚀 Project initialized at #{output_path}").blue
       
       puts Rainbow("⚙️ Starting orchestration...").magenta
-      project.process
+      project.process(async: options[:async])
       puts Rainbow("✅ Generation complete!").green
     end
 
@@ -149,7 +151,7 @@ module Arneis
       project.instance_variable_set(:@output_path, folder_path)
       
       puts Rainbow("⚙️ Resuming orchestration...").magenta
-      project.process
+      project.process(async: options[:async])
       puts Rainbow("✅ Resume complete!").green
     end
 
@@ -312,9 +314,9 @@ module Arneis
         media_stats << "#{d[:audio_count]}🎵" if d[:audio_count] > 0
         media_stats << "#{d[:text_count]}📝" if d[:text_count] > 0
         
-        total_assets = d[:video_count] + d[:image_count] + d[:audio_count]
+        total_assets = d[:video_count] + d[:image_count] + d[:audio_count] + d[:text_count]
         stats_str = media_stats.join(" ")
-        stats_str += " | 💎 #{total_assets}" if total_assets > 0
+        stats_str += " | 🫘 #{total_assets}" if total_assets > 0
         
         display_title = d[:title].length > 40 ? "#{d[:title][0...37]}..." : d[:title].ljust(40)
         puts "#{folder_emoji} #{Rainbow(d[:path].ljust(max_path + 1)).send(folder_color)} #{status_emoji(d[:status])} #{Rainbow(display_title).yellow} 💸 $#{'%.2f' % d[:cost]} #{stats_str}"

@@ -1,33 +1,19 @@
-name: VideoProject
-description: "A 32-second promotional video targeting French developers for Rubycon 2026, leveraging the WWII Victory Day (May 8) theme and the Maginot Line metaphor."
-title: "Rubycon 2026: Au-delà de la Ligne Maginot"
-output_filename: "rubycon_french_victory_day.mp4"
-
-background_music:
-  prompt: "A sophisticated blend of French Musette accordion and modern electronic beats, 110 BPM, elegant and inviting, 32 seconds long."
-
-scenes:
-  - scene: 1
-    description: "Atmospheric shot of a historic French village square at sunrise, transitioning into a vibrant, modern Ruby logo glowing with the colors of the Tricolore. Text overlay: '8 Mai 1945: La Victoire. 8 Mai 2026: L'Avenir.'"
-  - scene: 2
-    description: "Close-up of a hand typing elegant Ruby code on a laptop. In the reflection of the screen, we see the Rimini coastline. Text: 'Franchissez votre ligne Maginot.'"
-  - scene: 3
-    description: "A group of tech-savvy professionals in a chic Rimini café, discussing code with the Adriatic Sea in the background. High-end, premium lifestyle vibe. Text: 'Le Rubycone vous attend.'"
-  - scene: 4
-    description: "Dramatic shot of the historic Rubicon bridge with a digital overlay showing the Ruby logo. Text: 'Early Bird €99 | Rimini, Italie | rubycon.it'."
-defaults:
-  duration_seconds: 32
-  subchapters_count: 4
-  models:
-    video: veo-3.1-generate-preview
-    music: lyria-3-clip-preview
-    narration: gemini-3.1-flash-tts-preview
-  system_prompt: |
-    You are an expert Cinematographer and Creative Director. 
-    Your task is to take a brief scene description and expand it into a "chubby," highly-detailed visual prompt suitable for state-of-the-art video AI like Veo.
-    Focus on:
-    - Lighting (e.g., volumetric, cinematic, golden hour, neon).
-    - Camera movement (e.g., slow pan, dolly zoom, wide-angle tracking).
-    - Texture and resolution (e.g., 8k, photorealistic, grain, shallow depth of field).
-    - Emotional resonance and specific subjects.
-    Output ONLY the expanded prompt, no filler.
+apiVersion: media-arneis.palladius.it/v1
+kind: VideoProject
+metadata:
+  name: rubycon-2026-french-victory-day
+  template: VideoProject
+spec:
+  project_title: "Rubycon 2026: Au-delà de la Ligne Maginot"
+  output_filename: "rubycon_french_victory_day.mp4"
+  background_music:
+    prompt: "A sophisticated blend of French Musette accordion and modern electronic beats, 110 BPM, elegant and inviting, 32 seconds long."
+  scenes:
+    - scene: 1
+      description: "Atmospheric shot of a historic French village square at sunrise, transitioning into a vibrant, modern Ruby logo glowing with the colors of the Tricolore. Text overlay: '8 Mai 1945: La Victoire. 8 Mai 2026: L'Avenir.'"
+    - scene: 2
+      description: "Close-up of a hand typing elegant Ruby code on a laptop. In the reflection of the screen, we see the Rimini coastline. Text: 'Franchissez votre ligne Maginot.'"
+    - scene: 3
+      description: "A group of tech-savvy professionals in a chic Rimini café, discussing code with the Adriatic Sea in the background. High-end, premium lifestyle vibe. Text: 'Le Rubycone vous attend.'"
+    - scene: 4
+      description: "Dramatic shot of the historic Rubicon bridge with a digital overlay showing the Ruby logo. Text: 'Early Bird €99 | Rimini, Italie | rubycon.it'."

@@ -21,7 +21,7 @@ module Arneis
         start_time = Time.now
         
         # Call Lyria script (uv run)
-        escaped_prompt = prompt.gsub('"', '\"')
+        escaped_prompt = prompt.gsub('"', '\"').gsub('`', '\`').gsub('$', '\$')
         cmd = "uv run util/generate_music.py --prompt \"#{escaped_prompt}\" -o #{output_file}"
         
         env = {
@@ -36,23 +36,28 @@ module Arneis
             
             # Print stderr to show progress
             t_err = Thread.new do
-              while line = stderr.gets
-                puts "    [LYRIA SCRIPT] #{line.strip}"
+              begin
+                while line = stderr.gets
+                  puts "    [LYRIA SCRIPT] #{line.strip}"
+                end
+              rescue IOError
               end
             end
             
             # Script outputs MEDIA:path on success
             t_out = Thread.new do
-              while line = stdout.gets
-                if line =~ /^MEDIA:(.*)$/
-                  success = true
+              begin
+                while line = stdout.gets
+                  if line =~ /^MEDIA:(.*)$/
+                    success = true
+                  end
                 end
+              rescue IOError
               end
             end
             
             t_err.join
             t_out.join
-            
             success = wait_thr.value.success? if success.nil?
           end
 

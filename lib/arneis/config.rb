@@ -38,6 +38,10 @@ module Arneis
       ENV['GENMEDIA_BUCKET'] || raise("Missing GENMEDIA_BUCKET environment variable")
     end
 
+    def self.max_concurrent_tasks
+      (ENV['MAX_CONCURRENT_TASKS'] || 3).to_i
+    end
+
     def self.auth_method_emoji
       ENV['GOOGLE_APPLICATION_CREDENTIALS'] || system("gcloud auth application-default print-access-token > /dev/null 2>&1") ? "☁️ (Vertex)" : "🔑 (ApiKey)"
     end

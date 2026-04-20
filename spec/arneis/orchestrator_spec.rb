@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'arneis/task'
+require 'arneis/config'
 require 'arneis/orchestrator'
 
 RSpec.describe Arneis::Orchestrator do

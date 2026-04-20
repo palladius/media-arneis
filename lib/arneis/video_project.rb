@@ -70,10 +70,10 @@ module Arneis
       File.write(state_file, state.to_yaml)
     end
 
-    def process
+    def process(async: true)
       update_project_status('in_progress')
       
-      orchestrator = Orchestrator.new
+      orchestrator = Orchestrator.new(async: async)
       gemini_generator = Generator::Gemini.new
       veo_generator = Generator::Veo.new
       lyria_generator = Generator::Lyria.new

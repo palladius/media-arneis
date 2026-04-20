@@ -11,5 +11,7 @@ gem 'standard'
 gem 'zeitwerk'
 gem 'dry-validation'
 gem 'deep_merge'
+gem 'async'
+gem 'async-http'
 
 # gem "ruby_llm"
