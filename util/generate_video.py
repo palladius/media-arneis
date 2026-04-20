@@ -56,22 +56,27 @@ def main():
             config=config
         )
 
-        print(f"⏳ Operation started: {operation.name}", file=sys.stderr)
+        # In some versions, operation might be a string (name) or an object
+        op_name = getattr(operation, 'name', operation)
+        print(f"⏳ Operation started: {op_name}", file=sys.stderr)
         
         # Poll for completion
-        while not operation.done:
+        while True:
+            # Refresh status using op_name
+            op_status = client.operations.get(op_name)
+            if op_status.done:
+                break
             print("  Polling...", file=sys.stderr)
             time.sleep(15)
-            operation = client.operations.get(operation.name)
 
-        if operation.error:
-            raise ValueError(f"API Error: {operation.error.message}")
+        if op_status.error:
+            raise ValueError(f"API Error: {op_status.error.message}")
 
         # The result structure for generate_videos contains generated_videos list
-        if operation.result and operation.result.generated_videos:
+        if op_status.result and op_status.result.generated_videos:
             # We assume it saves to GCS by default or returns bytes
             # If it returns bytes in the video object:
-            video_part = operation.result.generated_videos[0].video
+            video_part = op_status.result.generated_videos[0].video
             if video_part.bytes:
                 with open(args.output, "wb") as f:
                     f.write(video_part.bytes)
