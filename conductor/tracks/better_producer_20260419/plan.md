@@ -14,13 +14,13 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
 
 ## Phase 3: Marketing Asset Generation
-- [~] Task: Implement platform-specific prompt templates for LinkedIn, IG, and X.
-- [ ] Task: Update `Arneis::Generator::Imagen` to support multiple aspect ratios (9:16 for IG).
-- [ ] Task: Write Tests for `Arneis::Generator::Marketing` (Asset existence and naming).
+- [x] Task: Implement platform-specific prompt templates for LinkedIn, IG, and X. 442b2c5
+- [x] Task: Update `Arneis::Generator::Imagen` to support multiple aspect ratios (9:16 for IG). 442b2c5
+- [x] Task: Write Tests for `Arneis::Generator::Marketing` (Asset existence and naming). 442b2c5
 - [ ] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)
 
 ## Phase 4: Folder Refurbishment & Orchestration
-- [ ] Task: Update `Arneis::VideoProject` to use the new subfolder structure (`video/scenex/`, `marketing/`).
+- [~] Task: Update `Arneis::VideoProject` to use the new subfolder structure (`video/scenex/`, `marketing/`).
 - [ ] Task: Ensure all generators respect the unified project folder while writing to subdirectories.
 - [ ] Task: Integrate marketing and GIF tasks into the main `Orchestrator` flow.
 - [ ] Task: Final end-to-end verification with `just arnectl apply`.
