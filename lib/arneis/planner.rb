@@ -52,5 +52,30 @@ module Arneis
       # Check for rev: N inside the file
       content.include?("rev: #{rev_from_name}")
     end
+
+    # Compares two plans (as hashes) and returns changes
+    def diff_scenes(old_plan, new_plan)
+      old_scenes = old_plan.dig('spec', 'scenes') || []
+      new_scenes = new_plan.dig('spec', 'scenes') || []
+
+      diff = { added: [], modified: [], removed: [] }
+
+      old_map = old_scenes.each_with_object({}) { |s, m| m[s['scene']] = s }
+      new_map = new_scenes.each_with_object({}) { |s, m| m[s['scene']] = s }
+
+      new_map.each do |id, scene|
+        if old_map.key?(id)
+          diff[:modified] << id if scene['description'] != old_map[id]['description']
+        else
+          diff[:added] << id
+        end
+      end
+
+      old_map.each_key do |id|
+        diff[:removed] << id unless new_map.key?(id)
+      end
+
+      diff
+    end
   end
 end

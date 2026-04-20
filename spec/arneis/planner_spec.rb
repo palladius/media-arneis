@@ -56,4 +56,15 @@ RSpec.describe Arneis::Planner do
       expect(File.basename(subject.latest_plan)).to eq('plan__rev10.md')
     end
   end
+
+  describe '#diff_scenes' do
+    it 'identifies changed scenes between two revisions' do
+      old_plan = { 'spec' => { 'scenes' => [{ 'scene' => 1, 'description' => 'Old desc' }] } }
+      new_plan = { 'spec' => { 'scenes' => [{ 'scene' => 1, 'description' => 'New desc' }, { 'scene' => 2, 'description' => 'Scene 2' }] } }
+      
+      diff = subject.diff_scenes(old_plan, new_plan)
+      expect(diff[:modified]).to include(1)
+      expect(diff[:added]).to include(2)
+    end
+  end
 end

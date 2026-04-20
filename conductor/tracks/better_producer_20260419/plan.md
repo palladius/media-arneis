@@ -1,10 +1,10 @@
 # Implementation Plan: Better Producer Strategy
 
 ## Phase 1: Iterative Planning & Hydration
-- [~] Task: Create `Arneis::Planner` class to manage versioned Markdown plans.
-- [ ] Task: Implement `__revN.md` naming and `rev: N` metadata extraction.
-- [ ] Task: Write Tests for `Arneis::Planner` (Revision invalidation and versioning).
-- [ ] Task: Implement hydration logic to detect segment changes between revisions.
+- [x] Task: Create `Arneis::Planner` class to manage versioned Markdown plans. f5ab175
+- [x] Task: Implement `__revN.md` naming and `rev: N` metadata extraction. f5ab175
+- [x] Task: Write Tests for `Arneis::Planner` (Revision invalidation and versioning). f5ab175
+- [~] Task: Implement hydration logic to detect segment changes between revisions.
 - [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
 
 ## Phase 2: Post-Production (GIFs)
