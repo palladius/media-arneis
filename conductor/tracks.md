@@ -25,3 +25,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [ ] **Track: [BUG] samples/video_pitches.yaml should inherit from templates!**
   *Link: [./tracks/template_inheritance_20260419/](./tracks/template_inheritance_20260419/)*
 
+- [ ] **Track: Implement expensive, end-to-end LLM integration tests (just-llm-tests)**
+  *Link: [./tracks/expensive_tests_20260419/](./tracks/expensive_tests_20260419/)*
+
