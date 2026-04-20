@@ -25,6 +25,8 @@ def main():
     parser.add_argument("-o", "--output", type=str, required=True, help="Output file path.")
     parser.add_argument("-i", "--image", type=str, help="Path to a reference image.")
     parser.add_argument("-m", "--model", type=str, default="veo-3.1-fast-generate-001", help="Model ID.")
+    parser.add_argument("--async-only", action="store_true", help="Start the operation and exit immediately.")
+    parser.add_argument("--check-status", type=str, help="Check status of an existing operation.")
     
     args = parser.parse_args()
 
@@ -32,6 +34,28 @@ def main():
     location = os.getenv("GOOGLE_CLOUD_REGION", "us-central1")
     
     client = genai.Client(vertexai=True, project=project, location=location)
+
+    if args.check_status:
+        print(f"🔍 Checking status for: {args.check_status}", file=sys.stderr)
+        op_status = client.operations.get(args.check_status)
+        if op_status.done:
+            if op_status.error:
+                print(f"❌ Error: {op_status.error.message}", file=sys.stderr)
+                sys.exit(1)
+            # Process result
+            if op_status.result and op_status.result.generated_videos:
+                video_part = op_status.result.generated_videos[0].video
+                if video_part.bytes:
+                    with open(args.output, "wb") as f:
+                        f.write(video_part.bytes)
+                    print(f"🎞️ Saved to {args.output}", file=sys.stderr)
+                    print(f"MEDIA:{args.output}")
+                    sys.exit(0)
+            print("⚠️ Done but no results found.", file=sys.stderr)
+            sys.exit(1)
+        else:
+            print("⏳ Still in progress.", file=sys.stderr)
+            sys.exit(0)
 
     print(f"🎥 [VEO] Generating real video for: '{args.prompt}'", file=sys.stderr)
     
@@ -60,6 +84,10 @@ def main():
         op_name = getattr(operation, 'name', operation)
         print(f"⏳ Operation started: {op_name}", file=sys.stderr)
         
+        if args.async_only:
+            print(f"OPERATION_ID:{op_name}")
+            sys.exit(0)
+
         # Poll for completion
         while True:
             # Refresh status using op_name

@@ -1,6 +1,7 @@
 =begin
 Arneis::VideoProject - Core orchestration for video media generation.
 Handles hydration, validation, and execution of a media project plan.
+Supports asynchronous polling for high-cost generations.
 =end
 
 require 'yaml'
@@ -95,8 +96,24 @@ module Arneis
         end
 
         orchestrator.add_task(scene_id) do
-          update_scene_status(scene['scene'], 'in_progress')
+          # Re-read state in case it changed (since we run in parallel)
+          state_scene = YAML.load_file(state_file)['scenes']&.find { |s| s['scene'] == scene['scene'] }
+          
           scene_output_base = File.join(@output_path, "scene_#{scene['scene']}")
+          veo_output = "#{scene_output_base}.mp4"
+
+          # Handle existing polling operation
+          if state_scene && state_scene['status'] == 'polling' && state_scene['operation_id']
+            res = veo_generator.check_status(state_scene['operation_id'], veo_output)
+            if res[:status] == 'done'
+              validate_scene(scene, veo_output)
+            else
+              puts Rainbow("    🔵 Scene #{scene['scene']} is still polling...").blue
+            end
+            next
+          end
+
+          update_scene_status(scene['scene'], 'in_progress')
           
           # Enhance scene description with Gemini
           enhancement_prompt = "Enhance this video scene description for high-quality production: #{scene['description']}"
@@ -104,46 +121,15 @@ module Arneis
           enhanced_prompt = enhancement[:content]
           File.write("#{scene_output_base}.text.txt", enhanced_prompt)
           
-          # Generate real video with Veo
-          veo_output = "#{scene_output_base}.mp4"
-          veo_generator.generate(enhanced_prompt, veo_output, asset_id: "Scene#{scene['scene']}.video")
+          # Generate real video with Veo (Async enabled)
+          res = veo_generator.generate(enhanced_prompt, veo_output, asset_id: "Scene#{scene['scene']}.video", async: true)
           
-          # Validate and Rename if invalid
-          puts "  🛡️  Validating scene #{scene['scene']} artifact..."
-          v_result = Validator.validate_and_rename!(veo_output, :video)
-          
-          if v_result[:success]
-            puts Rainbow("    ✅ Validated: #{v_result[:info]}").green
-            
-            # Update the asset.json with physical metadata
-            asset_json_path = "#{veo_output}.asset.json"
-            if File.exist?(asset_json_path)
-              asset_data = ::JSON.parse(File.read(asset_json_path))
-              asset_data['metadata'] = v_result[:metadata]
-              File.write(asset_json_path, asset_data.to_json)
-            end
-
-            # Run QA Eval
-            evaluator = Evaluator.new
-            eval_result = evaluator.evaluate_video_text(veo_output, scene['description'])
-            
-            if eval_result[:success]
-              puts Rainbow("    👍  EVAL: #{eval_result[:message]}").green
-              update_scene_status(scene['scene'], 'verified')
-            else
-              puts Rainbow("    😟  EVAL FAILED: #{eval_result[:message]} (Score: #{eval_result[:score]})").red
-              
-              if eval_result[:score] < 5
-                puts Rainbow("    ♻️  Score is low (< 5). Rescheduling scene for rework...").yellow
-                update_scene_status(scene['scene'], 'pending', eval_result[:message])
-              else
-                update_scene_status(scene['scene'], 'done_with_warnings', eval_result[:message])
-              end
-            end
+          if res[:status] == 'polling'
+            update_scene_status(scene['scene'], 'polling', nil, res[:operation_id])
+          elsif res[:status] == 'done'
+            validate_scene(scene, veo_output)
           else
-            puts Rainbow("    ⚠️  Validation failed: #{v_result[:message]}").yellow
-            # If validation failed (file not found or mock), mark as failed so it can be retried
-            update_scene_status(scene['scene'], 'failed', v_result[:message])
+            update_scene_status(scene['scene'], 'failed', "Generation failed")
           end
         end
       end
@@ -187,6 +173,17 @@ module Arneis
          puts Rainbow("  ⏭️  Skipping Final Montage (already done)").blue
       else
         orchestrator.add_task(montage_id, dependencies: scene_task_ids) do
+          # Final montage only runs if all dependencies are 'verified' or 'done' (not 'polling')
+          # Refresh state
+          latest_state = YAML.load_file(state_file)
+          pending_scenes = latest_state['scenes'].select { |s| s['status'] == 'polling' || s['status'] == 'pending' }
+          
+          if pending_scenes.any?
+            puts Rainbow("  ⏳ [MONTAGE] Waiting for #{pending_scenes.count} scenes to finish polling...").yellow
+            update_project_task_status('montage', 'waiting')
+            next
+          end
+
           update_project_task_status('montage', 'in_progress')
           puts Rainbow("🎞️  [MONTAGE] Assembling final video...").magenta
           
@@ -218,7 +215,7 @@ module Arneis
             success = system(ffmpeg_cmd)
           end
 
-          if success && File.exist?(File.basename(output_file))
+          if success && File.exist?(File.join(@output_path, File.basename(output_file)))
             # Validate and Rename
             v_result = Validator.validate_and_rename!(File.join(@output_path, File.basename(output_file)), :video)
             if v_result[:success]
@@ -244,10 +241,55 @@ module Arneis
       end
 
       orchestrator.run
-      update_project_status('done')
+      
+      # Final project status update
+      final_state = YAML.load_file(state_file)
+      if final_state['scenes'].any? { |s| s['status'] == 'polling' }
+        update_project_status('in_progress')
+      else
+        update_project_status('done')
+      end
     end
 
     private
+
+    def validate_scene(scene, veo_output)
+      puts "  🛡️  Validating scene #{scene['scene']} artifact..."
+      v_result = Validator.validate_and_rename!(veo_output, :video)
+      
+      if v_result[:success]
+        puts Rainbow("    ✅ Validated: #{v_result[:info]}").green
+        
+        # Update the asset.json with physical metadata
+        asset_json_path = "#{veo_output}.asset.json"
+        if File.exist?(asset_json_path)
+          asset_data = ::JSON.parse(File.read(asset_json_path))
+          asset_data['metadata'] = v_result[:metadata]
+          File.write(asset_json_path, asset_data.to_json)
+        end
+
+        # Run QA Eval
+        evaluator = Evaluator.new
+        eval_result = evaluator.evaluate_video_text(veo_output, scene['description'])
+        
+        if eval_result[:success]
+          puts Rainbow("    👍  EVAL: #{eval_result[:message]}").green
+          update_scene_status(scene['scene'], 'verified')
+        else
+          puts Rainbow("    😟  EVAL FAILED: #{eval_result[:message]} (Score: #{eval_result[:score]})").red
+          
+          if eval_result[:score] < 5
+            puts Rainbow("    ♻️  Score is low (< 5). Rescheduling scene for rework...").yellow
+            update_scene_status(scene['scene'], 'pending', eval_result[:message])
+          else
+            update_scene_status(scene['scene'], 'done_with_warnings', eval_result[:message])
+          end
+        end
+      else
+        puts Rainbow("    ⚠️  Validation failed: #{v_result[:message]}").yellow
+        update_scene_status(scene['scene'], 'failed', v_result[:message])
+      end
+    end
 
     def update_project_task_status(task_key, status)
       @mutex.synchronize do
@@ -259,7 +301,7 @@ module Arneis
       end
     end
 
-    def update_scene_status(scene_num, status, error_msg = nil)
+    def update_scene_status(scene_num, status, error_msg = nil, operation_id = nil)
       @mutex.synchronize do
         state_file = File.join(File.expand_path(@output_path), '.state.yaml')
         state = YAML.load_file(state_file)
@@ -267,6 +309,7 @@ module Arneis
         if scene
           scene['status'] = status
           scene['error'] = error_msg if error_msg
+          scene['operation_id'] = operation_id if operation_id
         end
         File.write(state_file, state.to_yaml)
       end

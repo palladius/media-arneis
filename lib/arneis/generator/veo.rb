@@ -1,6 +1,7 @@
 =begin
 Arneis::Generator::Veo - Media generator using Google Veo (Video).
 Orchestrates generation via Hussain's Python script.
+Supports asynchronous polling.
 =end
 
 require 'thread'
@@ -18,10 +19,42 @@ module Arneis
         @model = Models::VEO_DEFAULT
       end
 
-      def generate(prompt, output_file, timeout: 600, asset_id: nil)
+      def check_status(operation_id, output_file)
+        puts Rainbow("  🔍 [VEO] Checking status for operation: #{operation_id}").cyan
+        cmd = "uv run #{Config.veo_script} -o #{output_file} --check-status \"#{operation_id}\""
+        
+        env = {
+          'GOOGLE_CLOUD_PROJECT' => Config.google_cloud_project,
+          'GOOGLE_CLOUD_REGION' => Config.google_cloud_region
+        }
+
+        success = false
+        Open3.popen3(env, cmd) do |stdin, stdout, stderr, wait_thr|
+          stdin.close
+          t_err = Thread.new { while line = stderr.gets; puts "    [VEO SCRIPT] #{line.strip}"; end }
+          t_out = Thread.new do
+            while line = stdout.gets
+              if line =~ /^MEDIA:(.*)$/
+                success = true
+              end
+            end
+          end
+          t_err.join
+          t_out.join
+        end
+
+        if success && File.exist?(output_file)
+          puts Rainbow("  ✅ [VEO] Video retrieved successfully!").green
+          { status: 'done', file: output_file }
+        else
+          { status: 'polling' }
+        end
+      end
+
+      def generate(prompt, output_file, timeout: 600, asset_id: nil, async: false)
         receipt = AssetReceipt.new(asset_id: asset_id || "video_#{Time.now.to_i}", model: @model, prompt: prompt)
         
-        # Ensure at least 2 seconds between video launches to avoid rate limits
+        # Throttling
         @@launch_mutex.synchronize do
           if @@last_launch_at
             elapsed = Time.now - @@last_launch_at
@@ -34,11 +67,12 @@ module Arneis
           @@last_launch_at = Time.now
         end
 
-        puts Rainbow("  🎥 [VEO] Starting real video generation via Python script...").magenta
+        puts Rainbow("  🎥 [VEO] Starting real video generation via Python script (Async: #{async})...").magenta
         
-        # Call Hussain's script
+        # Call script
         escaped_prompt = prompt.gsub('"', '\"')
-        cmd = "uv run #{Config.veo_script} \"#{escaped_prompt}\" -o #{output_file}"
+        async_flag = async ? "--async-only" : ""
+        cmd = "uv run #{Config.veo_script} \"#{escaped_prompt}\" -o #{output_file} #{async_flag}"
         
         env = {
           'GOOGLE_CLOUD_PROJECT' => Config.google_cloud_project,
@@ -46,44 +80,37 @@ module Arneis
           'GENMEDIA_BUCKET' => Config.genmedia_bucket
         }
 
+        operation_id = nil
         begin
           success = false
-          start_time = Time.now
-          
           Open3.popen3(env, cmd) do |stdin, stdout, stderr, wait_thr|
             stdin.close
             
-            # Use threads to capture output and log in real-time
-            t_err = Thread.new do
-              while line = stderr.gets
-                puts "    [VEO SCRIPT] #{line.strip}"
-              end
-            end
-            
+            t_err = Thread.new { while line = stderr.gets; puts "    [VEO SCRIPT] #{line.strip}"; end }
             t_out = Thread.new do
               while line = stdout.gets
                 if line =~ /^MEDIA:(.*)$/
-                  media_path = $1.strip
-                  puts Rainbow("  📥 Captured media path: #{media_path}").blue
-                  FileUtils.mkdir_p(File.dirname(output_file))
-                  FileUtils.mv(media_path, output_file)
+                  success = true
+                elsif line =~ /^OPERATION_ID:(.*)$/
+                  operation_id = $1.strip
                   success = true
                 end
               end
             end
             
-            # Wait for all threads to finish before closing streams
             t_err.join
             t_out.join
-            
             success = wait_thr.value.success? if success.nil?
           end
 
-          if success && File.exist?(output_file)
+          if async && operation_id
+            puts Rainbow("  🔵 [VEO] Async operation started: #{operation_id}").blue
+            return { status: 'polling', operation_id: operation_id }
+          elsif success && File.exist?(output_file)
             puts Rainbow("  ✅ [VEO] Video generated successfully!").green
             receipt.complete!(cost_usd: Pricing::COST_PER_VEO_GEN)
             receipt.save!(output_file)
-            { tokens: 0, cost: Pricing::COST_PER_VEO_GEN, time: duration_from(receipt.ts_started) }
+            return { status: 'done', tokens: 0, cost: Pricing::COST_PER_VEO_GEN, time: duration_from(receipt.ts_started) }
           else
             raise "Python script execution failed or output missing"
           end
@@ -93,7 +120,7 @@ module Arneis
           receipt.fail!(error_msg: sanitized_msg)
           receipt.save!(output_file)
           File.write("#{output_file}.mock", "MOCK_VEO_VIDEO_FOR: #{prompt}")
-          return { tokens: 0, cost: 0.0, time: 0 }
+          return { status: 'mocked', tokens: 0, cost: 0.0, time: 0 }
         end
       end
 

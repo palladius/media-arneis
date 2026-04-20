@@ -34,6 +34,11 @@ Use Conductor extension to manage the BDD and SW dev
     * Use a Gemini cLI **SubAgent** when video/audio generation is involved.
 * Do not break POLA - Principles of Least Astonishment.
 
+## Ruby
+
+* Use async. Read these docs from Carmine Paolino: https://rubyllm.com/async/ and https://paolino.me/async-ruby-is-the-future/
+
+
 ## Testing
 
 * Tests must be executable from `just test` command, using common naming conventions, and run with the latest Ruby version (for now).
