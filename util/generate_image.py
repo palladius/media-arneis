@@ -23,6 +23,7 @@ def main():
     parser = argparse.ArgumentParser(description="Generate high-fidelity images using Google Imagen.")
     parser.add_argument("-p", "--prompt", type=str, required=True, help="The text prompt for generation.")
     parser.add_argument("-o", "--output", type=str, required=True, help="Output file path.")
+    parser.add_argument("-a", "--aspect-ratio", type=str, default="1:1", help="Aspect ratio (1:1, 4:3, 3:4, 16:9, 9:16).")
     parser.add_argument("-i", "--image", type=str, help="Path to a reference image for character consistency.")
     parser.add_argument("-s", "--style", type=str, help="Optional style reference (e.g., 'cinematic', 'watercolor').")
     parser.add_argument("-m", "--model", type=str, default="imagen-3.0-generate-001", help="Model ID to use.")
@@ -46,12 +47,11 @@ def main():
 
     try:
         # Standard Imagen generation typically uses specific config
-        # This structure supports character consistency via multimodal parts
         response = client.models.generate_content(
             model=args.model,
             contents=parts,
             config=types.GenerateContentConfig(
-                # Add specific Imagen parameters if needed via tool_config or similar
+                aspect_ratio=args.aspect_ratio
             )
         )
 

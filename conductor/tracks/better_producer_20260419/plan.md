@@ -8,13 +8,13 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
 
 ## Phase 2: Post-Production (GIFs)
-- [~] Task: Implement `Arneis::Generator::Gif` using `ffmpeg`.
+- [x] Task: Implement `Arneis::Generator::Gif` using `ffmpeg`. da78481
 - [ ] Task: Add task dependency to trigger GIF generation after final video assembly.
-- [ ] Task: Write Tests for `Arneis::Generator::Gif` (Ensuring real .gif output).
+- [x] Task: Write Tests for `Arneis::Generator::Gif` (Ensuring real .gif output). da78481
 - [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
 
 ## Phase 3: Marketing Asset Generation
-- [ ] Task: Implement platform-specific prompt templates for LinkedIn, IG, and X.
+- [~] Task: Implement platform-specific prompt templates for LinkedIn, IG, and X.
 - [ ] Task: Update `Arneis::Generator::Imagen` to support multiple aspect ratios (9:16 for IG).
 - [ ] Task: Write Tests for `Arneis::Generator::Marketing` (Asset existence and naming).
 - [ ] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)
