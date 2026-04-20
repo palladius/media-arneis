@@ -25,6 +25,3 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [ ] **Track: [BUG] samples/video_pitches.yaml should inherit from templates!**
   *Link: [./tracks/template_inheritance_20260419/](./tracks/template_inheritance_20260419/)*
 
-- [ ] **Track: Implement Asynchronous Polling and State-Based Orchestration**
-  *Link: [./tracks/async_orchestration_20260419/](./tracks/async_orchestration_20260419/)*
-
