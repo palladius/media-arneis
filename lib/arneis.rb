@@ -7,13 +7,12 @@ module Arneis
 
   def self.load_project(yaml_path)
     data = YAML.load_file(yaml_path)
-    case data['kind']
-    when 'VideoProject'
-      VideoProject.new(yaml_path)
-    when 'KidsStory'
-      KidsStory.new(yaml_path)
-    else
-      raise "Unknown project kind: #{data['kind']}"
+    kind = data['kind']
+    begin
+      klass = const_get(kind)
+      klass.new(yaml_path)
+    rescue NameError
+      raise "Unknown project kind: #{kind}"
     end
   end
 end

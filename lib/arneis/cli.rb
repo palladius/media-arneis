@@ -40,7 +40,7 @@ module Arneis
       puts Rainbow("🎨 Applying #{yaml_path}...").green
       project = Arneis.load_project(yaml_path)
       
-      output_path = options[:output] || "out/#{Time.now.strftime('%Y%m%d_%H%M%S')}_#{File.basename(yaml_path, '.*')}"
+      output_path = options[:media_folder] || options[:output] || "out/#{Time.now.strftime('%Y%m%d_%H%M%S')}_#{File.basename(yaml_path, '.*')}"
       
       project.initialize_output(output_path)
       puts Rainbow("🚀 Project initialized at #{output_path}").blue
