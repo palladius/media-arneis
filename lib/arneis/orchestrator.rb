@@ -12,19 +12,21 @@ module Arneis
   class Orchestrator
     attr_reader :completed_tasks
 
-    def initialize(async: true)
+    def initialize(async: true, pre_completed: [])
       @tasks = {}
       @async_enabled = async
-      @completed_tasks = []
+      @completed_tasks = Array(pre_completed).map(&:to_sym)
       # Limit concurrent AI operations to avoid rate limits
       @semaphore = Async::Semaphore.new(Arneis::Config.max_concurrent_tasks || 3)
     end
 
     def add_task(id, dependencies: [], &block)
-      @tasks[id.to_sym] = Task.new(id.to_sym, dependencies: dependencies, &block)
+      @tasks[id.to_sym] = Task.new(id.to_sym, dependencies: dependencies.map(&:to_sym), &block)
     end
 
     def run
+      return if @tasks.empty?
+
       if @async_enabled
         run_async
       else
@@ -36,16 +38,14 @@ module Arneis
 
     def run_sync
       puts Rainbow("🔀 Running orchestration in SYNC mode...").yellow
-      completed = []
       loop do
-        runnable = @tasks.values.reject { |t| completed.include?(t.id) }
-                                 .select { |t| (t.dependencies - completed).empty? }
+        runnable = @tasks.values.reject { |t| @completed_tasks.include?(t.id) }
+                                 .select { |t| (t.dependencies - @completed_tasks).empty? }
         break if runnable.empty?
 
         runnable.each do |task|
           task.execute
           @completed_tasks << task.id
-          completed << task.id
         end
       end
     end
@@ -53,14 +53,13 @@ module Arneis
     def run_async
       puts Rainbow("🚀 Running orchestration in ASYNC mode (Fibers)...").green
       Async do |parent|
-        barrier = Async::Barrier.new
-        completed = []
         task_fibers = {}
 
         # Loop until all tasks are scheduled
         loop do
-          runnable = @tasks.values.reject { |t| completed.include?(t.id) || task_fibers.key?(t.id) }
-                                   .select { |t| (t.dependencies - completed).empty? }
+          scheduled_ids = task_fibers.keys
+          runnable = @tasks.values.reject { |t| @completed_tasks.include?(t.id) || scheduled_ids.include?(t.id) }
+                                   .select { |t| (t.dependencies - @completed_tasks).empty? }
           
           runnable.each do |task|
             task_fibers[task.id] = parent.async do
@@ -68,16 +67,19 @@ module Arneis
                 task.execute
               end
               @completed_tasks << task.id
-              completed << task.id
             end
           end
 
-          break if completed.size == @tasks.size
-          # Wait a tiny bit for fibers to progress and dependencies to clear
+          break if @tasks.values.all? { |t| @completed_tasks.include?(t.id) }
+          
+          # Check for deadlocks (no tasks runnable and not all finished)
+          if runnable.empty? && task_fibers.values.all?(&:finished?) && !@tasks.values.all? { |t| @completed_tasks.include?(t.id) }
+             puts Rainbow("⚠️  Orchestration Deadlock detected! Some dependencies might be missing.").red
+             break
+          end
+
           sleep 0.1 
         end
-        
-        barrier.wait
       end
     end
   end

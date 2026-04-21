@@ -73,17 +73,20 @@ module Arneis
 
     def process(async: true)
       update_project_status('in_progress')
-      
-      orchestrator = Orchestrator.new(async: async)
+
+      state_file = File.join(@output_path, '.state.yaml')
+      current_state = YAML.load_file(state_file) rescue { 'scenes' => [], 'status' => 'initialized' }
+
+      pre_completed = []
+      current_state['scenes']&.each { |s| pre_completed << "scene_#{s['scene']}" if s['status'] == 'done' || s['status'] == 'verified' }
+      pre_completed << "background_music" if current_state['background_music'] && (current_state['background_music']['status'] == 'done' || current_state['background_music']['status'] == 'verified')
+
+      orchestrator = Orchestrator.new(async: async, pre_completed: pre_completed)
       gemini_generator = Generator::Gemini.new
       veo_generator = Generator::Veo.new
       lyria_generator = Generator::Lyria.new
       marketing_generator = Generator::Marketing.new
-      gif_generator = Generator::Gif.new
-      
-      state_file = File.join(@output_path, '.state.yaml')
-      current_state = YAML.load_file(state_file)
-      
+      gif_generator = Generator::Gif.new      
       scene_task_ids = []
 
       # 1. Scene Tasks (Subfolders: video/sceneX/)

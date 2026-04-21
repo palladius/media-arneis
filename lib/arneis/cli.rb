@@ -155,6 +155,12 @@ module Arneis
             state['background_music']['status'] = 'pending'
           end
         end
+        if state['final_story_assembly']
+          story_file = File.join(folder_path, "STORY.md")
+          if !File.exist?(story_file) || options[:force]
+            state['final_story_assembly']['status'] = 'pending'
+          end
+        end
         File.write(state_file, state.to_yaml)
       end
 
@@ -203,12 +209,15 @@ module Arneis
       items = state['scenes'] || state['pages'] || []
       label = state['scenes'] ? "Scene" : "Page"
       icon = state['scenes'] ? "🎥" : "🖼️"
+      has_failures = state['status'] == 'failed'
 
       puts "\n#{label}s:"
       items.each do |item|
         num = item['scene'] || item['page']
         desc = item['description']
         desc = "#{desc[0..76]}..." if desc.length > 80
+        
+        has_failures = true if item['status'] == 'failed'
         
         file_ext = state['scenes'] ? ".mp4" : "/illustration.png"
         item_dir = state['scenes'] ? "" : "pages/page_#{num}/"
@@ -218,7 +227,7 @@ module Arneis
         bad_file = "#{artifact_file}.NOT_GOOD"
         asset_json = "#{artifact_file}.asset.json"
         
-        eval_indicator = "🟣"
+        eval_indicator = "⚫" # No eval implementation yet
         eval_score = ""
         if File.exist?(asset_json)
           asset_data = ::JSON.parse(File.read(asset_json))
@@ -279,8 +288,18 @@ module Arneis
         suffix = Rainbow(" 🚫 INVALID").red if File.exist?(bad_montage)
         puts "  #{status_emoji(state['montage']['status'])} 🎞️  #{eval_indicator} Final Montage" + suffix
       end
+      if state['final_story_assembly']
+        puts "  #{status_emoji(state['final_story_assembly']['status'])} 📖 Final Story Assembly"
+      end
 
       puts Rainbow("\n📊 Stats: 🪙 #{total_tokens} (⬆️ #{input_tokens} ⬇️ #{output_tokens}) | 💸 $#{'%.2f' % total_cost}").cyan.bold
+
+      if has_failures
+        puts Rainbow("\n💡 Hint: Some parts failed. To fix, run:").yellow
+        puts Rainbow("   just arnectl resume #{folder_path} --force").white
+      end
+
+      puts Rainbow("\nLegend: 🟢 done | 🔴 failed | 🟡 in_progress | ⚪ pending | 🤡 mocked | 👍/👎 evaluated").gray.italic
     end
 
     desc "list", "List all meaningful projects in out/"

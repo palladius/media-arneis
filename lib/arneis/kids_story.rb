@@ -68,22 +68,26 @@ module Arneis
         'character_id' => @character_id,
         'status' => 'initialized',
         'pages' => @pages.map { |p| p.merge('status' => 'pending') },
-        'background_music' => @data['background_music'] ? { 'status' => 'pending', 'prompt' => @data['background_music']['prompt'] } : nil
+        'background_music' => @data['background_music'] ? { 'status' => 'pending', 'prompt' => @data['background_music']['prompt'] } : nil,
+        'final_story_assembly' => { 'status' => 'pending' }
       }
       File.write(state_file, state.to_yaml)
     end
 
     def process(async: true)
       update_status('in_progress')
-      
-      orchestrator = Orchestrator.new(async: async)
+
+      state_file = File.join(@output_path, '.state.yaml')
+      current_state = YAML.load_file(state_file) rescue { 'pages' => [], 'status' => 'initialized' }
+
+      pre_completed = []
+      current_state['pages']&.each { |p| pre_completed << "page_#{p['page']}" if p['status'] == 'done' || p['status'] == 'verified' }
+      pre_completed << "background_music" if current_state['background_music'] && (current_state['background_music']['status'] == 'done' || current_state['background_music']['status'] == 'verified')
+
+      orchestrator = Orchestrator.new(async: async, pre_completed: pre_completed)
       gemini_generator = Generator::Gemini.new
       imagen_generator = Generator::Imagen.new
-      lyria_generator = Generator::Lyria.new
-      
-      state_file = File.join(@output_path, '.state.yaml')
-      current_state = YAML.load_file(state_file)
-      
+      lyria_generator = Generator::Lyria.new      
       page_task_ids = []
 
       # 1. Page Tasks
@@ -127,16 +131,35 @@ module Arneis
       # 2. Background Music
       music_id = "background_music"
       if @data['background_music']
-        orchestrator.add_task(music_id) do
-          update_task_status('background_music', 'in_progress')
-          music_dir = File.join(@output_path, "audio")
-          FileUtils.mkdir_p(music_dir)
-          music_output = File.join(music_dir, "background_music.wav")
-          
-          lyria_generator.generate(@data['background_music']['prompt'], music_output, asset_id: "Story.music")
-          update_task_status('background_music', 'done')
+        state_music = current_state['background_music']
+        if state_music && (state_music['status'] == 'done' || state_music['status'] == 'verified')
+          puts Rainbow("  ⏭️  Skipping Background Music (already done)").blue
+        else
+          orchestrator.add_task(music_id) do
+            update_task_status('background_music', 'in_progress')
+            music_dir = File.join(@output_path, "audio")
+            FileUtils.mkdir_p(music_dir)
+            music_output = File.join(music_dir, "background_music.wav")
+            
+            lyria_generator.generate(@data['background_music']['prompt'], music_output, asset_id: "Story.music")
+            update_task_status('background_music', 'done')
+          end
+          page_task_ids << music_id
         end
-        page_task_ids << music_id
+      end
+
+      # 3. Final Story Assembly
+      story_md_id = "final_story_assembly"
+      state_assembly = current_state['final_story_assembly']
+      if state_assembly && state_assembly['status'] == 'done'
+        puts Rainbow("  ⏭️  Skipping Final Story Assembly (already done)").blue
+      else
+        orchestrator.add_task(story_md_id, dependencies: page_task_ids) do
+          update_task_status('final_story_assembly', 'in_progress')
+          puts Rainbow("📖 Assembling final story Markdown...").magenta
+          generate_final_story
+          update_task_status('final_story_assembly', 'done')
+        end
       end
 
       orchestrator.run
@@ -144,6 +167,27 @@ module Arneis
     end
 
     private
+
+    def generate_final_story
+      content = "# #{@story_title}\n\n"
+      
+      if @data['background_music']
+        content += "🎵 **Background Music:** [#{@data['background_music']['prompt']}](audio/background_music.wav)\n\n"
+      end
+
+      @pages.each do |page|
+        num = page['page']
+        image_rel_path = "pages/page_#{num}/illustration.png"
+        content += "## Page #{num}\n\n"
+        content += "![Page #{num}](#{image_rel_path})\n\n"
+        content += "#{page['text']}\n\n"
+        content += "---\n\n"
+      end
+
+      story_file = File.join(@output_path, "STORY.md")
+      File.write(story_file, content)
+      puts Rainbow("✅ Final story saved to #{story_file}").green
+    end
 
     def validate_page(page, image_output)
       v_result = Validator.validate_and_rename!(image_output, :image)
