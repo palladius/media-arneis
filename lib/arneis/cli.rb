@@ -10,8 +10,11 @@ require 'fileutils'
 require 'time'
 
 module Arneis
+  class CharactersCli < Thor; end
+
   class Cli < Thor
     class_option :async, type: :boolean, default: true, desc: "Run media generation asynchronously using Fibers"
+    class_option :media_folder, type: :string, aliases: "-f", desc: "Explicitly set the media folder"
 
     def initialize(*args)
       super
@@ -50,10 +53,11 @@ module Arneis
     desc "feedback [FOLDER_PATH] -p, --prompt=PROMPT", "Provide natural language feedback on a specific asset"
     method_option :prompt, type: :string, required: true, aliases: "-p", desc: "Your feedback"
     def feedback(folder_path = nil)
+      folder_path = resolve_media_folder([folder_path], options) rescue nil
       folder_path ||= Dir.glob("out/*/").select { |f| File.exist?(File.join(f, '.state.yaml')) }.max_by { |f| File.mtime(f) }
       
       if folder_path.nil?
-        puts Rainbow("❌ No project folders found in out/").red
+        puts Rainbow("❌ No project folders found. Specify one or set ARNEIS_FOLDER.").red
         return
       end
 
@@ -117,10 +121,11 @@ module Arneis
     desc "resume [FOLDER_PATH]", "Resume a media project from its state file"
     method_option :force, type: :boolean, aliases: "-f", desc: "Force retry of failed or mocked tasks"
     def resume(folder_path = nil)
+      folder_path = resolve_media_folder([folder_path], options) rescue nil
       folder_path ||= Dir.glob("out/*/").select { |f| File.exist?(File.join(f, '.state.yaml')) }.max_by { |f| File.mtime(f) }
       
       if folder_path.nil?
-        puts Rainbow("❌ No project folders found in out/").red
+        puts Rainbow("❌ No project folders found. Specify one or set ARNEIS_FOLDER.").red
         return
       end
 
@@ -161,10 +166,11 @@ module Arneis
 
     desc "status [FOLDER_PATH]", "Show real-time status of a media project"
     def status(folder_path = nil)
+      folder_path = resolve_media_folder([folder_path], options) rescue nil
       folder_path ||= Dir.glob("out/*/").select { |f| File.exist?(File.join(f, '.state.yaml')) }.max_by { |f| File.mtime(f) }
       
       if folder_path.nil?
-        puts Rainbow("❌ No project folders found in out/").red
+        puts Rainbow("❌ No project folders found. Specify one or set ARNEIS_FOLDER.").red
         return
       end
 
@@ -355,6 +361,7 @@ module Arneis
 
     desc "check-fake-media [FOLDER_PATH]", "Rigorously verify all media files in a project or all projects"
     def check_fake_media(folder_path = nil)
+      folder_path = resolve_media_folder([folder_path], options) rescue "out"
       search_path = folder_path ? File.join(folder_path, "**", "*.{mp4,png,wav}") : "out/**/*.{mp4,png,wav}"
       puts Rainbow("🛡️  Rigorously checking media artifacts in #{search_path}...").cyan.bold
       
@@ -442,6 +449,21 @@ module Arneis
     end
 
     no_commands do
+      def resolve_media_folder(args = [], options = {})
+        # Precedence:
+        # 1. Command-line flag (-f / --media-folder)
+        # 2. Positional argument
+        # 3. Environment variable (ARNEIS_FOLDER)
+        
+        folder = options['media_folder'] || args.first || ENV['ARNEIS_FOLDER']
+        
+        if folder.nil? || folder.empty?
+          raise "No media folder specified. Use -f, a positional argument, or set ARNEIS_FOLDER ENV."
+        end
+        
+        folder
+      end
+
       def status_emoji(status)
         case status
         when 'verified' then "⚖️ "

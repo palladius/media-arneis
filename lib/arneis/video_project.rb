@@ -22,8 +22,10 @@ module Arneis
       # Step 1: Hydrate (Deep Merge with Template)
       h_result = Arneis::Hydrator.hydrate(yaml_path)
       unless h_result[:success]
-        puts Rainbow("❌ Hydration Failed: #{h_result[:message]}").red
-        raise h_result[:message]
+        # Hydration errors are also critical
+        error = Arneis::Schema::ValidationError.new("Hydration Failed: #{h_result[:message]}", { hydration: [h_result[:message]] }, yaml_path)
+        puts error.report
+        raise error
       end
       
       # Step 2: Validate against Schema
@@ -36,11 +38,9 @@ module Arneis
 
       val_result = contract.new.call(full_data)
       unless val_result.success?
-        puts Rainbow("❌ Validation Failed for #{yaml_path}:").red
-        val_result.errors.to_h.each do |field, msgs|
-          puts Rainbow("   - #{field}: #{msgs.join(', ')}").yellow
-        end
-        raise "Validation Error: #{val_result.errors.to_h}"
+        error = Arneis::Schema::ValidationError.new("Validation Error", val_result.errors.to_h, yaml_path)
+        puts error.report
+        raise error
       end
 
       # Step 3: Extract Spec

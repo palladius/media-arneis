@@ -22,6 +22,6 @@
 
 ## Phase 4: CLI Integration & Hard Fail
 - [x] Task: Update `Arneis::VideoProject` to trigger hydration and validation during initialization. f320356
-- [ ] Task: Implement Hard Fail logic with color-coded, detailed error reporting.
+- [x] Task: Implement Hard Fail logic with color-coded, detailed error reporting. (Implemented Arneis::Schema::ValidationError)
 - [x] Task: Verify that `just test` and `arnectl apply` correctly enforce new K8s-compliant rules. f320356
 - [ ] Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md)

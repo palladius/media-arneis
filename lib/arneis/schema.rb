@@ -101,6 +101,39 @@ module Arneis
       else nil
       end
     end
+
+    class ValidationError < StandardError
+      attr_reader :errors, :yaml_path
+
+      def initialize(message, errors = {}, yaml_path = nil)
+        super(message)
+        @errors = errors
+        @yaml_path = yaml_path
+      end
+
+      def report
+        report_str = Rainbow("❌ Validation Failed for #{@yaml_path || 'YAML'}:").red.bold + "\n"
+        format_errors(@errors).each do |error|
+          report_str += Rainbow("   - #{error[:field]}:").yellow + " #{error[:messages].join(', ')}\n"
+        end
+        report_str
+      end
+
+      private
+
+      def format_errors(errors, prefix = nil)
+        flat_errors = []
+        errors.each do |key, value|
+          current_path = prefix ? "#{prefix}.#{key}" : key.to_s
+          if value.is_a?(Hash)
+            flat_errors.concat(format_errors(value, current_path))
+          else
+            flat_errors << { field: current_path, messages: value }
+          end
+        end
+        flat_errors
+      end
+    end
   end
 
   module Hydrator

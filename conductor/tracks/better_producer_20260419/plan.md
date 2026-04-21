@@ -9,7 +9,7 @@
 
 ## Phase 2: Post-Production (GIFs)
 - [x] Task: Implement `Arneis::Generator::Gif` using `ffmpeg`. da78481
-- [ ] Task: Add task dependency to trigger GIF generation after final video assembly.
+- [x] Task: Add task dependency to trigger GIF generation after final video assembly.
 - [x] Task: Write Tests for `Arneis::Generator::Gif` (Ensuring real .gif output). da78481
 - [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
 

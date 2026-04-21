@@ -1,0 +1,188 @@
+=begin
+Arneis::KidsStory - Multi-page illustrated children's story orchestration.
+Similar to VideoProject but focused on static pages with character consistency.
+=end
+
+require 'yaml'
+require 'fileutils'
+require 'rainbow'
+require 'json'
+require 'time'
+require 'thread'
+
+module Arneis
+  class KidsStory
+    attr_reader :story_title, :pages, :character_id, :output_path, :data, :metadata
+
+    def initialize(yaml_path)
+      puts Rainbow("💧 Hydrating and validating KidsStory from #{yaml_path}...").cyan
+      @yaml_path = yaml_path
+      
+      # Step 1: Hydrate (Deep Merge with Template)
+      h_result = Arneis::Hydrator.hydrate(yaml_path)
+      unless h_result[:success]
+        error = Arneis::Schema::ValidationError.new("Hydration Failed: #{h_result[:message]}", { hydration: [h_result[:message]] }, yaml_path)
+        puts error.report
+        raise error
+      end
+      
+      # Step 2: Validate against Schema
+      full_data = h_result[:data]
+      contract = Arneis::Schema.contract_for(full_data['kind'])
+      
+      unless contract
+        raise "Unknown project kind: #{full_data['kind']}"
+      end
+
+      val_result = contract.new.call(full_data)
+      unless val_result.success?
+        error = Arneis::Schema::ValidationError.new("Validation Error", val_result.errors.to_h, yaml_path)
+        puts error.report
+        raise error
+      end
+
+      # Step 3: Extract Spec
+      @data = full_data['spec']
+      @metadata = full_data['metadata']
+      @story_title = @data['story_title']
+      @character_id = @data['character_id']
+      @pages = @data['pages']
+      @mutex = Thread::Mutex.new
+      
+      # Step 4: Load Character
+      @character = Arneis::Character.load(@character_id)
+      puts Rainbow("👤 Loaded Character: #{@character.name}").yellow if @character
+    end
+
+    def initialize_output(output_path)
+      FileUtils.mkdir_p(output_path) unless Dir.exist?(output_path)
+      @output_path = output_path
+      
+      # Copy YAML to output folder for resumption
+      FileUtils.cp(@yaml_path, File.join(output_path, File.basename(@yaml_path))) if @yaml_path
+
+      # Create initial state file
+      state_file = File.join(output_path, '.state.yaml')
+      state = {
+        'story_title' => @story_title,
+        'character_id' => @character_id,
+        'status' => 'initialized',
+        'pages' => @pages.map { |p| p.merge('status' => 'pending') },
+        'background_music' => @data['background_music'] ? { 'status' => 'pending', 'prompt' => @data['background_music']['prompt'] } : nil
+      }
+      File.write(state_file, state.to_yaml)
+    end
+
+    def process(async: true)
+      update_status('in_progress')
+      
+      orchestrator = Orchestrator.new(async: async)
+      gemini_generator = Generator::Gemini.new
+      imagen_generator = Generator::Imagen.new
+      lyria_generator = Generator::Lyria.new
+      
+      state_file = File.join(@output_path, '.state.yaml')
+      current_state = YAML.load_file(state_file)
+      
+      page_task_ids = []
+
+      # 1. Page Tasks
+      @pages.each do |page|
+        page_id = "page_#{page['page']}"
+        page_task_ids << page_id
+        
+        state_page = current_state['pages']&.find { |p| p['page'] == page['page'] }
+        if state_page && (state_page['status'] == 'done' || state_page['status'] == 'verified')
+          puts Rainbow("  ⏭️  Skipping Page #{page['page']} (already done)").blue
+          next
+        end
+
+        orchestrator.add_task(page_id) do
+          page_dir = File.join(@output_path, "pages", "page_#{page['page']}")
+          FileUtils.mkdir_p(page_dir)
+          
+          image_output = File.join(page_dir, "illustration.png")
+          update_page_status(page['page'], 'in_progress')
+          
+          # Use Character to enhance the prompt
+          character_prompt = @character ? @character.prompt_context : ""
+          full_prompt = "#{character_prompt} #{page['description']}"
+          
+          enhancement = gemini_generator.generate("Enhance this children's story illustration prompt: #{full_prompt}")
+          enhanced_prompt = enhancement[:content]
+          File.write(File.join(page_dir, "prompt.txt"), enhanced_prompt)
+          File.write(File.join(page_dir, "story_text.txt"), page['text'])
+          
+          res = imagen_generator.generate(enhanced_prompt, image_output, asset_id: "Page#{page['page']}.image")
+          
+          if res[:status] == 'done'
+            validate_page(page, image_output)
+          else
+            update_page_status(page['page'], 'failed', "Generation failed")
+          end
+        end
+      end
+
+      # 2. Background Music
+      music_id = "background_music"
+      if @data['background_music']
+        orchestrator.add_task(music_id) do
+          update_task_status('background_music', 'in_progress')
+          music_dir = File.join(@output_path, "audio")
+          FileUtils.mkdir_p(music_dir)
+          music_output = File.join(music_dir, "background_music.wav")
+          
+          lyria_generator.generate(@data['background_music']['prompt'], music_output, asset_id: "Story.music")
+          update_task_status('background_music', 'done')
+        end
+        page_task_ids << music_id
+      end
+
+      orchestrator.run
+      update_status('done')
+    end
+
+    private
+
+    def validate_page(page, image_output)
+      v_result = Validator.validate_and_rename!(image_output, :image)
+      if v_result[:success]
+        update_page_status(page['page'], 'verified')
+      else
+        update_page_status(page['page'], 'failed', v_result[:message])
+      end
+    end
+
+    def update_task_status(task_key, status)
+      @mutex.synchronize do
+        state_file = File.join(File.expand_path(@output_path), '.state.yaml')
+        state = YAML.load_file(state_file)
+        state[task_key] ||= {}
+        state[task_key]['status'] = status
+        File.write(state_file, state.to_yaml)
+      end
+    end
+
+    def update_page_status(page_num, status, error_msg = nil)
+      @mutex.synchronize do
+        state_file = File.join(File.expand_path(@output_path), '.state.yaml')
+        state = YAML.load_file(state_file)
+        page = state['pages'].find { |p| p['page'] == page_num }
+        if page
+          page['status'] = status
+          page['error'] = error_msg if error_msg
+        end
+        File.write(state_file, state.to_yaml)
+      end
+    end
+
+    def update_status(status)
+      @mutex.synchronize do
+        state_file = File.join(File.expand_path(@output_path), '.state.yaml')
+        state = YAML.load_file(state_file)
+        state['status'] = status
+        File.write(state_file, state.to_yaml)
+      end
+    end
+  end
+end

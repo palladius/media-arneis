@@ -1,0 +1,8 @@
+{
+  "id": "cli_env_folder_20260421",
+  "name": "CLI Improvements - ARNEIS_FOLDER and --media-folder",
+  "description": "Improve arnectl CLI to support media folder resolution via environment variables and CLI flags.",
+  "status": "pending",
+  "progress": 0,
+  "link": "./tracks/cli_env_folder_20260421/"
+}
