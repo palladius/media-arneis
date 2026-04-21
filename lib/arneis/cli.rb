@@ -289,7 +289,9 @@ module Arneis
         puts "  #{status_emoji(state['montage']['status'])} 🎞️  #{eval_indicator} Final Montage" + suffix
       end
       if state['final_story_assembly']
-        puts "  #{status_emoji(state['final_story_assembly']['status'])} 📖 Final Story Assembly"
+        story_file = File.join(folder_path, "STORY.md")
+        link = File.exist?(story_file) ? " -> " + Rainbow(story_file).cyan.underline : ""
+        puts "  #{status_emoji(state['final_story_assembly']['status'])} 📖 Final Story Assembly#{link}"
       end
 
       puts Rainbow("\n📊 Stats: 🪙 #{total_tokens} (⬆️ #{input_tokens} ⬇️ #{output_tokens}) | 💸 $#{'%.2f' % total_cost}").cyan.bold

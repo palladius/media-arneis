@@ -116,7 +116,13 @@ module Arneis
           enhancement = gemini_generator.generate("Enhance this children's story illustration prompt: #{full_prompt}", system_instruction: system_instruction)
           enhanced_prompt = enhancement[:content]
           File.write(File.join(page_dir, "prompt.txt"), enhanced_prompt)
-          File.write(File.join(page_dir, "story_text.txt"), page['text'])
+          
+          # ENRICH NARRATIVE
+          puts Rainbow("  📝 [GEMINI] Enriching narrative for Page #{page['page']}...").magenta
+          narrative_instruction = "You are a professional children's book author. Your task is to expand the provided 'one-sentence' story beat into a beautiful, engaging, and age-appropriate paragraph for a kids' storybook. Use vivid language and a magical tone. Output ONLY the story paragraph."
+          narrative_resp = gemini_generator.generate(page['text'], system_instruction: narrative_instruction)
+          enriched_text = narrative_resp[:content]
+          File.write(File.join(page_dir, "story_text.txt"), enriched_text)
           
           res = imagen_generator.generate(enhanced_prompt, image_output, asset_id: "Page#{page['page']}.image", reference_image: @character&.reference_image)
           
@@ -178,9 +184,12 @@ module Arneis
       @pages.each do |page|
         num = page['page']
         image_rel_path = "pages/page_#{num}/illustration.png"
+        text_file = File.join(@output_path, "pages", "page_#{num}", "story_text.txt")
+        display_text = File.exist?(text_file) ? File.read(text_file) : page['text']
+
         content += "## Page #{num}\n\n"
         content += "![Page #{num}](#{image_rel_path})\n\n"
-        content += "#{page['text']}\n\n"
+        content += "#{display_text}\n\n"
         content += "---\n\n"
       end
 
