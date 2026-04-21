@@ -59,14 +59,24 @@ module Arneis
     end
 
     def image_count
-      return 0 unless @consistency_images_dir
+      consistency_images.count
+    end
+
+    def reference_image
+      consistency_images.sample
+    end
+
+    private
+
+    def consistency_images
+      return [] unless @consistency_images_dir
       # If relative to YAML path (starts with .)
       base_dir = @yaml_path.end_with?('character.yaml') ? File.dirname(@yaml_path) : CHARACTERS_DIR
       dir = File.expand_path(@consistency_images_dir, base_dir)
 
-      return 0 unless Dir.exist?(dir)
-      # Count images but exclude hidden files
-      Dir.glob(File.join(dir, "*")).reject { |f| File.directory?(f) || File.basename(f).start_with?('.') }.count
+      return [] unless Dir.exist?(dir)
+      # Get images but exclude hidden files
+      Dir.glob(File.join(dir, "*.{png,jpg,jpeg}")).reject { |f| File.basename(f).start_with?('.') }
     end
   end
 end

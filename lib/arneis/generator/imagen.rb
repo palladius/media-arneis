@@ -15,14 +15,16 @@ module Arneis
         @model = Models::IMAGEN_DEFAULT
       end
 
-      def generate(prompt, output_file, timeout: 300, asset_id: nil, aspect_ratio: '1:1')
+      def generate(prompt, output_file, timeout: 300, asset_id: nil, aspect_ratio: '1:1', reference_image: nil)
         puts Rainbow("  🎨 [IMAGEN] Starting real image generation via Python script (AR: #{aspect_ratio})...").magenta
+        puts Rainbow("  👤 [CONSISTENCY] Using reference image: #{reference_image}").cyan if reference_image
         receipt = AssetReceipt.new(asset_id: asset_id || "image_#{Time.now.to_i}", model: @model, prompt: prompt)
         start_time = Time.now
         
         # Call Imagen script (uv run)
         escaped_prompt = prompt.gsub('"', '\"').gsub('`', '\`').gsub('$', '\$')
-        cmd = "uv run util/generate_image.py -p \"#{escaped_prompt}\" -o #{output_file} --aspect-ratio \"#{aspect_ratio}\""
+        image_flag = reference_image && File.exist?(reference_image) ? "-i \"#{reference_image}\"" : ""
+        cmd = "uv run util/generate_image.py -p \"#{escaped_prompt}\" -o #{output_file} --aspect-ratio \"#{aspect_ratio}\" #{image_flag}"
         
         env = {
           'GOOGLE_CLOUD_PROJECT' => Config.google_cloud_project,

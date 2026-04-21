@@ -10,13 +10,13 @@
 - [x] Task: Create `Arneis::KidsStory` class inheriting from a common project base (if applicable) or mirroring `VideoProject`. 7bd4c1c
 - [x] Task: Implement `Arneis::KidsStory#initialize` with character loading. 7bd4c1c
 - [x] Task: Implement multi-page generation loop with `Imagen` and character references. 7bd4c1c
-- [ ] Task: [FUTURE] Implement character consistency using reference images in `Imagen` generator.
-- [ ] Task: Write Tests for `KidsStory` orchestration with mocked generators.
+- [x] Task: Implement character consistency using reference images in `Imagen` generator.
+- [x] Task: Write Tests for `KidsStory` orchestration with mocked generators.
 - [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
 
 ## Phase 3: Final Polish & Verification
 - [x] Task: Integrate `Lyria` music generation into the `KidsStory` flow. 3cbcfff
 - [x] Task: Implement hierarchical folder structure for stories. 3cbcfff
-- [~] Task: Implement consolidated `STORY.md` (and optional HTML) generation.
-- [ ] Task: Final end-to-end verification with `just arnectl apply`.
+- [x] Task: Implement consolidated `STORY.md` (and optional HTML) generation.
+- [x] Task: Final end-to-end verification with `just arnectl apply`.
 - [ ] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)

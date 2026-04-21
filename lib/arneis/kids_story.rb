@@ -118,7 +118,7 @@ module Arneis
           File.write(File.join(page_dir, "prompt.txt"), enhanced_prompt)
           File.write(File.join(page_dir, "story_text.txt"), page['text'])
           
-          res = imagen_generator.generate(enhanced_prompt, image_output, asset_id: "Page#{page['page']}.image")
+          res = imagen_generator.generate(enhanced_prompt, image_output, asset_id: "Page#{page['page']}.image", reference_image: @character&.reference_image)
           
           if res[:status] == 'done'
             validate_page(page, image_output)
