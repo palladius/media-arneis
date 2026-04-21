@@ -119,12 +119,12 @@ module Arneis
           
           # ENRICH NARRATIVE
           puts Rainbow("  📝 [GEMINI] Enriching narrative for Page #{page['page']}...").magenta
-          narrative_instruction = "You are a professional children's book author. Your task is to expand the provided 'one-sentence' story beat into a beautiful, engaging, and age-appropriate paragraph for a kids' storybook. Use vivid language and a magical tone. Output ONLY the story paragraph."
+          narrative_instruction = "You are a professional children's book author. Your task is to expand the provided 'one-sentence' story beat into a beautiful, engaging, and detailed chapter for a kids' storybook. Aim for a substantial length (roughly 500-1000 words) with vivid descriptions, dialogue, and a magical, adventurous tone. Output ONLY the story text."
           narrative_resp = gemini_generator.generate(page['text'], system_instruction: narrative_instruction)
           enriched_text = narrative_resp[:content]
           File.write(File.join(page_dir, "story_text.txt"), enriched_text)
           
-          res = imagen_generator.generate(enhanced_prompt, image_output, asset_id: "Page#{page['page']}.image", reference_image: @character&.reference_image)
+          res = imagen_generator.generate(enhanced_prompt, image_output, asset_id: "Page#{page['page']}.image", reference_images: @character&.all_reference_images)
           
           if res[:status] == 'done'
             validate_page(page, image_output)

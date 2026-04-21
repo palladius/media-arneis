@@ -301,7 +301,7 @@ module Arneis
         puts Rainbow("   just arnectl resume #{folder_path} --force").white
       end
 
-      puts Rainbow("\nLegend: 🟢 done | 🔴 failed | 🟡 in_progress | ⚪ pending | 🤡 mocked | 👍/👎 evaluated").gray.italic
+      puts Rainbow("\nLegend: 🟢 done | 🔴 failed | 🟡 in_progress | ⚪ pending | 🤡 mocked | 👍/👎 evaluated | 🟣/⚫ unevaluated").gray.italic
     end
 
     desc "list", "List all meaningful projects in out/"

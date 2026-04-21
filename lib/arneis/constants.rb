@@ -22,10 +22,9 @@ module Arneis
     CHIRP_DEFAULT = 'chirp_3'                # Latest GA
     
     # Imagen / Nano Banana
-    NANO_BANANA_1 = 'gemini-2.5-flash-image'
-    NANO_BANANA_PRO = 'gemini-3-pro-image-preview'
-    NANO_BANANA_2 = 'gemini-3.1-flash-image-preview'
-    IMAGEN_DEFAULT = NANO_BANANA_2
+    IMAGEN_3_FAST = 'imagen-3.0-fast-generate-001'
+    IMAGEN_3_PRO = 'imagen-3.0-generate-001'
+    IMAGEN_DEFAULT = IMAGEN_3_PRO
   end
   
   # Resource Pricing (Rough estimates)

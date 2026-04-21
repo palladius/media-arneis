@@ -66,6 +66,10 @@ module Arneis
       consistency_images.sample
     end
 
+    def all_reference_images
+      consistency_images.join(',')
+    end
+
     private
 
     def consistency_images
