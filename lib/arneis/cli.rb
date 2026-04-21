@@ -443,7 +443,9 @@ module Arneis
       system_prompt = "You are an expert Copywriter. Create a VideoProject YAML based on the research. Follow the schema. Output ONLY the YAML."
       resp = gemini.generate(research_content, system_instruction: system_prompt)
       yaml_content = resp[:content].gsub(/```yaml\n|```/, '')
-      output_file = "data/samples/#{File.basename(research_path, '.*')}.yaml"
+      output_dir = "data/samples/VideoProject"
+      FileUtils.mkdir_p(output_dir)
+      output_file = File.join(output_dir, "#{File.basename(research_path, '.*')}.yaml")
       File.write(output_file, yaml_content)
       puts Rainbow("✅ Pitch generated and saved to #{output_file}").green
     end
