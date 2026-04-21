@@ -32,10 +32,10 @@ This document outlines the current capabilities and usage of the Arneis Video Pr
 ### Creating a New Project
 ```bash
 # Timestamped folder (Default)
-just arnectl apply data/samples/rubycon_sales_pitch.yaml
+just arnectl apply data/samples/VideoProject/rubycon_sales_pitch.yaml
 
 # Fixed folder (Best for testing/iterating)
-just arnectl apply data/samples/rubycon_sales_pitch.yaml -o out/my-test-project
+just arnectl apply data/samples/VideoProject/rubycon_sales_pitch.yaml -o out/my-test-project
 ```
 
 ### Checking Status

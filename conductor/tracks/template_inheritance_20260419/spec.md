@@ -1,7 +1,7 @@
 # Track Specification: YAML Template Inheritance and Validation
 
 ## Overview
-This track implements a robust validation and inheritance mechanism for YAML data files, following Kubernetes-compliant patterns. Samples in `data/samples/` will inherit from base templates in `data/templates/` using a "hydration" (deep merge) strategy. Structural integrity will be enforced using `dry-validation`.
+This track implements a robust validation and inheritance mechanism for YAML data files, following Kubernetes-compliant patterns. Samples in subfolders of `data/samples/` (e.g., `VideoProject/`, `KidsStory/`) will inherit from base templates in `data/templates/` using a "hydration" (deep merge) strategy. Structural integrity will be enforced using `dry-validation`.
 
 ## Functional Requirements
 1. **Kubernetes-Compliant Structure:** All YAML files (templates and samples) MUST include `apiVersion`, `kind`, and `metadata` fields.

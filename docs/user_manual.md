@@ -36,13 +36,13 @@ Arneis is primarily interacted with via the `arnectl` command. For convenience, 
 ### 1. Research & Ideation
 Start by providing a raw research document or a simple prompt to generate a structured project specification.
 ```bash
-just arnectl research-pitch data/samples/rubycon_research.md
+just arnectl research-pitch data/samples/VideoProject/rubycon_research.md
 ```
 
 ### 2. Applying a Specification
 Once you have a `.yaml` specification, "apply" it to start the generation process. This will create a project directory under `out/` and begin parallel execution of all tasks.
 ```bash
-just arnectl apply data/samples/rubycon_sales_pitch.yaml
+just arnectl apply data/samples/VideoProject/rubycon_sales_pitch.yaml
 ```
 
 ### 3. Checking Project Status
@@ -54,7 +54,7 @@ just arnectl status out/20260418_225308_rubycon_sales_pitch/
 ### 4. Visualizing Dependencies
 Generate a Mermaid.js dependency graph to understand how your project parts relate to each other.
 ```bash
-just arnectl graph data/samples/rubycon_sales_pitch.yaml
+just arnectl graph data/samples/VideoProject/rubycon_sales_pitch.yaml
 ```
 
 ### 5. Verification

@@ -31,7 +31,7 @@ For a deeper dive into how Arneis works, check out the [User Manual](docs/user_m
 just test-all-models
 
 # Research a project and generate a pitch YAML
-just arnectl research-pitch data/samples/rubycon_research.md
+just arnectl research-pitch data/samples/VideoProject/rubycon_research.md
 
 # Apply a media plan from 2 different examples.
 just arnectl apply data/samples/VideoProject/rubycon_sales_pitch.yaml
@@ -44,5 +44,5 @@ just arnectl status out/latest_folder
 just arnectl verify out/latest_folder
 
 # Generate a dependency graph (Mermaid.js)
-just arnectl graph data/samples/rubycon_sales_pitch.yaml
+just arnectl graph data/samples/VideoProject/rubycon_sales_pitch.yaml
 ```
