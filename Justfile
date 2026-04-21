@@ -45,3 +45,7 @@ status:
 
 list:
 	just arnectl list
+
+
+test-story:
+	just arnectl apply data/samples/KidsStory/riccardo_story.yaml -f out/riccardo-manhouse/

@@ -22,7 +22,7 @@ module Arneis
         
         # Call Imagen script (uv run)
         escaped_prompt = prompt.gsub('"', '\"').gsub('`', '\`').gsub('$', '\$')
-        cmd = "uv run util/generate_image.py \"#{escaped_prompt}\" -o #{output_file} --aspect-ratio \"#{aspect_ratio}\""
+        cmd = "uv run util/generate_image.py -p \"#{escaped_prompt}\" -o #{output_file} --aspect-ratio \"#{aspect_ratio}\""
         
         env = {
           'GOOGLE_CLOUD_PROJECT' => Config.google_cloud_project,
@@ -64,7 +64,7 @@ module Arneis
             # Validate and Rename
             Validator.validate_and_rename!(output_file, :image)
             
-            { tokens: 0, cost: Pricing::COST_PER_IMAGEN_GEN, time: (Time.now - start_time).round(2) }
+            { status: 'done', tokens: 0, cost: Pricing::COST_PER_IMAGEN_GEN, time: (Time.now - start_time).round(2) }
           else
             raise "Python script execution failed or output missing"
           end
@@ -74,7 +74,7 @@ module Arneis
           receipt.fail!(error_msg: sanitized_msg)
           receipt.save!(output_file)
           File.write("#{output_file}.mock", "MOCK_IMAGEN_DATA: #{prompt}")
-          return { tokens: 0, cost: 0.0, time: 0 }
+          return { status: 'mocked', tokens: 0, cost: 0.0, time: 0 }
         end
       end
 

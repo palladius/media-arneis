@@ -8,12 +8,11 @@
 # ///
 """
 Arneis Image Generator - PRO version.
-Supports character consistency, styles, and high-fidelity generation.
+Supports character consistency, styles, and high-fidelity generation using Imagen 3.
 """
 import sys
 import argparse
 import os
-import base64
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
@@ -38,35 +37,27 @@ def main():
 
     print(f"🎨 Generating image for: '{args.prompt}'", file=sys.stderr)
     
-    # Handle reference image if provided
-    parts = [args.prompt]
-    if args.image and os.path.exists(args.image):
-        print(f"👤 Using reference image: {args.image}", file=sys.stderr)
-        with open(args.image, "rb") as f:
-            parts.append(types.Part.from_bytes(data=f.read(), mime_type="image/png"))
+    # Imagen 3 specific config
+    config = {
+        "aspect_ratio": args.aspect_ratio,
+        "number_of_images": 1,
+    }
 
     try:
-        # Standard Imagen generation typically uses specific config
-        response = client.models.generate_content(
+        # Use generate_images for Imagen 3
+        response = client.models.generate_images(
             model=args.model,
-            contents=parts,
-            config=types.GenerateContentConfig(
-                aspect_ratio=args.aspect_ratio
-            )
+            prompt=args.prompt,
+            config=config
         )
 
-        found_image = False
-        if response.candidates and response.candidates[0].content.parts:
-            for part in response.candidates[0].content.parts:
-                if part.inline_data:
-                    with open(args.output, "wb") as f:
-                        f.write(part.inline_data.data)
-                    print(f"🖼️ Saved to {args.output}", file=sys.stderr)
-                    print(f"MEDIA:{args.output}")
-                    found_image = True
-                    break
-
-        if not found_image:
+        if response.generated_images:
+            image_data = response.generated_images[0].image.image_bytes
+            with open(args.output, "wb") as f:
+                f.write(image_data)
+            print(f"🖼️ Saved to {args.output}", file=sys.stderr)
+            print(f"MEDIA:{args.output}")
+        else:
             print("⚠️ No image returned in response.", file=sys.stderr)
             sys.exit(1)
 

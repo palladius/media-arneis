@@ -50,7 +50,7 @@ module Arneis
       @mutex = Thread::Mutex.new
       
       # Step 4: Load Character
-      @character = Arneis::Character.load(@character_id)
+      @character = Arneis::Character.find(@character_id)
       puts Rainbow("👤 Loaded Character: #{@character.name}").yellow if @character
     end
 
@@ -108,7 +108,8 @@ module Arneis
           character_prompt = @character ? @character.prompt_context : ""
           full_prompt = "#{character_prompt} #{page['description']}"
           
-          enhancement = gemini_generator.generate("Enhance this children's story illustration prompt: #{full_prompt}")
+          system_instruction = "You are an expert Image Prompt Engineer. Enhance the user's children's story prompt to be highly descriptive, artistic, and suitable for high-quality image generation. Output ONLY the enhanced prompt, no conversational filler, no options, no preamble."
+          enhancement = gemini_generator.generate("Enhance this children's story illustration prompt: #{full_prompt}", system_instruction: system_instruction)
           enhanced_prompt = enhancement[:content]
           File.write(File.join(page_dir, "prompt.txt"), enhanced_prompt)
           File.write(File.join(page_dir, "story_text.txt"), page['text'])

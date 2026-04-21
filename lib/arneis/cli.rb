@@ -38,7 +38,7 @@ module Arneis
         return
       end
       puts Rainbow("🎨 Applying #{yaml_path}...").green
-      project = VideoProject.new(yaml_path)
+      project = Arneis.load_project(yaml_path)
       
       output_path = options[:output] || "out/#{Time.now.strftime('%Y%m%d_%H%M%S')}_#{File.basename(yaml_path, '.*')}"
       
@@ -135,14 +135,22 @@ module Arneis
       if options[:force]
         puts Rainbow("  🔥 Force flag detected. Resetting non-done tasks...").yellow
         state = YAML.load_file(state_file)
-        state['scenes'].each do |s|
-          video_file = File.join(folder_path, "scene_#{s['scene']}.mp4")
-          if s['status'] == 'failed' || s['status'] == 'done_with_warnings' || !File.exist?(video_file) || File.exist?("#{video_file}.mock")
-            s['status'] = 'pending'
+        
+        # Handle both VideoProject (scenes) and KidsStory (pages)
+        items = state['scenes'] || state['pages'] || []
+        
+        items.each do |item|
+          num = item['scene'] || item['page']
+          item_dir = state['scenes'] ? "" : "pages/page_#{num}/"
+          artifact_name = state['scenes'] ? "scene_#{num}.mp4" : "illustration.png"
+          artifact_file = File.join(folder_path, item_dir, artifact_name)
+          
+          if item['status'] == 'failed' || item['status'] == 'done_with_warnings' || !File.exist?(artifact_file) || File.exist?("#{artifact_file}.mock")
+            item['status'] = 'pending'
           end
         end
         if state['background_music']
-          music_file = File.join(folder_path, "background_music.wav")
+          music_file = File.join(folder_path, "audio", "background_music.wav") # Note: added audio/ subfolder which was missing in original resume logic
           if state['background_music']['status'] == 'failed' || !File.exist?(music_file) || File.exist?("#{music_file}.mock")
             state['background_music']['status'] = 'pending'
           end
@@ -156,7 +164,7 @@ module Arneis
         return
       end
 
-      project = VideoProject.new(yaml_files.first)
+      project = Arneis.load_project(yaml_files.first)
       project.instance_variable_set(:@output_path, folder_path)
       
       puts Rainbow("⚙️ Resuming orchestration...").magenta
@@ -182,7 +190,8 @@ module Arneis
       end
 
       state = YAML.load_file(state_file)
-      puts "Project: #{Rainbow(state['project_title']).yellow}"
+      title = state['project_title'] || state['story_title'] || File.basename(folder_path)
+      puts "Project: #{Rainbow(title).yellow}"
       puts "Status: #{status_emoji(state['status'])} #{state['status']} | Auth: #{Config.auth_method_emoji}"
       
       total_tokens = 0
@@ -190,15 +199,24 @@ module Arneis
       input_tokens = 0
       output_tokens = 0
 
-      puts "\nScenes:"
-      state['scenes'].each do |scene|
-        desc = scene['description']
+      # Handle both VideoProject (scenes) and KidsStory (pages)
+      items = state['scenes'] || state['pages'] || []
+      label = state['scenes'] ? "Scene" : "Page"
+      icon = state['scenes'] ? "🎥" : "🖼️"
+
+      puts "\n#{label}s:"
+      items.each do |item|
+        num = item['scene'] || item['page']
+        desc = item['description']
         desc = "#{desc[0..76]}..." if desc.length > 80
         
-        video_file = File.join(folder_path, "scene_#{scene['scene']}.mp4")
-        mock_file = "#{video_file}.mock"
-        bad_file = "#{video_file}.NOT_GOOD"
-        asset_json = "#{video_file}.asset.json"
+        file_ext = state['scenes'] ? ".mp4" : "/illustration.png"
+        item_dir = state['scenes'] ? "" : "pages/page_#{num}/"
+        artifact_file = File.join(folder_path, item_dir, "#{state['scenes'] ? "scene_#{num}" : "illustration"}#{state['scenes'] ? ".mp4" : ".png"}")
+        
+        mock_file = "#{artifact_file}.mock"
+        bad_file = "#{artifact_file}.NOT_GOOD"
+        asset_json = "#{artifact_file}.asset.json"
         
         eval_indicator = "🟣"
         eval_score = ""
@@ -214,9 +232,9 @@ module Arneis
         suffix = Rainbow(" 🤡").yellow if File.exist?(mock_file)
         suffix = Rainbow(" 🚫 INVALID").red if File.exist?(bad_file)
 
-        puts "  #{status_emoji(scene['status'])} 🎥 #{eval_indicator}" + Rainbow(" Scene #{scene['scene']}:").orange + " " + Rainbow(desc).white + eval_score + suffix
+        puts "  #{status_emoji(item['status'])} #{icon} #{eval_indicator}" + Rainbow(" #{label} #{num}:").orange + " " + Rainbow(desc).white + eval_score + suffix
         
-        output_base = File.join(folder_path, "scene_#{scene['scene']}")
+        output_base = File.join(folder_path, item_dir, state['scenes'] ? "scene_#{num}" : "illustration")
         Dir.glob("#{output_base}.*.error.json").each do |error_file|
           error_data = ::JSON.parse(File.read(error_file))
           err_msg = error_data['error']
@@ -277,13 +295,13 @@ module Arneis
 
       data = projects_paths.sort_by { |f| File.mtime(f) }.reverse.map do |path|
         state = YAML.load_file(File.join(path, '.state.yaml'))
-        title = state['project_title'] || File.basename(path)
+        title = state['project_title'] || state['story_title'] || File.basename(path)
         status = state['status']
         
-        all_media = Dir.glob(File.join(path, "*.{mp4,png,wav}"))
+        all_media = Dir.glob(File.join(path, "**", "*.{mp4,png,wav}"))
         real_media = all_media.reject { |f| File.exist?("#{f}.mock") || File.exist?("#{f}.NOT_GOOD") }
-        mock_media_files = Dir.glob(File.join(path, "*.mock"))
-        bad_media_files = Dir.glob(File.join(path, "*.NOT_GOOD"))
+        mock_media_files = Dir.glob(File.join(path, "**", "*.mock"))
+        bad_media_files = Dir.glob(File.join(path, "**", "*.NOT_GOOD"))
         
         honest_status = status
         if status == 'done' && real_media.empty?
@@ -292,7 +310,7 @@ module Arneis
         honest_status = 'failed' if !bad_media_files.empty?
 
         total_cost = 0.0
-        Dir.glob(File.join(path, "*.asset.json")).each do |f|
+        Dir.glob(File.join(path, "**", "*.asset.json")).each do |f|
           total_cost += ::JSON.parse(File.read(f))['cost_usd'] || 0.0
         end
 
@@ -309,7 +327,7 @@ module Arneis
           video_count: real_media.select { |f| f.end_with?('.mp4') }.count,
           image_count: real_media.select { |f| f.end_with?('.png') }.count,
           audio_count: real_media.select { |f| f.end_with?('.wav') || f.end_with?('.mp3') }.count,
-          text_count: Dir.glob(File.join(path, "*.{txt,md}")).count
+          text_count: Dir.glob(File.join(path, "**", "*.{txt,md}")).count
         }
       end
 

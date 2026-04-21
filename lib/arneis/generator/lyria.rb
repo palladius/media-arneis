@@ -69,7 +69,7 @@ module Arneis
             # Validate and Rename
             Validator.validate_and_rename!(output_file, :audio)
             
-            { tokens: 0, cost: Pricing::COST_PER_LYRIA_GEN, time: (Time.now - start_time).round(2) }
+            { status: 'done', tokens: 0, cost: Pricing::COST_PER_LYRIA_GEN, time: (Time.now - start_time).round(2) }
           else
             raise "Python script execution failed or output missing"
           end
@@ -79,7 +79,7 @@ module Arneis
           receipt.fail!(error_msg: sanitized_msg)
           receipt.save!(output_file)
           File.write("#{output_file}.mock", "MOCK_LYRIA_DATA: #{prompt}")
-          return { tokens: 0, cost: 0.0, time: 0 }
+          return { status: 'mocked', tokens: 0, cost: 0.0, time: 0 }
         end
       end
     end

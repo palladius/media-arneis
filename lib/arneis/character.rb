@@ -54,6 +54,10 @@ module Arneis
       [@name, @surname].compact.join(" ")
     end
 
+    def prompt_context
+      "Character Name: #{name}. Personality: #{personality}. Visual Look: #{visual_look}"
+    end
+
     def image_count
       return 0 unless @consistency_images_dir
       # If relative to YAML path (starts with .)
