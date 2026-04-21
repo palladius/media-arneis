@@ -509,9 +509,8 @@ module Arneis
         case status
         when 'verified' then "⚖️ "
         when 'done' then "🟢"
-        when 'polling' then "🔵"
-        when 'mocked' then "🤡"
         when 'done_with_warnings' then "😟"
+        when 'polling' then "🔵"
         when 'in_progress' then "🟡"
         when 'pending' then "⚪"
         when 'waiting' then "🩶"

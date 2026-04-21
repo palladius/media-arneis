@@ -201,7 +201,23 @@ module Arneis
     def validate_page(page, image_output)
       v_result = Validator.validate_and_rename!(image_output, :image)
       if v_result[:success]
-        update_page_status(page['page'], 'verified')
+        # Perform Character Consistency EVAL
+        evaluator = Evaluator.new
+        e_result = evaluator.evaluate_character_consistency(image_output, @character)
+        
+        # Save Eval result to asset json
+        asset_json = "#{image_output}.asset.json"
+        if File.exist?(asset_json)
+          asset_data = ::JSON.parse(File.read(asset_json))
+          asset_data['eval'] = e_result
+          File.write(asset_json, ::JSON.pretty_generate(asset_data))
+        end
+
+        if e_result[:success]
+          update_page_status(page['page'], 'verified')
+        else
+          update_page_status(page['page'], 'done_with_warnings', "CC Score: #{e_result[:score]}/10 - #{e_result[:message]}")
+        end
       else
         update_page_status(page['page'], 'failed', v_result[:message])
       end

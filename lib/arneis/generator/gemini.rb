@@ -3,6 +3,7 @@ Arneis::Generator::Gemini - Media generator using Google Gemini via gemini-ai ge
 =end
 
 require 'gemini-ai'
+require 'base64'
 
 module Arneis
   module Generator
@@ -21,12 +22,24 @@ module Arneis
         )
       end
 
-      def generate(prompt, output_file = nil, system_instruction: nil, timeout: 30, asset_id: nil)
-        puts "  [GEMINI] Generating text for prompt: '#{prompt[0..50]}...'"
+      def generate(prompt, output_file = nil, system_instruction: nil, images: [], timeout: 30, asset_id: nil)
+        puts "  [GEMINI] Generating #{images.empty? ? 'text' : 'multimodal response'} for prompt: '#{prompt[0..50]}...'"
         receipt = AssetReceipt.new(asset_id: asset_id || "text_#{Time.now.to_i}", model: @model, prompt: prompt)
         
+        parts = [{ text: prompt }]
+        images.each do |img_path|
+          next unless File.exist?(img_path)
+          ext = File.extname(img_path).downcase.gsub('.', '')
+          mime_type = case ext
+                      when 'png' then 'image/png'
+                      when 'jpg', 'jpeg' then 'image/jpeg'
+                      else 'image/png'
+                      end
+          parts << { inline_data: { mime_type: mime_type, data: Base64.strict_encode64(File.read(img_path)) } }
+        end
+
         payload = {
-          contents: [{ role: 'user', parts: [{ text: prompt }] }]
+          contents: [{ role: 'user', parts: parts }]
         }
         
         if system_instruction
