@@ -34,6 +34,3 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [ ] **Track: Implement KidsStory Class for multi-page illustrated children's stories**
   *Link: [./tracks/kids_story_20260419/](./tracks/kids_story_20260419/)*
 
-- [x] **Track: CLI Improvements: ARNEIS_FOLDER and --media-folder**
-  *Link: [./tracks/cli_env_folder_20260421/](./tracks/cli_env_folder_20260421/)*
-

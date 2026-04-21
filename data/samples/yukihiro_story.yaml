@@ -1,0 +1,20 @@
+apiVersion: media-arneis.palladius.it/v1
+kind: KidsStory
+metadata:
+  name: yukihiro-the-ruby-wizard
+  template: KidsStory
+spec:
+  story_title: "Yukihiro and the Magical Ruby"
+  character_id: yukihiro
+  pages:
+    - page: 1
+      description: "Yukihiro finds a giant, glowing red ruby in a misty Japanese garden."
+      text: "One morning, Yukihiro was walking in his garden when he found a magical red ruby!"
+    - page: 2
+      description: "Yukihiro holds the ruby high, and it sparkles, turning the gray mist into rainbows."
+      text: "When he picked it up, the whole world started to sparkle with rainbows."
+    - page: 3
+      description: "Yukihiro sharing the ruby with a group of happy children in a futuristic dojo."
+      text: "He decided to share the magic with all the children, and they all learned to code with joy."
+  background_music:
+    prompt: "A peaceful, koto-inspired Japanese melody with a hint of magical sparkles."
