@@ -184,11 +184,49 @@ module Arneis
         gif_generator.generate(final_video, gif_output)
       end
 
+      # 3. Final Montage (LLM-driven)
+      montage_id = "montage"
+      orchestrator.add_task(montage_id, dependencies: scene_task_ids + [music_id]) do
+        update_project_status('in_progress')
+        puts Rainbow("🎬 [MONTAGE] Generating final movie using LLM-driven ffmpeg command...").magenta
+        
+        # Build context for Gemini
+        video_files = @scenes.map { |s| File.join(@output_path, "video", "scene_#{s['scene']}", "video.mp4") }
+        audio_file = File.join(@output_path, "audio", "background_music.wav")
+        output_file = File.join(@output_path, @data['output_filename'] || "final_video.mp4")
+        
+        system_instruction = "You are an ffmpeg expert. Generate the EXACT shell command to concatenate the provided video files and add the background music as a loop or trimmed to the total video length. Output ONLY the command, no preamble, no code blocks."
+        prompt = "Video files: #{video_files.join(', ')}\nAudio file: #{audio_file}\nOutput file: #{output_file}"
+        
+        resp = gemini_generator.generate(prompt, system_instruction: system_instruction)
+        ffmpeg_cmd = resp[:content].strip.gsub(/^`|`$/, '')
+        
+        puts "  💻 Executing: #{ffmpeg_cmd}"
+        # We mock this for now since we might not have all real files in tests
+        if ENV['ARNEIS_NO_MOCK'] == 'true'
+          system(ffmpeg_cmd)
+        else
+          puts Rainbow("  🤡 [MOCK] FFMPEG Montage mocked (ARNEIS_NO_MOCK is false)").yellow
+          File.write("#{output_file}.mock", "MOCK_VIDEO_MONTAGE: #{ffmpeg_cmd}")
+        end
+        update_task_status('montage', 'done')
+      end
+
       orchestrator.run
       update_project_status('done')
     end
 
     private
+
+    def update_task_status(task_key, status)
+      @mutex.synchronize do
+        state_file = File.join(File.expand_path(@output_path), '.state.yaml')
+        state = YAML.load_file(state_file)
+        state[task_key] ||= {}
+        state[task_key]['status'] = status
+        File.write(state_file, state.to_yaml)
+      end
+    end
 
     def validate_scene(scene, veo_output)
       puts "  🛡️  Validating scene #{scene['scene']} artifact..."

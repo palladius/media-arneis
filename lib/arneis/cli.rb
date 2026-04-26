@@ -66,56 +66,77 @@ module Arneis
       state_file = File.join(folder_path, '.state.yaml')
       state = YAML.load_file(state_file)
       
-      asset_id = nil
-      if options[:prompt] =~ /^(video|text)(\d+)$/i
-        type = $1.downcase == 'video' ? 'video' : 'text'
-        scene_num = $2
-        asset_id = "Scene#{scene_num}.#{type}"
-      else
-        gemini = Generator::Gemini.new
-        system_prompt = "You are an expert Media Assistant. Identify the EXACT asset_id (e.g., 'Scene3.video' or 'Project.music') the user is talking about. Return 'Project' for general feedback. Output ONLY the asset_id."
-        
-        asset_list = state['scenes'].map { |s| "Scene#{s['scene']}.video, Scene#{s['scene']}.text" }.join(", ")
-        asset_list += ", Project.music" if state['background_music']
-        
-        identification_prompt = "User Feedback: '#{options[:prompt]}'\nAsset List: #{asset_list}"
-        
-        resp = gemini.generate(identification_prompt, system_instruction: system_prompt)
-        asset_id = resp[:content].strip
-      end
+      # 1. Identify which asset the user is talking about
+      puts "  🧠 Gemini identifying target asset..."
       
-      puts Rainbow("🎯 Identified target: #{asset_id}").yellow
+      # Build a list of assets for Gemini to choose from
+      items = state['scenes'] || state['pages'] || []
+      asset_list = items.map { |i| "ID: #{state['scenes'] ? "scene_#{i['scene']}" : "page_#{i['page']}"}, Description: #{i['description']}" }
+      asset_list << "ID: background_music, Description: Background music for the project"
       
-      if asset_id == 'Project'
-        puts "  (General project feedback not yet implemented for automated regeneration)"
+      gemini = Generator::Gemini.new
+      id_prompt = "Based on the user feedback: '#{options[:prompt]}', identify which Asset ID they are referring to from this list:
+      #{asset_list.join("\n")}
+      
+      Output ONLY the Asset ID (e.g., 'scene_1' or 'background_music'). If unclear, output 'unknown'."
+      
+      id_resp = gemini.generate(id_prompt)
+      target_id = id_resp[:content].strip.gsub(/['"]/, '')
+      
+      if target_id == 'unknown'
+        puts Rainbow("  🤔 Gemini couldn't identify the target asset. Please be more specific.").yellow
         return
       end
+      
+      puts Rainbow("  🎯 Target identified: #{target_id}").green
 
-      if asset_id =~ /Scene(\d+)\.(video|text)/
-        scene_num = $1.to_i
-        type = $2
-        
-        trash_dir = File.join(folder_path, ".trash", Time.now.strftime('%Y%m%d_%H%M%S'))
-        FileUtils.mkdir_p(trash_dir)
-        
-        target_file = File.join(folder_path, "scene_#{scene_num}.#{type == 'video' ? 'mp4' : 'text.txt'}")
-        if File.exist?(target_file)
-          puts "  🗑️  Archiving #{File.basename(target_file)} to .trash/"
-          FileUtils.mv(target_file, trash_dir)
-          Dir.glob("#{target_file}*").each { |f| FileUtils.mv(f, trash_dir) }
-        end
-
-        scene = state['scenes'].find { |s| s['scene'] == scene_num }
-        if scene
-          scene['status'] = 'pending'
-          scene['feedback'] = options[:prompt]
-          scene['human_score'] = 5
-          File.write(state_file, state.to_yaml)
-          puts Rainbow("✅ Scene #{scene_num} reset to pending. Run 'arnectl resume' to regenerate.").green
-        end
-      else
-        puts Rainbow("⚠️  Could not map '#{asset_id}' to an automated action.").yellow
+      # 2. Archive to .trash/
+      trash_dir = File.join(folder_path, '.trash', Time.now.strftime('%Y%m%d_%H%M%S'))
+      FileUtils.mkdir_p(trash_dir)
+      
+      # Identify file paths to trash
+      to_trash = []
+      if target_id == 'background_music'
+        to_trash << File.join(folder_path, "audio", "background_music.wav")
+      elsif target_id.start_with?('scene_')
+        num = target_id.split('_').last
+        to_trash << File.join(folder_path, "video", "scene_#{num}", "video.mp4")
+        to_trash << File.join(folder_path, "video", "scene_#{num}", "video.mp4.asset.json")
+      elsif target_id.start_with?('page_')
+        num = target_id.split('_').last
+        to_trash << File.join(folder_path, "pages", "page_#{num}", "illustration.png")
+        to_trash << File.join(folder_path, "pages", "page_#{num}", "illustration.png.asset.json")
+        to_trash << File.join(folder_path, "pages", "page_#{num}", "story_text.txt")
       end
+
+      to_trash.each do |f|
+        if File.exist?(f)
+          puts "  🗑️  Trashing #{File.basename(f)}..."
+          FileUtils.mv(f, File.join(trash_dir, File.basename(f)))
+        end
+      end
+
+      # 3. Update .state.yaml
+      if target_id == 'background_music'
+        state['background_music']['status'] = 'pending'
+        state['background_music']['feedback'] = options[:prompt]
+      else
+        num = target_id.split('_').last.to_i
+        item = items.find { |i| (i['scene'] || i['page']) == num }
+        if item
+          item['status'] = 'pending'
+          item['feedback'] = options[:prompt]
+        end
+      end
+      
+      # Also reset final assembly if it exists
+      state['final_story_assembly']['status'] = 'pending' if state['final_story_assembly']
+      state['status'] = 'in_progress'
+
+      File.write(state_file, state.to_yaml)
+      
+      puts Rainbow("✅ Feedback recorded. Target #{target_id} reset to pending.").green
+      puts Rainbow("🚀 Run 'just arnectl resume #{folder_path}' to re-generate with feedback.").blue
     end
 
     desc "resume [FOLDER_PATH]", "Resume a media project from its state file"
@@ -445,26 +466,46 @@ module Arneis
         return
       end
       puts Rainbow("📊 Generating graph for #{yaml_path}...").cyan
-      project = VideoProject.new(yaml_path)
+      project = Arneis.load_project(yaml_path)
+      
       tasks = []
-      scene_task_ids = []
-      project.scenes.each do |scene|
-        scene_id = "scene_#{scene['scene']}".to_sym
-        tasks << Arneis::Task.new(scene_id)
-        scene_task_ids << scene_id
+      core_task_ids = []
+      
+      # Handle both VideoProject (scenes) and KidsStory (pages)
+      items = project.respond_to?(:scenes) ? project.scenes : project.pages
+      label_prefix = project.respond_to?(:scenes) ? "scene_" : "page_"
+      
+      items.each do |item|
+        num = item['scene'] || item['page']
+        item_id = "#{label_prefix}#{num}".to_sym
+        tasks << Arneis::Task.new(item_id)
+        core_task_ids << item_id
       end
+
       if project.data['background_music']
         tasks << Arneis::Task.new(:background_music)
-        scene_task_ids << :background_music
+        core_task_ids << :background_music
       end
-      tasks << Arneis::Task.new(:montage, dependencies: scene_task_ids)
+
+      # Add assembly tasks based on kind
+      if project.is_a?(Arneis::VideoProject)
+        tasks << Arneis::Task.new(:montage, dependencies: core_task_ids)
+        tasks << Arneis::Task.new(:marketing, dependencies: [:montage])
+      elsif project.is_a?(Arneis::KidsStory)
+        tasks << Arneis::Task.new(:final_story_assembly, dependencies: core_task_ids)
+      end
+
       visualizer = Visualizer.new(tasks)
       mermaid = visualizer.to_mermaid
-      latest_project = Dir.glob("out/*/").select { |f| File.exist?(File.join(f, '.state.yaml')) }.max_by { |f| File.mtime(f) }
-      output_dir = latest_project || "out/latest_graph"
-      FileUtils.mkdir_p(output_dir)
+      
+      # Determine output folder
+      output_dir = options[:media_folder] || options[:output] || Dir.glob("out/*/").select { |f| File.exist?(File.join(f, '.state.yaml')) }.max_by { |f| File.mtime(f) } || "out/latest_graph"
+      FileUtils.mkdir_p(output_dir) if output_dir.start_with?("out/")
+      
       output_file = options[:output] || File.join(output_dir, "DEPENDENCIES.md")
-      content = "# Dependency Graph: #{project.title}\n\n```mermaid\n#{mermaid}\n```"
+      title = project.respond_to?(:project_title) ? project.project_title : project.story_title
+      content = "# Dependency Graph: #{title}\n\n```mermaid\n#{mermaid}\n```"
+      
       File.write(output_file, content)
       puts Rainbow("✅ Graph generated and saved to #{output_file}").green
     end

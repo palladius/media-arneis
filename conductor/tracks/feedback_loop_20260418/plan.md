@@ -1,10 +1,10 @@
 # Implementation Plan: Implement Feedback Loop and Advanced Montage Orchestration
 
 ## Phase 1: Interactive Feedback Loop
-- [ ] Task: Implement `Arneis::Cli#feedback` command.
-- [ ] Task: Use Gemini to identify `asset_id` from user prompt.
-- [ ] Task: Implement `.trash/` archiving for assets and receipts.
-- [ ] Task: Update `.state.yaml` to reset target asset status to `pending`.
+- [x] Task: Implement `Arneis::Cli#feedback` command. a032915
+- [x] Task: Use Gemini to identify `asset_id` from user prompt. a032915
+- [x] Task: Implement `.trash/` archiving for assets and receipts. a032915
+- [x] Task: Update `.state.yaml` to reset target asset status to `pending`. a032915
 - [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
 
 ## Phase 2: Advanced Montage & LLM Commands
