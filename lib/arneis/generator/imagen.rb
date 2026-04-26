@@ -72,7 +72,14 @@ module Arneis
           end
         rescue => e
           sanitized_msg = Config.sanitize(e.message)
-          puts Rainbow("  ⚠️ [IMAGEN] Script failed: #{sanitized_msg}. Falling back to mock.").yellow
+          puts Rainbow("  ⚠️ [IMAGEN] Script failed: #{sanitized_msg}").yellow
+          
+          if Config.no_mock?
+            puts Rainbow("  🚫 Mocking disabled. Raising error.").red
+            raise e
+          end
+
+          puts Rainbow("  🤡 Falling back to mock.").yellow
           receipt.fail!(error_msg: sanitized_msg)
           receipt.save!(output_file)
           File.write("#{output_file}.mock", "MOCK_IMAGEN_DATA: #{prompt}")

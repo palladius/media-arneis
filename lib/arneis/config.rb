@@ -46,6 +46,10 @@ module Arneis
       ENV['GOOGLE_APPLICATION_CREDENTIALS'] || system("gcloud auth application-default print-access-token > /dev/null 2>&1") ? "☁️ (Vertex)" : "🔑 (ApiKey)"
     end
 
+    def self.no_mock?
+      ENV['ARNEIS_NO_MOCK'] == 'true' || ENV['ARNEIS_NO_MOCK'] == '1'
+    end
+
     def self.sanitize(text)
       return text unless text.is_a?(String)
       
