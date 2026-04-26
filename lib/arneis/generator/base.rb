@@ -17,6 +17,11 @@ module Arneis
 
       protected
 
+      def after_creation(output_file, type)
+        return unless output_file && File.exist?(output_file)
+        Validator.validate_and_rename!(output_file, type)
+      end
+
       def with_retry(max_retries: 3)
         retries = 0
         begin
