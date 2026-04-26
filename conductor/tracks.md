@@ -16,7 +16,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [ ] **Track: Implement Feedback Loop and Advanced Montage Orchestration**
   *Link: [./tracks/feedback_loop_20260418/](./tracks/feedback_loop_20260418/)*
 
-- [ ] **Track: Implement Real Background Music Generation using Lyria**
+- [x] **Track: Implement Real Background Music Generation using Lyria**
   *Link: [./tracks/lyria_gen_20260418/](./tracks/lyria_gen_20260418/)*
 
 - [x] **Track: Implement Robust Artifact Validation and Metadata Extraction**
@@ -28,7 +28,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [ ] **Track: Implement expensive, end-to-end LLM integration tests (just-llm-tests)**
   *Link: [./tracks/expensive_tests_20260419/](./tracks/expensive_tests_20260419/)*
 
-- [ ] **Track: BETTER PRODUCER STRATEGY #12**
+- [x] **Track: BETTER PRODUCER STRATEGY #12**
   *Link: [./tracks/better_producer_20260419/](./tracks/better_producer_20260419/)*
 
 - [x] **Track: Implement KidsStory Class for multi-page illustrated children's stories**
