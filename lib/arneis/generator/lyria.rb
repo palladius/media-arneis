@@ -1,11 +1,8 @@
-=begin
-Arneis::Generator::Lyria - Media generator using Google Lyria (Music).
-Orchestrates generation via the util/generate_music.py script.
-=end
+# Arneis::Generator::Lyria - Media generator using Google Lyria (Music).
+# Orchestrates generation via the util/generate_music.py script.
 
-require 'thread'
-require 'open3'
-require 'fileutils'
+require "open3"
+require "fileutils"
 
 module Arneis
   module Generator
@@ -19,43 +16,39 @@ module Arneis
         puts Rainbow("  🎵 [LYRIA] Starting real music generation via Python script...").magenta
         receipt = AssetReceipt.new(asset_id: asset_id || "music_#{Time.now.to_i}", model: @model, prompt: prompt)
         start_time = Time.now
-        
+
         # Call Lyria script (uv run)
-        escaped_prompt = prompt.gsub('"', '\"').gsub('`', '\`').gsub('$', '\$')
+        escaped_prompt = prompt.gsub('"', '\"').gsub("`", '\`').gsub("$", '\$')
         cmd = "uv run util/generate_music.py --prompt \"#{escaped_prompt}\" -o #{output_file}"
-        
+
         env = {
-          'GOOGLE_CLOUD_PROJECT' => Config.google_cloud_project,
-          'GOOGLE_CLOUD_REGION' => Config.google_cloud_region
+          "GOOGLE_CLOUD_PROJECT" => Config.google_cloud_project,
+          "GOOGLE_CLOUD_REGION" => Config.google_cloud_region
         }
 
         begin
           success = false
           Open3.popen3(env, cmd) do |stdin, stdout, stderr, wait_thr|
             stdin.close
-            
+
             # Print stderr to show progress
             t_err = Thread.new do
-              begin
-                while line = stderr.gets
-                  puts "    [LYRIA SCRIPT] #{line.strip}"
-                end
-              rescue IOError
+              while line = stderr.gets
+                puts "    [LYRIA SCRIPT] #{line.strip}"
               end
+            rescue IOError
             end
-            
+
             # Script outputs MEDIA:path on success
             t_out = Thread.new do
-              begin
-                while line = stdout.gets
-                  if line =~ /^MEDIA:(.*)$/
-                    success = true
-                  end
+              while line = stdout.gets
+                if /^MEDIA:(.*)$/.match?(line)
+                  success = true
                 end
-              rescue IOError
               end
+            rescue IOError
             end
-            
+
             t_err.join
             t_out.join
             success = wait_thr.value.success? if success.nil?
@@ -65,18 +58,18 @@ module Arneis
             puts Rainbow("  ✅ [LYRIA] Music generated successfully!").green
             receipt.complete!(cost_usd: Pricing::COST_PER_LYRIA_GEN)
             receipt.save!(output_file)
-            
+
             # Validate and Rename
             Validator.validate_and_rename!(output_file, :audio)
-            
-            { status: 'done', tokens: 0, cost: Pricing::COST_PER_LYRIA_GEN, time: (Time.now - start_time).round(2) }
+
+            {status: "done", tokens: 0, cost: Pricing::COST_PER_LYRIA_GEN, time: (Time.now - start_time).round(2)}
           else
             raise "Python script execution failed or output missing"
           end
         rescue => e
           sanitized_msg = Config.sanitize(e.message)
           puts Rainbow("  ⚠️ [LYRIA] Script failed: #{sanitized_msg}").yellow
-          
+
           if Config.no_mock?
             puts Rainbow("  🚫 Mocking disabled. Raising error.").red
             raise e
@@ -86,7 +79,7 @@ module Arneis
           receipt.fail!(error_msg: sanitized_msg)
           receipt.save!(output_file)
           File.write("#{output_file}.mock", "MOCK_LYRIA_DATA: #{prompt}")
-          return { status: 'mocked', tokens: 0, cost: 0.0, time: 0 }
+          {status: "mocked", tokens: 0, cost: 0.0, time: 0}
         end
       end
     end

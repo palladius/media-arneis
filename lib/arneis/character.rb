@@ -1,9 +1,7 @@
-=begin
-Arneis::Character - Model for character data.
-=end
+# Arneis::Character - Model for character data.
 
-require 'yaml'
-require 'date'
+require "yaml"
+require "date"
 
 module Arneis
   class Character
@@ -15,7 +13,7 @@ module Arneis
       # Case 1: data/characters/*.yaml
       # Case 2: data/characters/*/character.yaml
       files = Dir.glob(File.join(CHARACTERS_DIR, "*.yaml")) +
-              Dir.glob(File.join(CHARACTERS_DIR, "*/character.yaml"))
+        Dir.glob(File.join(CHARACTERS_DIR, "*/character.yaml"))
       files.uniq.map do |file|
         new(file)
       end.sort_by(&:name)
@@ -24,8 +22,8 @@ module Arneis
     def self.find(name_or_nickname)
       all.find do |c|
         c.name&.downcase == name_or_nickname.downcase ||
-        c.nickname&.downcase == name_or_nickname.downcase ||
-        c.id.downcase == name_or_nickname.downcase
+          c.nickname&.downcase == name_or_nickname.downcase ||
+          c.id.downcase == name_or_nickname.downcase
       end
     end
 
@@ -34,20 +32,20 @@ module Arneis
     def initialize(yaml_path)
       @yaml_path = yaml_path
       @data = YAML.load_file(yaml_path, permitted_classes: [Date, Time])
-      @name = @data['name']
-      @surname = @data['surname']
-      @nickname = @data['nickname']
-      @personality = @data['personality']
-      @visual_look = @data['visual_look']
-      @consistency_images_dir = @data['consistency_images']
-      @emoji = @data['emoji'] || "👤"
-      @nationality_emoji = @data['nationality_emoji'] || "🌍"
-      
-      @id = if yaml_path.end_with?('character.yaml')
-              File.basename(File.dirname(yaml_path))
-            else
-              File.basename(yaml_path, '.yaml')
-            end
+      @name = @data["name"]
+      @surname = @data["surname"]
+      @nickname = @data["nickname"]
+      @personality = @data["personality"]
+      @visual_look = @data["visual_look"]
+      @consistency_images_dir = @data["consistency_images"]
+      @emoji = @data["emoji"] || "👤"
+      @nationality_emoji = @data["nationality_emoji"] || "🌍"
+
+      @id = if yaml_path.end_with?("character.yaml")
+        File.basename(File.dirname(yaml_path))
+      else
+        File.basename(yaml_path, ".yaml")
+      end
     end
 
     def full_name
@@ -67,7 +65,7 @@ module Arneis
     end
 
     def all_reference_images
-      consistency_images.join(',')
+      consistency_images.join(",")
     end
 
     private
@@ -75,12 +73,12 @@ module Arneis
     def consistency_images
       return [] unless @consistency_images_dir
       # If relative to YAML path (starts with .)
-      base_dir = @yaml_path.end_with?('character.yaml') ? File.dirname(@yaml_path) : CHARACTERS_DIR
+      base_dir = @yaml_path.end_with?("character.yaml") ? File.dirname(@yaml_path) : CHARACTERS_DIR
       dir = File.expand_path(@consistency_images_dir, base_dir)
 
       return [] unless Dir.exist?(dir)
       # Get images but exclude hidden files
-      Dir.glob(File.join(dir, "*.{png,jpg,jpeg}")).reject { |f| File.basename(f).start_with?('.') }
+      Dir.glob(File.join(dir, "*.{png,jpg,jpeg}")).reject { |f| File.basename(f).start_with?(".") }
     end
   end
 end

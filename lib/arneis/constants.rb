@@ -1,32 +1,30 @@
-=begin
-Arneis::Constants - Centralized model names and other project-wide constants.
-Based on recommendations in GEMINI.md.
-=end
+# Arneis::Constants - Centralized model names and other project-wide constants.
+# Based on recommendations in GEMINI.md.
 
 module Arneis
   module Models
     # Gemini Text & Evals
-    GEMINI_FLASH = 'gemini-2.5-flash'
-    GEMINI_PRO   = 'gemini-2.5-pro'
-    
+    GEMINI_FLASH = "gemini-2.5-flash"
+    GEMINI_PRO = "gemini-2.5-pro"
+
     # Veo Video Generation
-    VEO_2       = 'veo-2.0-generate-001'
-    VEO_DEFAULT = 'veo-3.0-generate-001' # confirmed via test script
-    
+    VEO_2 = "veo-2.0-generate-001"
+    VEO_DEFAULT = "veo-3.0-generate-001" # confirmed via test script
+
     # Lyria Music Generation
-    LYRIA_CLIP  = 'lyria-3-clip-preview'
-    LYRIA_DEFAULT = 'lyria-3-pro-preview'    # High quality
-    
+    LYRIA_CLIP = "lyria-3-clip-preview"
+    LYRIA_DEFAULT = "lyria-3-pro-preview"    # High quality
+
     # Chirp Speech / Narration
-    CHIRP_2     = 'chirp_2'
-    CHIRP_DEFAULT = 'chirp_3'                # Latest GA
-    
+    CHIRP_2 = "chirp_2"
+    CHIRP_DEFAULT = "chirp_3"                # Latest GA
+
     # Imagen / Nano Banana
-    IMAGEN_3_FAST = 'imagen-3.0-fast-generate-001'
-    IMAGEN_3_PRO = 'imagen-3.0-generate-001'
+    IMAGEN_3_FAST = "imagen-3.0-fast-generate-001"
+    IMAGEN_3_PRO = "imagen-3.0-generate-001"
     IMAGEN_DEFAULT = IMAGEN_3_PRO
   end
-  
+
   # Resource Pricing (Rough estimates)
   module Pricing
     COST_PER_VEO_GEN = 4.00

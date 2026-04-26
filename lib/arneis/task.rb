@@ -1,6 +1,4 @@
-=begin
-Arneis::Task - Represents a single unit of work in the orchestration.
-=end
+# Arneis::Task - Represents a single unit of work in the orchestration.
 
 module Arneis
   class Task

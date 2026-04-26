@@ -1,6 +1,4 @@
-=begin
-Arneis::Generator::Base - Base class for all media generators.
-=end
+# Arneis::Generator::Base - Base class for all media generators.
 
 module Arneis
   module Generator
@@ -27,7 +25,7 @@ module Arneis
         begin
           yield
         rescue => e
-          if e.message.include?('429') && retries < max_retries
+          if e.message.include?("429") && retries < max_retries
             wait_time = 2**retries
             puts Rainbow("  ⏳ [RATE LIMIT] 429 detected. Retrying in #{wait_time}s... (Attempt #{retries + 1}/#{max_retries})").yellow
             sleep(wait_time)

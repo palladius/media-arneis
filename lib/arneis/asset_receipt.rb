@@ -1,9 +1,7 @@
-=begin
-Arneis::AssetReceipt - Standardized record for every generated asset.
-Provides full observability into model usage, timing, and costs.
-=end
+# Arneis::AssetReceipt - Standardized record for every generated asset.
+# Provides full observability into model usage, timing, and costs.
 
-require 'json'
+require "json"
 
 module Arneis
   class AssetReceipt
@@ -14,7 +12,7 @@ module Arneis
       @model = model
       @prompt = prompt
       @ts_started = Time.now.iso8601
-      @status = 'pending'
+      @status = "pending"
       @input_tokens = 0
       @output_tokens = 0
       @cost_usd = 0.0
@@ -37,14 +35,14 @@ module Arneis
       @input_tokens = input_tokens
       @output_tokens = output_tokens
       @cost_usd = cost_usd
-      @status = 'done'
+      @status = "done"
     end
 
     def fail!(error_msg:)
       @ts_ended = Time.now.iso8601
       @duration = (Time.parse(@ts_ended) - Time.parse(@ts_started)).round(2)
       @error_msg = Config.sanitize(error_msg)
-      @status = 'failed'
+      @status = "failed"
     end
 
     def save!(path)

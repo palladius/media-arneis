@@ -1,11 +1,9 @@
-=begin
-Arneis::Generator::Gif - Post-production tool using ffmpeg.
-Converts final MP4 videos to high-quality GIFs.
-=end
+# Arneis::Generator::Gif - Post-production tool using ffmpeg.
+# Converts final MP4 videos to high-quality GIFs.
 
-require 'fileutils'
+require "fileutils"
 
-require_relative 'base'
+require_relative "base"
 
 module Arneis
   module Generator
@@ -24,7 +22,7 @@ module Arneis
           receipt.fail!(error_msg: "Input file missing")
           receipt.save!(output_file)
           File.write("#{output_file}.mock", "MOCK_GIF_DATA_FOR: #{input_file}")
-          return { status: 'mocked', tokens: 0, cost: 0.0, time: 0 }
+          return {status: "mocked", tokens: 0, cost: 0.0, time: 0}
         end
 
         # ffmpeg command for high-quality GIF
@@ -32,9 +30,9 @@ module Arneis
         # 2. Convert using palette
         palette = "palette.png"
         filters = "fps=15,scale=640:-1:flags=lanczos"
-        
+
         cmd = "ffmpeg -v warning -i \"#{input_file}\" -vf \"#{filters},palettegen\" -y \"#{palette}\" && " +
-              "ffmpeg -v warning -i \"#{input_file}\" -i \"#{palette}\" -lavfi \"#{filters} [x]; [x][1:v] paletteuse\" -y \"#{output_file}\""
+          "ffmpeg -v warning -i \"#{input_file}\" -i \"#{palette}\" -lavfi \"#{filters} [x]; [x][1:v] paletteuse\" -y \"#{output_file}\""
 
         begin
           success = system(cmd)
@@ -44,11 +42,11 @@ module Arneis
             puts Rainbow("  ✅ [GIF] GIF generated successfully!").green
             receipt.complete!(cost_usd: 0.0)
             receipt.save!(output_file)
-            
+
             # Validate
             Validator.validate_and_rename!(output_file, :image) # GIFs are validated as images (header checks)
-            
-            { status: 'done', tokens: 0, cost: 0.0, time: (Time.now - start_time).round(2) }
+
+            {status: "done", tokens: 0, cost: 0.0, time: (Time.now - start_time).round(2)}
           else
             raise "ffmpeg execution failed"
           end
@@ -57,7 +55,7 @@ module Arneis
           receipt.fail!(error_msg: e.message)
           receipt.save!(output_file)
           File.write("#{output_file}.mock", "MOCK_GIF_DATA")
-          { status: 'mocked', tokens: 0, cost: 0.0, time: 0 }
+          {status: "mocked", tokens: 0, cost: 0.0, time: 0}
         end
       end
     end

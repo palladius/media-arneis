@@ -1,10 +1,8 @@
-=begin
-Arneis::Schema - YAML schema validation and inheritance (hydration).
-Uses dry-validation for structural enforcement.
-=end
+# Arneis::Schema - YAML schema validation and inheritance (hydration).
+# Uses dry-validation for structural enforcement.
 
-require 'dry-validation'
-require 'deep_merge'
+require "dry-validation"
+require "deep_merge"
 
 module Arneis
   module Schema
@@ -22,7 +20,7 @@ module Arneis
       end
 
       rule(:apiVersion) do
-        unless value == 'media-arneis.palladius.it/v1'
+        unless value == "media-arneis.palladius.it/v1"
           key.failure("must be media-arneis.palladius.it/v1")
         end
       end
@@ -45,7 +43,7 @@ module Arneis
       end
 
       rule(:kind) do
-        unless value == 'VideoProject'
+        unless value == "VideoProject"
           key.failure("must be VideoProject")
         end
       end
@@ -69,7 +67,7 @@ module Arneis
       end
 
       rule(:kind) do
-        unless value == 'KidsStory'
+        unless value == "KidsStory"
           key.failure("must be KidsStory")
         end
       end
@@ -78,27 +76,26 @@ module Arneis
     def self.validate_template(yaml_path)
       data = YAML.load_file(yaml_path)
       # For now, identify contract by kind
-      contract = contract_for(data['kind'])
-      
+      contract = contract_for(data["kind"])
+
       unless contract
-        return { success: false, message: "Unknown kind: #{data['kind']}" }
+        return {success: false, message: "Unknown kind: #{data["kind"]}"}
       end
 
       result = contract.new.call(data)
       if result.success?
-        { success: true, data: result.to_h }
+        {success: true, data: result.to_h}
       else
-        { success: false, message: "Validation failed for #{File.basename(yaml_path)}: #{result.errors.to_h}", errors: result.errors.to_h }
+        {success: false, message: "Validation failed for #{File.basename(yaml_path)}: #{result.errors.to_h}", errors: result.errors.to_h}
       end
     rescue => e
-      { success: false, message: "Error loading YAML: #{e.message}" }
+      {success: false, message: "Error loading YAML: #{e.message}"}
     end
 
     def self.contract_for(kind)
       case kind
-      when 'VideoProject' then VideoProjectContract
-      when 'KidsStory' then KidsStoryContract
-      else nil
+      when "VideoProject" then VideoProjectContract
+      when "KidsStory" then KidsStoryContract
       end
     end
 
@@ -112,9 +109,9 @@ module Arneis
       end
 
       def report
-        report_str = Rainbow("❌ Validation Failed for #{@yaml_path || 'YAML'}:").red.bold + "\n"
+        report_str = Rainbow("❌ Validation Failed for #{@yaml_path || "YAML"}:").red.bold + "\n"
         format_errors(@errors).each do |error|
-          report_str += Rainbow("   - #{error[:field]}:").yellow + " #{error[:messages].join(', ')}\n"
+          report_str += Rainbow("   - #{error[:field]}:").yellow + " #{error[:messages].join(", ")}\n"
         end
         report_str
       end
@@ -128,7 +125,7 @@ module Arneis
           if value.is_a?(Hash)
             flat_errors.concat(format_errors(value, current_path))
           else
-            flat_errors << { field: current_path, messages: value }
+            flat_errors << {field: current_path, messages: value}
           end
         end
         flat_errors
@@ -139,33 +136,32 @@ module Arneis
   module Hydrator
     def self.hydrate(sample_path)
       unless File.exist?(sample_path)
-        return { success: false, message: "File not found: #{sample_path}" }
+        return {success: false, message: "File not found: #{sample_path}"}
       end
       sample_data = YAML.load_file(sample_path)
-      template_name = sample_data.dig('metadata', 'template') || sample_data['template']
-      
+      template_name = sample_data.dig("metadata", "template") || sample_data["template"]
+
       unless template_name
-        return { success: false, message: "No template specified in #{sample_path}" }
+        return {success: false, message: "No template specified in #{sample_path}"}
       end
 
       template_path = File.join("data/templates", "#{template_name}.yaml")
       unless File.exist?(template_path)
-        return { success: false, message: "Template not found: #{template_path}" }
+        return {success: false, message: "Template not found: #{template_path}"}
       end
 
       template_data = YAML.load_file(template_path)
-      
+
       # Deep Merge: sample overrides template
       hydrated_data = template_data.dup.deep_merge!(sample_data)
 
-      
       # Ensure metadata name comes from sample
-      hydrated_data['metadata'] ||= {}
-      hydrated_data['metadata']['name'] = sample_data.dig('metadata', 'name') || File.basename(sample_path, '.*')
-      
-      { success: true, data: hydrated_data }
+      hydrated_data["metadata"] ||= {}
+      hydrated_data["metadata"]["name"] = sample_data.dig("metadata", "name") || File.basename(sample_path, ".*")
+
+      {success: true, data: hydrated_data}
     rescue => e
-      { success: false, message: "Hydration error: #{e.message}" }
+      {success: false, message: "Hydration error: #{e.message}"}
     end
   end
 end

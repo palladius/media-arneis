@@ -1,6 +1,4 @@
-=begin
-Arneis::Generator::Mock - Mock generator for testing purposes.
-=end
+# Arneis::Generator::Mock - Mock generator for testing purposes.
 
 module Arneis
   module Generator
@@ -9,7 +7,7 @@ module Arneis
         puts "  [MOCK] Generating media for prompt: '#{prompt}' -> #{output_file}"
         sleep(rand(0.5..2.0)) # Simulate generation time
         File.write(output_file, "Mock content for: #{prompt}")
-        { tokens: 100, cost: 0.01, time: 1.5 }
+        {tokens: 100, cost: 0.01, time: 1.5}
       end
     end
   end

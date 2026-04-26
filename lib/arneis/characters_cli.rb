@@ -1,9 +1,7 @@
-=begin
-Arneis::CharactersCli - Subcommand for character management.
-=end
+# Arneis::CharactersCli - Subcommand for character management.
 
-require 'thor'
-require 'rainbow'
+require "thor"
+require "rainbow"
 
 module Arneis
   class CharactersCli < Thor
@@ -17,7 +15,7 @@ module Arneis
       end
 
       characters.each do |c|
-        img_str = c.image_count > 0 ? Rainbow("#{c.image_count} 🖼️").green : Rainbow("0 🖼️").red
+        img_str = (c.image_count > 0) ? Rainbow("#{c.image_count} 🖼️").green : Rainbow("0 🖼️").red
         id_str = Rainbow("📂 #{c.id}/").blue.ljust(18)
         name_str = "#{c.emoji} #{c.nationality_emoji} #{Rainbow(c.name.ljust(12)).yellow}"
         nick_str = "(#{Rainbow(c.nickname.ljust(10)).white})"
@@ -38,22 +36,22 @@ module Arneis
       end
 
       puts Rainbow("👤 Character: #{char.full_name} #{char.emoji} #{char.nationality_emoji}").cyan.bold
-      puts "  #{Rainbow('Nickname:').white} #{char.nickname}"
-      
+      puts "  #{Rainbow("Nickname:").white} #{char.nickname}"
+
       img_count = char.image_count
-      img_status = img_count > 0 ? Rainbow("#{img_count} images").green : Rainbow("No images").red
-      puts "  #{Rainbow('Reference:').white} 📂 #{char.consistency_images_dir} (#{img_status})"
-      
+      img_status = (img_count > 0) ? Rainbow("#{img_count} images").green : Rainbow("No images").red
+      puts "  #{Rainbow("Reference:").white} 📂 #{char.consistency_images_dir} (#{img_status})"
+
       if char.personality
-        puts "\n  #{Rainbow('🧠 Personality:').magenta}"
+        puts "\n  #{Rainbow("🧠 Personality:").magenta}"
         puts char.personality.split("\n").map { |l| "    #{l}" }.join("\n")
       end
-      
+
       if char.visual_look
-        puts "\n  #{Rainbow('🎨 Visual Look:').blue}"
+        puts "\n  #{Rainbow("🎨 Visual Look:").blue}"
         puts char.visual_look.split("\n").map { |l| "    #{l}" }.join("\n")
       end
-      
+
       puts ""
     end
   end

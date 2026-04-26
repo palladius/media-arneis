@@ -1,7 +1,5 @@
-=begin
-Arneis::MarketingConfig - Platform-specific prompt templates for marketing assets.
-Defines style, aspect ratio, and tone for LinkedIn, Instagram, and X.
-=end
+# Arneis::MarketingConfig - Platform-specific prompt templates for marketing assets.
+# Defines style, aspect ratio, and tone for LinkedIn, Instagram, and X.
 
 module Arneis
   module MarketingConfig
@@ -30,10 +28,10 @@ module Arneis
       config = PLATFORMS[platform]
       return nil unless config
 
-      "Create a high-fidelity marketing image for '#{project_title}'. 
-      Style: #{config[:style]}. 
-      Tone: #{config[:text_requirement]}. 
-      Context: #{context}. 
+      "Create a high-fidelity marketing image for '#{project_title}'.
+      Style: #{config[:style]}.
+      Tone: #{config[:text_requirement]}.
+      Context: #{context}.
       Ensure the composition matches a #{config[:aspect_ratio]} aspect ratio."
     end
   end

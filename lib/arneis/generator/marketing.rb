@@ -1,9 +1,7 @@
-=begin
-Arneis::Generator::Marketing - Orchestrates platform-specific marketing asset generation.
-Uses MarketingConfig for prompts and Imagen for creation.
-=end
+# Arneis::Generator::Marketing - Orchestrates platform-specific marketing asset generation.
+# Uses MarketingConfig for prompts and Imagen for creation.
 
-require 'fileutils'
+require "fileutils"
 
 module Arneis
   module Generator
@@ -21,7 +19,7 @@ module Arneis
           output_file = File.join(output_dir, "#{MarketingConfig::PLATFORMS[platform][:suffix]}.png")
           prompt = MarketingConfig.prompt_for(platform, project_title, context)
           aspect_ratio = MarketingConfig::PLATFORMS[platform][:aspect_ratio]
-          
+
           puts Rainbow("  📢 [MARKETING] Generating #{platform} asset...").cyan
           res = @imagen.generate(prompt, output_file, asset_id: "Marketing.#{platform}", aspect_ratio: aspect_ratio)
           results[platform] = res

@@ -1,12 +1,10 @@
-=begin
-Arneis::Orchestrator - Manages task execution with dependency awareness.
-Refactored to use the 'async' gem for fiber-based concurrency.
-=end
+# Arneis::Orchestrator - Manages task execution with dependency awareness.
+# Refactored to use the 'async' gem for fiber-based concurrency.
 
-require 'async'
-require 'async/barrier'
-require 'async/semaphore'
-require 'zeitwerk'
+require "async"
+require "async/barrier"
+require "async/semaphore"
+require "zeitwerk"
 
 module Arneis
   class Orchestrator
@@ -40,7 +38,7 @@ module Arneis
       puts Rainbow("🔀 Running orchestration in SYNC mode...").yellow
       loop do
         runnable = @tasks.values.reject { |t| @completed_tasks.include?(t.id) }
-                                 .select { |t| (t.dependencies - @completed_tasks).empty? }
+          .select { |t| (t.dependencies - @completed_tasks).empty? }
         break if runnable.empty?
 
         runnable.each do |task|
@@ -59,8 +57,8 @@ module Arneis
         loop do
           scheduled_ids = task_fibers.keys
           runnable = @tasks.values.reject { |t| @completed_tasks.include?(t.id) || scheduled_ids.include?(t.id) }
-                                   .select { |t| (t.dependencies - @completed_tasks).empty? }
-          
+            .select { |t| (t.dependencies - @completed_tasks).empty? }
+
           runnable.each do |task|
             task_fibers[task.id] = parent.async do
               @semaphore.acquire do
@@ -71,14 +69,14 @@ module Arneis
           end
 
           break if @tasks.values.all? { |t| @completed_tasks.include?(t.id) }
-          
+
           # Check for deadlocks (no tasks runnable and not all finished)
           if runnable.empty? && task_fibers.values.all?(&:finished?) && !@tasks.values.all? { |t| @completed_tasks.include?(t.id) }
-             puts Rainbow("⚠️  Orchestration Deadlock detected! Some dependencies might be missing.").red
-             break
+            puts Rainbow("⚠️  Orchestration Deadlock detected! Some dependencies might be missing.").red
+            break
           end
 
-          sleep 0.1 
+          sleep 0.1
         end
       end
     end

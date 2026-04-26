@@ -1,9 +1,7 @@
-=begin
-Arneis::Validator - Verifies the integrity and type of generated media artifacts.
-Uses the system 'file' command to check for expected media headers.
-=end
+# Arneis::Validator - Verifies the integrity and type of generated media artifacts.
+# Uses the system 'file' command to check for expected media headers.
 
-require 'rainbow'
+require "rainbow"
 
 module Arneis
   class Validator
@@ -17,7 +15,7 @@ module Arneis
 
     def self.verify(file_path, type)
       unless File.exist?(file_path)
-        return { success: false, message: "File not found: #{file_path}" }
+        return {success: false, message: "File not found: #{file_path}"}
       end
 
       # Run system 'file' command
@@ -25,9 +23,9 @@ module Arneis
       expected_patterns = VALID_TYPES[type]
 
       if expected_patterns.any? { |pattern| file_info =~ pattern }
-        { success: true, info: file_info.strip, metadata: extract_metadata(file_path, file_info) }
+        {success: true, info: file_info.strip, metadata: extract_metadata(file_path, file_info)}
       else
-        { success: false, info: file_info.strip, message: "Type mismatch: expected #{type}, got #{file_info.strip}" }
+        {success: false, info: file_info.strip, message: "Type mismatch: expected #{type}, got #{file_info.strip}"}
       end
     end
 

@@ -1,10 +1,10 @@
-require 'spec_helper'
-require 'arneis/task'
-require 'arneis/config'
-require 'arneis/orchestrator'
+require "spec_helper"
+require "arneis/task"
+require "arneis/config"
+require "arneis/orchestrator"
 
 RSpec.describe Arneis::Orchestrator do
-  it 'executes tasks in the correct order based on dependencies' do
+  it "executes tasks in the correct order based on dependencies" do
     orchestrator = described_class.new
     execution_order = []
 
@@ -26,7 +26,7 @@ RSpec.describe Arneis::Orchestrator do
     expect(orchestrator.completed_tasks).to include(:task1, :task2, :task3)
   end
 
-  it 'runs independent tasks' do
+  it "runs independent tasks" do
     orchestrator = described_class.new
     completed = []
 
