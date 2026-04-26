@@ -43,6 +43,42 @@ module Arneis
       end
     end
 
+    def evaluate_character_consistency(generated_image_path, character)
+      # ... existing logic ...
+    end
+
+    def detailed_probability_eval(generated_image_path, reference_image_path, character_name)
+      puts Rainbow("  ⚖️  [EVAL] Calculating similarity probability for #{character_name}...").cyan
+      
+      prompt = "You are a professional facial recognition and identity verification expert. 
+      Compare these two images. 
+      Image A (the first one) is the GROUND TRUTH reference of the person '#{character_name}'.
+      Image B (the second one) is an AI-generated image.
+      
+      Are they the same person? 
+      Be extremely critical. AI often misses subtle facial structures, ear shapes, or eye nuances.
+      
+      Output format:
+      PROBABILITY: <0-100>
+      REASON: <brief explanation of your confidence score>"
+
+      begin
+        res = @gemini.generate(prompt, images: [reference_image_path, generated_image_path])
+        content = res[:content]
+        
+        prob = content.match(/PROBABILITY:\s*(\d+)/)&.captures&.first&.to_i || 0
+        reason = content.match(/REASON:\s*(.*)/m)&.captures&.first&.strip || "No reason provided"
+        
+        { 
+          probability: prob,
+          message: reason
+        }
+      rescue => e
+        puts Rainbow("  ⚠️ [EVAL] Failed: #{e.message}").yellow
+        { probability: 0, message: "Eval failed: #{e.message}" }
+      end
+    end
+
     def evaluate_video_text(video_path, expected_text)
       puts "  👀 [EVAL] Verifying text in #{File.basename(video_path)}..."
 

@@ -68,8 +68,6 @@ module Arneis
       consistency_images.join(",")
     end
 
-    private
-
     def consistency_images
       return [] unless @consistency_images_dir
       # If relative to YAML path (starts with .)
@@ -80,5 +78,7 @@ module Arneis
       # Get images but exclude hidden files
       Dir.glob(File.join(dir, "*.{png,jpg,jpeg}")).reject { |f| File.basename(f).start_with?(".") }
     end
+
+    private
   end
 end
