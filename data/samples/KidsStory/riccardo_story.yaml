@@ -6,12 +6,13 @@ metadata:
 spec:
   story_title: "Riccardo's Galactic Pizza Quest"
   character_id: riccardo
+  story_audio: [it, en]
   pages:
     - page: 1
       description: "Riccardo in a cool space suit, standing next to a rocket shaped like a wine bottle, looking at the stars."
       text: "Riccardo wanted to find the best pizza in the whole galaxy!"
     - page: 2
-      description: "Riccardo eating a giant pineapple pizza on a purple moon with two friendly aliens."
+      description: "He flew to the Purple Moon and shared a delicious pineapple pizza with his new alien friends."
       text: "He flew to the Purple Moon and shared a delicious pineapple pizza with his new alien friends."
     - page: 3
       description: "Riccardo flying his rocket back to Earth (Switzerland), with a box of space-pizza on his lap."
