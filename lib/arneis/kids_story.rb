@@ -9,7 +9,7 @@ require "time"
 
 module Arneis
   class KidsStory
-    attr_reader :story_title, :pages, :character_id, :output_path, :data, :metadata
+    attr_reader :story_title, :pages, :character_id, :story_audio, :output_path, :data, :metadata
 
     def initialize(yaml_path)
       puts Rainbow("💧 Hydrating and validating KidsStory from #{yaml_path}...").cyan
@@ -43,6 +43,7 @@ module Arneis
       @metadata = full_data["metadata"]
       @story_title = @data["story_title"]
       @character_id = @data["character_id"]
+      @story_audio = @data["story_audio"] || ["it", "en"]
       @pages = @data["pages"]
       @mutex = Thread::Mutex.new
 

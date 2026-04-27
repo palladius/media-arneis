@@ -55,6 +55,7 @@ module Arneis
         required(:spec).hash do
           required(:story_title).filled(:string)
           required(:character_id).filled(:string) # Protagonist
+          optional(:story_audio).array(:string)
           required(:pages).array(:hash) do
             required(:page).filled(:integer)
             required(:description).filled(:string) # Visual prompt context
