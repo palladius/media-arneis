@@ -69,6 +69,19 @@ module Arneis
     end
 
     def consistency_images
+      if id == "riccardo"
+        # Using the superior images from nano-banana-ricc skill
+        base = "/home/riccardo/.gemini/extensions/palladius-public-goodies/skills/nano-banana-ricc/assets/riccardo/"
+        return [
+          "#{base}ricc-pineapple-pizza.png",
+          "#{base}riccardosouthafrica.png",
+          "#{base}ricc-za-lake.png",
+          "#{base}ricc-za-view-with-kids.png",
+          "#{base}ricc-za-wine-tasting.png",
+          "#{base}ricc-google-switzerland.png"
+        ].select { |f| File.exist?(f) }
+      end
+
       return [] unless @consistency_images_dir
       # If relative to YAML path (starts with .)
       base_dir = @yaml_path.end_with?("character.yaml") ? File.dirname(@yaml_path) : CHARACTERS_DIR

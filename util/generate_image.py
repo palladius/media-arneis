@@ -8,8 +8,8 @@
 # ]
 # ///
 """
-Arneis Image Generator - Gemini 3.1 Flash Image.
-Uses non-Vertex GenAI API to achieve character consistency via multimodal prompt.
+Arneis Image Generator - Multimodal (Vertex AI).
+Uses Vertex AI to avoid 503 spikes.
 """
 import sys
 import argparse
@@ -17,8 +17,6 @@ import os
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
-from PIL import Image as PILImage
-from io import BytesIO
 import base64
 
 def main():
@@ -28,19 +26,24 @@ def main():
     parser.add_argument("-o", "--output", type=str, required=True, help="Output file path.")
     parser.add_argument("-i", "--images", type=str, help="Comma-separated paths to reference images for character consistency.")
     parser.add_argument("-a", "--aspect-ratio", type=str, default="1:1", help="Aspect ratio (1:1, 4:3, 3:4, 16:9, 9:16).")
-    parser.add_argument("-m", "--model", type=str, default="gemini-3.1-flash-image-preview", help="Model ID to use.")
-    parser.add_argument("-v", "--vertex", action="store_true", default=False, help="Use Vertex AI (default: False for this model).")
+    parser.add_argument("-m", "--model", type=str, default="gemini-2.5-flash", help="Model ID to use.")
+    parser.add_argument("-v", "--vertex", action="store_true", default=True, help="Use Vertex AI (default: True).")
 
     args = parser.parse_args()
 
+    project = os.getenv("GOOGLE_CLOUD_PROJECT")
+    location = os.getenv("GOOGLE_CLOUD_REGION", "us-central1")
     api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        print("❌ Error: GEMINI_API_KEY environment variable is not set.", file=sys.stderr)
-        sys.exit(1)
-        
-    client = genai.Client(api_key=api_key)
 
-    print(f"🎨 Generating image via multimodal prompt using {args.model} (GenAI API)...", file=sys.stderr)
+    if args.vertex:
+        client = genai.Client(vertexai=True, project=project, location=location)
+    else:
+        if not api_key:
+            print("❌ Error: GEMINI_API_KEY not set for GenAI API mode.", file=sys.stderr)
+            sys.exit(1)
+        client = genai.Client(api_key=api_key)
+
+    print(f"🎨 Generating image via multimodal prompt using {args.model} (Vertex={args.vertex})...", file=sys.stderr)
     
     contents = []
 
@@ -75,13 +78,12 @@ def main():
 
         image_saved = False
         if not response.parts:
-             print("⚠️ No parts in response.", file=sys.stderr)
+             print("⚠️ No parts in response. Refusal or safety filter hit.", file=sys.stderr)
              sys.exit(1)
 
         for part in response.parts:
             if part.inline_data:
                 image_data = part.inline_data.data
-                # In GenAI API, data is sometimes base64 encoded string
                 if isinstance(image_data, str):
                     image_data = base64.b64decode(image_data)
                 

@@ -35,10 +35,10 @@ autoarchive:
 	{{BUNDLE}} exec bin/arnectl cleanup
 archive: autoarchive
 
-# Run the CLI
+# Running safe CLI arneis with limit of 300seconds
 arnectl *args:
-	# Running safe arneis with limit of 60seconds
-	timeout 60 {{BUNDLE}} exec bin/arnectl {{args}}
+	@white "timeout 300 {{BUNDLE}} exec bin/arnectl {{args}}"
+	@timeout 300 {{BUNDLE}} exec bin/arnectl {{args}}
 
 status:
 	just arnectl status
@@ -52,3 +52,10 @@ test-story:
 # Run expensive LLM integration tests (opt-in via ARNEIS_EXPENSIVE_TESTS=true)
 test-expensive:
 	{{BUNDLE}} exec bin/test_llm_expensive.rb
+
+
+ricc-story:
+	just arnectl apply data/samples/KidsStory/riccardo_story.yaml --output out/just-ricc-story/
+
+riccardo-consistent:
+	just arnectl apply data/samples/KidsStory/riccardo_story.yaml --output out/riccardo-consistent/.

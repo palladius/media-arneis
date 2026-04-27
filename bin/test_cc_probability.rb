@@ -28,9 +28,11 @@ test_image = images.last
 train_images = images[0...-1]
 
 puts Rainbow("👤 Character: #{character.name}").yellow
-puts "  - Total images: #{images.size}"
-puts "  - Using #{train_images.size} images for generation."
-puts "  - Using 1 image as ground truth: #{File.basename(test_image)}"
+puts "  - Total images found: #{images.size}"
+puts Rainbow("  - 📚 TRAINING IMAGES (Used for Generation):").blue
+train_images.each { |img| puts "    📸 #{File.basename(img)}" }
+puts Rainbow("  - 🎯 GROUND TRUTH IMAGE (Used for Comparison):").green
+puts "    🖼️  #{File.basename(test_image)}"
 
 # 3. Generate new image
 puts Rainbow("\n🚀 Generating Riccardo as an astronaut...").magenta
