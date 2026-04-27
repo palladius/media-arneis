@@ -235,6 +235,7 @@ module Arneis
       total_cost = 0.0
       input_tokens = 0
       output_tokens = 0
+      min_score = 10
 
       # Handle both VideoProject (scenes) and KidsStory (pages)
       items = state["scenes"] || state["pages"] || []
@@ -264,7 +265,9 @@ module Arneis
           asset_data = ::JSON.parse(File.read(asset_json))
           if asset_data["eval"]
             eval_indicator = asset_data["eval"]["success"] ? "👍" : "👎"
-            eval_score = " (⭐ #{asset_data["eval"]["score"]}/10)"
+            score = asset_data["eval"]["score"]
+            eval_score = " (⭐ #{score}/10)"
+            min_score = [min_score, score].min
           end
         end
 
@@ -327,12 +330,86 @@ module Arneis
 
       puts Rainbow("\n📊 Stats: 🪙 #{total_tokens} (⬆️ #{input_tokens} ⬇️ #{output_tokens}) | 💸 $#{"%.2f" % total_cost}").cyan.bold
 
+      if min_score < 6
+        puts Rainbow("\n💡 Hint: Some evaluations are sub-optimal (score < 6).").yellow
+        puts "   to automatically re-do the sub-optimal jobs, type: " + Rainbow("arnectl redo --threshold 6").white
+      end
+
       if has_failures
         puts Rainbow("\n💡 Hint: Some parts failed. To fix, run:").yellow
         puts Rainbow("   just arnectl resume #{folder_path} --force").white
       end
 
       puts Rainbow("\nLegend: 🟢 done | 🔴 failed | 🟡 in_progress | ⚪ pending | 🤡 mocked | 👍/👎 evaluated | 🟣/⚫ unevaluated").gray.italic
+    end
+
+    desc "redo [FOLDER_PATH]", "Invalidate and redo sub-optimal generation tasks"
+    method_option :threshold, type: :numeric, default: 6, aliases: "-t", desc: "Evaluation score threshold (0-10)"
+    def redo(folder_path = nil)
+      folder_path = begin
+        resolve_media_folder([folder_path], options)
+      rescue
+        nil
+      end
+      folder_path ||= Dir.glob("out/*/").select { |f| File.exist?(File.join(f, ".state.yaml")) }.max_by { |f| File.mtime(f) }
+
+      if folder_path.nil?
+        puts Rainbow("❌ No project folders found. Specify one or set ARNEIS_FOLDER.").red
+        return
+      end
+
+      threshold = options[:threshold]
+      puts Rainbow("🔄 Redoing tasks with evaluation score < #{threshold} in #{folder_path}...").cyan
+
+      state_file = File.join(folder_path, ".state.yaml")
+      state = YAML.load_file(state_file)
+
+      # Handle both VideoProject (scenes) and KidsStory (pages)
+      items = state["scenes"] || state["pages"] || []
+      invalidated_count = 0
+      trash_dir = File.join(folder_path, ".trash", "redo_#{Time.now.strftime("%Y%m%d_%H%M%S")}")
+
+      items.each do |item|
+        num = item["scene"] || item["page"]
+        item_dir = state["scenes"] ? "" : "pages/page_#{num}/"
+        artifact_base = File.join(folder_path, item_dir, state["scenes"] ? "scene_#{num}" : "illustration")
+        
+        # Check all possible media extensions
+        media_file = Dir.glob("#{artifact_base}.{mp4,png,wav}").first
+        next unless media_file
+
+        asset_json = "#{media_file}.asset.json"
+        next unless File.exist?(asset_json)
+
+        asset_data = ::JSON.parse(File.read(asset_json))
+        score = asset_data.dig("eval", "score") || 10
+
+        if score < threshold
+          puts Rainbow("  🗑️  Invalidating Page/Scene #{num} (Score: #{score})").yellow
+          FileUtils.mkdir_p(trash_dir)
+          
+          # Move files to trash
+          Dir.glob("#{artifact_base}*").each do |f|
+            FileUtils.mv(f, File.join(trash_dir, File.basename(f)))
+          end
+          
+          item["status"] = "pending"
+          invalidated_count += 1
+        end
+      end
+
+      if invalidated_count > 0
+        state["status"] = "in_progress"
+        # Also reset final assembly
+        state["final_story_assembly"]["status"] = "pending" if state["final_story_assembly"]
+        state["montage"]["status"] = "pending" if state["montage"]
+        
+        File.write(state_file, state.to_yaml)
+        puts Rainbow("✅ Successfully invalidated #{invalidated_count} tasks.").green
+        puts Rainbow("🚀 Run 'just arnectl resume #{folder_path}' to re-generate.").blue
+      else
+        puts Rainbow("✨ No tasks found below the threshold of #{threshold}.").green
+      end
     end
 
     desc "list", "List all meaningful projects in out/"
