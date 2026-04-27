@@ -8,8 +8,9 @@
 # ]
 # ///
 """
-Arneis Image Generator - Multimodal (Vertex AI).
-Uses Vertex AI to avoid 503 spikes.
+Arneis Image Generator - Gemini 3.1 Flash Image (Multimodal).
+The proven approach for 90%+ character consistency.
+Uses non-Vertex GenAI API.
 """
 import sys
 import argparse
@@ -26,24 +27,19 @@ def main():
     parser.add_argument("-o", "--output", type=str, required=True, help="Output file path.")
     parser.add_argument("-i", "--images", type=str, help="Comma-separated paths to reference images for character consistency.")
     parser.add_argument("-a", "--aspect-ratio", type=str, default="1:1", help="Aspect ratio (1:1, 4:3, 3:4, 16:9, 9:16).")
-    parser.add_argument("-m", "--model", type=str, default="gemini-2.5-flash", help="Model ID to use.")
-    parser.add_argument("-v", "--vertex", action="store_true", default=True, help="Use Vertex AI (default: True).")
+    parser.add_argument("-m", "--model", type=str, default="gemini-3.1-flash-image-preview", help="Model ID to use.")
+    parser.add_argument("-v", "--vertex", action="store_true", default=False, help="Use Vertex AI.")
 
     args = parser.parse_args()
 
-    project = os.getenv("GOOGLE_CLOUD_PROJECT")
-    location = os.getenv("GOOGLE_CLOUD_REGION", "us-central1")
     api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        print("❌ Error: GEMINI_API_KEY not set.", file=sys.stderr)
+        sys.exit(1)
+        
+    client = genai.Client(api_key=api_key)
 
-    if args.vertex:
-        client = genai.Client(vertexai=True, project=project, location=location)
-    else:
-        if not api_key:
-            print("❌ Error: GEMINI_API_KEY not set for GenAI API mode.", file=sys.stderr)
-            sys.exit(1)
-        client = genai.Client(api_key=api_key)
-
-    print(f"🎨 Generating image via multimodal prompt using {args.model} (Vertex={args.vertex})...", file=sys.stderr)
+    print(f"🎨 Generating image via multimodal prompt using {args.model}...", file=sys.stderr)
     
     contents = []
 

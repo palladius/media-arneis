@@ -100,5 +100,48 @@ module Arneis
         {success: false, score: 0, message: "Eval failed: #{e.message}", evaluated: false}
       end
     end
+
+    def evaluate_audio_intelligibility(audio_path, expected_text)
+      puts Rainbow("  ⚖️  [EVAL] Checking audio intelligibility for #{File.basename(audio_path)}...").cyan
+
+      prompt = "You are an audio quality auditor. Listen to the provided audio and transcribe it.
+      Then, compare your transcription with the EXPECTED text provided below.
+
+      EXPECTED TEXT:
+      \"#{expected_text}\"
+
+      Assess how well the audio matches the expected text. 
+      The transcription should be at least 90% the same as the expected text.
+      Consider: Pronunciation, Clarity, and Accuracy.
+
+      Output format:
+      SCORE: <1-10>
+      SIMILARITY: <0-100>%
+      TRANSCRIPTION: <your transcription>
+      REASON: <brief explanation>
+      "
+
+      begin
+        res = @gemini.generate(prompt, audio: [audio_path])
+        content = res[:content]
+
+        score = content.match(/SCORE:\s*(\d+)/)&.captures&.first&.to_i || 5
+        similarity = content.match(/SIMILARITY:\s*(\d+)/)&.captures&.first&.to_i || 0
+        reason = content.match(/REASON:\s*(.*)/m)&.captures&.first&.strip || "No reason provided"
+        transcription = content.match(/TRANSCRIPTION:\s*(.*)/m)&.captures&.first&.strip || "N/A"
+
+        {
+          success: similarity >= 90,
+          score: score,
+          similarity: similarity,
+          transcription: transcription,
+          message: reason,
+          evaluated: true
+        }
+      rescue => e
+        puts Rainbow("  ⚠️ [EVAL] Audio Eval Failed: #{e.message}").yellow
+        {success: false, score: 0, message: "Eval failed: #{e.message}", evaluated: false}
+      end
+    end
   end
 end

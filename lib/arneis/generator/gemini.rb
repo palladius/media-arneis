@@ -20,8 +20,8 @@ module Arneis
         )
       end
 
-      def generate(prompt, output_file = nil, system_instruction: nil, images: [], timeout: 30, asset_id: nil)
-        puts "  [GEMINI] Generating #{images.empty? ? "text" : "multimodal response"} for prompt: '#{prompt[0..50]}...'"
+      def generate(prompt, output_file = nil, system_instruction: nil, images: [], audio: [], timeout: 30, asset_id: nil)
+        puts "  [GEMINI] Generating #{images.empty? && audio.empty? ? "text" : "multimodal response"} for prompt: '#{prompt[0..50]}...'"
         receipt = AssetReceipt.new(asset_id: asset_id || "text_#{Time.now.to_i}", model: @model, prompt: prompt)
 
         parts = [{text: prompt}]
@@ -34,6 +34,17 @@ module Arneis
           else "image/png"
           end
           parts << {inline_data: {mime_type: mime_type, data: Base64.strict_encode64(File.read(img_path))}}
+        end
+
+        audio.each do |aud_path|
+          next unless File.exist?(aud_path)
+          ext = File.extname(aud_path).downcase.delete(".")
+          mime_type = case ext
+          when "wav" then "audio/wav"
+          when "mp3" then "audio/mpeg"
+          else "audio/wav"
+          end
+          parts << {inline_data: {mime_type: mime_type, data: Base64.strict_encode64(File.read(aud_path))}}
         end
 
         payload = {

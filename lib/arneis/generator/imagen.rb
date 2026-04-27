@@ -19,9 +19,9 @@ module Arneis
         start_time = Time.now
 
         # Call Imagen script (uv run)
-        escaped_prompt = prompt.gsub('"', '\"').gsub("`", '\`').gsub("$", '\$')
+        escaped_prompt = prompt.gsub('"', '\"').gsub('`', '\`').gsub('$', '\$')
         image_flag = reference_images ? "-i \"#{reference_images}\"" : ""
-        cmd = "uv run util/generate_image.py -p \"#{escaped_prompt}\" -o #{output_file} --aspect-ratio \"#{aspect_ratio}\" #{image_flag}"
+        cmd = "uv run util/generate_image.py -p \"#{escaped_prompt}\" -o #{output_file} --aspect-ratio \"#{aspect_ratio}\" #{image_flag} -m #{@model}"
 
         env = {
           "GOOGLE_CLOUD_PROJECT" => Config.google_cloud_project,

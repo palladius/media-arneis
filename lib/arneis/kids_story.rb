@@ -288,16 +288,41 @@ module Arneis
 
         # Save Eval result to asset json
         asset_json = "#{image_output}.asset.json"
-        if File.exist?(asset_json)
+        if File.exist?(asset_json) && e_result
           asset_data = ::JSON.parse(File.read(asset_json))
           asset_data["eval"] = e_result
           File.write(asset_json, ::JSON.pretty_generate(asset_data))
         end
 
-        if e_result[:success]
+        # AUDIO EVAL
+        @story_audio.each do |lang|
+          audio_file = File.join(File.dirname(image_output), "audio_#{lang}.wav")
+          if File.exist?(audio_file)
+            # Find the text for this page in this language
+            text_file = File.join(File.dirname(image_output), "story_text_#{lang}.txt")
+            text_file = File.join(File.dirname(image_output), "story_text.txt") if lang == "en" && !File.exist?(text_file)
+            
+            if File.exist?(text_file)
+              expected_text = File.read(text_file)
+              a_result = evaluator.evaluate_audio_intelligibility(audio_file, expected_text)
+              
+              # Save audio eval to asset json
+              audio_asset_json = "#{audio_file}.asset.json"
+              if File.exist?(audio_asset_json) && a_result
+                audio_asset_data = ::JSON.parse(File.read(audio_asset_json))
+                audio_asset_data["eval"] = a_result
+                File.write(audio_asset_json, ::JSON.pretty_generate(audio_asset_data))
+              end
+            end
+          end
+        end
+
+        if e_result && e_result[:success]
           update_page_status(page["page"], "verified")
-        else
+        elsif e_result
           update_page_status(page["page"], "done_with_warnings", "CC Score: #{e_result[:score]}/10 - #{e_result[:message]}")
+        else
+          update_page_status(page["page"], "done_with_warnings", "Evaluation failed")
         end
       else
         update_page_status(page["page"], "failed", v_result[:message])

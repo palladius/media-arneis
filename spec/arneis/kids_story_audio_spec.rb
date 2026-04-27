@@ -38,12 +38,14 @@ RSpec.describe Arneis::KidsStory do
     let(:imagen_mock) { instance_double(Arneis::Generator::Imagen) }
     let(:lyria_mock) { instance_double(Arneis::Generator::Lyria) }
     let(:chirp_mock) { instance_double(Arneis::Generator::Chirp) }
+    let(:evaluator_mock) { instance_double(Arneis::Evaluator) }
 
     before do
       allow(Arneis::Generator::Gemini).to receive(:new).and_return(gemini_mock)
       allow(Arneis::Generator::Imagen).to receive(:new).and_return(imagen_mock)
       allow(Arneis::Generator::Lyria).to receive(:new).and_return(lyria_mock)
       allow(Arneis::Generator::Chirp).to receive(:new).and_return(chirp_mock)
+      allow(Arneis::Evaluator).to receive(:new).and_return(evaluator_mock)
 
       allow(gemini_mock).to receive(:generate).and_return({content: "Mocked content", tokens: 10, cost: 0.01})
       allow(imagen_mock).to receive(:generate).and_return({status: "done", cost: 0.05, time: 1.0})
@@ -57,15 +59,19 @@ RSpec.describe Arneis::KidsStory do
       end
 
       allow(Arneis::Validator).to receive(:validate_and_rename!).and_return({success: true})
-      allow_any_instance_of(Arneis::Evaluator).to receive(:evaluate_character_consistency).and_return({ success: true, score: 8 })
+      allow(evaluator_mock).to receive(:evaluate_character_consistency).and_return({ success: true, score: 8 })
+      allow(evaluator_mock).to receive(:evaluate_audio_intelligibility).and_return({ success: true, score: 9, similarity: 95 })
     end
 
-    it "triggers audio generation and includes links in STORY.md" do
+    it "triggers audio generation, evaluation and includes links in STORY.md" do
       project = described_class.new(sample_yaml) # has [it, en]
       project.initialize_output(output_dir)
       
       # 3 for enrichment + 3 for prompt enhancement + 3 for translation
       expect(gemini_mock).to receive(:generate).exactly(9).times
+      
+      # 3 pages * 2 languages = 6 audio evaluation calls
+      expect(evaluator_mock).to receive(:evaluate_audio_intelligibility).exactly(6).times
 
       project.process(async: false)
       

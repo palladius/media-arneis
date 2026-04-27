@@ -34,3 +34,13 @@
     - [x] Implement the invalidation logic (moving files to `.trash` or marking as invalid in metadata).
     - [x] Refactor and ensure all tests pass.
 - [x] Task: Conductor - User Manual Verification 'Status Output & Auto-Invalidation Suggestion' (Protocol in workflow.md) [9ebbe88]
+
+## Phase 5: Audio Intelligibility Evaluation
+- [x] Task: Implement Speech-to-Text validation for generated audio [35b5f6a]
+    - [x] Add audio support to `Arneis::Generator::Gemini` for multimodal responses.
+    - [x] Implement `evaluate_audio_intelligibility` in `Arneis::Evaluator`.
+    - [x] Integrate audio evaluation into `Arneis::KidsStory#validate_page`.
+    - [x] Write tests for audio evaluator and full orchestration with audio verification.
+    - [x] Ensure similarity threshold of 90% is enforced.
+    - [x] Refactor and ensure all tests pass.
+- [x] Task: Conductor - User Manual Verification 'Audio Intelligibility Evaluation' (Protocol in workflow.md) [35b5f6a]

@@ -57,5 +57,6 @@ test-expensive:
 ricc-story:
 	just arnectl apply data/samples/KidsStory/riccardo_story.yaml --output out/just-ricc-story/
 
+# timeout 300 bundle exec bin/arnectl apply data/samples/KidsStory/riccardo_story.yaml -o out/riccardo-consistent/
 riccardo-consistent:
-	just arnectl apply data/samples/KidsStory/riccardo_story.yaml --output out/riccardo-consistent/.
+	just arnectl apply data/samples/KidsStory/riccardo_story.yaml --output out/riccardo-consistent/

@@ -25,7 +25,8 @@ end
 
 # 2. Split into N-1 training and 1 test
 test_image = images.last
-train_images = images[0...-1]
+# Try 3 images for the sweet spot
+train_images = images[0...3]
 
 puts Rainbow("👤 Character: #{character.name}").yellow
 puts "  - Total images found: #{images.size}"
