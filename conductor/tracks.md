@@ -34,3 +34,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Implement KidsStory Class for multi-page illustrated children's stories**
   *Link: [./tracks/kids_story_20260419/](./tracks/kids_story_20260419/)*
 
+---
+
+- [ ] **Track: Multilingual audio generation for KidsStory using Chirp 2**
+*Link: [./tracks/kids_story_audio_20260426/](./tracks/kids_story_audio_20260426/)*
