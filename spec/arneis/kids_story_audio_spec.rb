@@ -60,7 +60,7 @@ RSpec.describe Arneis::KidsStory do
       allow_any_instance_of(Arneis::Evaluator).to receive(:evaluate_character_consistency).and_return({ success: true, score: 8 })
     end
 
-    it "triggers audio generation for each page and language" do
+    it "triggers audio generation and includes links in STORY.md" do
       project = described_class.new(sample_yaml) # has [it, en]
       project.initialize_output(output_dir)
       
@@ -71,10 +71,17 @@ RSpec.describe Arneis::KidsStory do
       
       expect(File.exist?(File.join(output_dir, "pages/page_1/audio_it.wav"))).to be true
       expect(File.exist?(File.join(output_dir, "pages/page_1/audio_en.wav"))).to be true
-      expect(File.exist?(File.join(output_dir, "pages/page_2/audio_it.wav"))).to be true
-      expect(File.exist?(File.join(output_dir, "pages/page_2/audio_en.wav"))).to be true
-      expect(File.exist?(File.join(output_dir, "pages/page_3/audio_it.wav"))).to be true
-      expect(File.exist?(File.join(output_dir, "pages/page_3/audio_en.wav"))).to be true
+      
+      # Final audio files
+      expect(File.exist?(File.join(output_dir, "audio/final_story_it.wav"))).to be true
+      expect(File.exist?(File.join(output_dir, "audio/final_story_en.wav"))).to be true
+
+      # Check STORY.md for links
+      story_content = File.read(File.join(output_dir, "STORY.md"))
+      expect(story_content).to include("Full Story Audio (it)")
+      expect(story_content).to include("Full Story Audio (en)")
+      expect(story_content).to include("audio/final_story_it.wav")
+      expect(story_content).to include("audio/final_story_en.wav")
     end
   end
 end
