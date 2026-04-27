@@ -6,7 +6,7 @@ metadata:
 spec:
   story_title: "Yukihiro and the Magical Ruby"
   character_id: yukihiro
-  story_audio: [it, en]
+  story_audio: [en, jp]
   pages:
     - page: 1
       description: "Yukihiro finds a giant, glowing red ruby in a Japanese garden."
