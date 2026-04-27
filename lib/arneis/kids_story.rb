@@ -90,6 +90,7 @@ module Arneis
       gemini_generator = Generator::Gemini.new
       imagen_generator = Generator::Imagen.new
       lyria_generator = Generator::Lyria.new
+      chirp_generator = Generator::Chirp.new
       page_task_ids = []
 
       # 1. Page Tasks
@@ -128,7 +129,23 @@ module Arneis
 
           res = imagen_generator.generate(enhanced_prompt, image_output, asset_id: "Page#{page["page"]}.image", reference_images: @character&.all_reference_images)
 
-          if res[:status] == "done"
+          if res[:status] == "done" || res[:status] == "mocked"
+            # GENERATE AUDIO for each language
+            @story_audio.each do |lang|
+              audio_output = File.join(page_dir, "audio_#{lang}.wav")
+              
+              target_text = enriched_text
+              if lang != "en"
+                puts Rainbow("    🌐 [GEMINI] Translating Page #{page["page"]} to #{lang}...").cyan
+                translation_instruction = "You are a professional translator for children's books. Translate the following story text into #{lang}, maintaining the magical and adventurous tone. Output ONLY the translated text."
+                trans_resp = gemini_generator.generate(enriched_text, system_instruction: translation_instruction)
+                target_text = trans_resp[:content]
+                File.write(File.join(page_dir, "story_text_#{lang}.txt"), target_text)
+              end
+
+              chirp_generator.generate(target_text, audio_output, language_code: lang, asset_id: "Page#{page["page"]}.audio.#{lang}")
+            end
+
             validate_page(page, image_output)
           else
             update_page_status(page["page"], "failed", "Generation failed")
