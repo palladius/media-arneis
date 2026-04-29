@@ -2,6 +2,8 @@
 
 require "ruby_llm"
 require "json"
+require "dotenv"
+Dotenv.load 
 
 # This script transcribes an audio file using RubyLLM (which uses Google Gemini behind the scenes).
 #
@@ -26,15 +28,19 @@ end
 begin
   puts "🧠 Transcribing #{audio_file_path} using RubyLLM (Gemini)..."
   
-  # Assuming RubyLLM's chat method can handle audio input directly
-  # If not, this might need adjustment based on RubyLLM's actual API
-  # The question mentions "chat.transcribe", so let's try that.
-  response = RubyLlm::Chat.transcribe(audio_file_path)
+  # Configure RubyLLM for Gemini
+  RubyLLM.configure do |config|
+    config.gemini_api_key = ENV['GEMINI_API_KEY']
+  end
 
-  if response && response["text"]
+  # Transcribe using RubyLLM.transcribe directly
+  # The model needs to be specified as it defaults to whisper-1 (OpenAI)
+  response = RubyLLM.transcribe(audio_file_path, model: "gemini-2.5-flash")
+
+  if response && response.text
     puts "
 --- TRANSCRIPTION ---"
-    puts response["text"].strip
+    puts response.text.strip
     puts "----------------------"
   elsif response
     puts "⚠️ No text found in response: #{response.inspect}"
