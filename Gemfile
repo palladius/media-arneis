@@ -14,4 +14,4 @@ gem "deep_merge"
 gem "async"
 gem "async-http"
 
-# gem "ruby_llm"
+gem "ruby_llm"
