@@ -27,7 +27,8 @@ def main():
     parser.add_argument("-o", "--output", type=str, required=True, help="Output file path.")
     parser.add_argument("-i", "--images", type=str, help="Comma-separated paths to reference images for character consistency.")
     parser.add_argument("-a", "--aspect-ratio", type=str, default="1:1", help="Aspect ratio (1:1, 4:3, 3:4, 16:9, 9:16).")
-    parser.add_argument("-m", "--model", type=str, default="gemini-3.1-flash-image-preview", help="Model ID to use.")
+    default_model = os.environ.get("ARNEIS_IMAGEN_MODEL", "gemini-3.1-flash-image-preview")
+    parser.add_argument("-m", "--model", type=str, default=default_model, help="Model ID to use.")
     parser.add_argument("-v", "--vertex", action="store_true", default=False, help="Use Vertex AI.")
 
     args = parser.parse_args()
