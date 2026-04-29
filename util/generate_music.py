@@ -23,11 +23,12 @@ def main():
 
     # Determine project and region from environment
     client = genai.Client(vertexai=False) # Use Generative Language API
+    model_name = os.environ.get("ARNEIS_LYRIA_CLIP_MODEL", "lyria-3-clip-preview")
 
     print(f"🎸 Generating music for prompt: '{args.prompt}'...", file=sys.stderr)
     try:
         response = client.models.generate_content(
-            model="lyria-3-clip-preview",
+            model=model_name,
             contents=args.prompt,
             config=types.GenerateContentConfig(
                 response_modalities=["AUDIO", "TEXT"],
