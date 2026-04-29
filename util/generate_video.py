@@ -24,7 +24,8 @@ def main():
     parser.add_argument("prompt", type=str, help="The text prompt for video generation.")
     parser.add_argument("-o", "--output", type=str, required=True, help="Output file path.")
     parser.add_argument("-i", "--image", type=str, help="Path to a reference image.")
-    parser.add_argument("-m", "--model", type=str, default="veo-3.1-fast-generate-001", help="Model ID.")
+    default_model = os.environ.get("ARNEIS_VEO_DEFAULT_MODEL", "veo-3.0-generate-001")
+    parser.add_argument("-m", "--model", type=str, default=default_model, help="Model ID.")
     parser.add_argument("--async-only", action="store_true", help="Start the operation and exit immediately.")
     parser.add_argument("--check-status", type=str, help="Check status of an existing operation.")
     
