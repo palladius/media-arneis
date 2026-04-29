@@ -4,23 +4,26 @@
 module Arneis
   module Models
     # Gemini Text & Evals
-    GEMINI_FLASH = "gemini-2.5-flash"
-    GEMINI_PRO = "gemini-2.5-pro"
+    GEMINI_FLASH = ENV['ARNEIS_FLASH_MODEL'] || "gemini-2.5-flash"
+    GEMINI_PRO   = ENV['ARNEIS_PRO_MODEL']   || "gemini-2.5-pro"
+    
+    # Generic main model (defaults to flash 2.5)
+    MAIN = ENV['ARNEIS_MAIN_MODEL'] || GEMINI_FLASH
 
     # Veo Video Generation
-    VEO_2 = "veo-2.0-generate-001"
-    VEO_DEFAULT = "veo-3.0-generate-001" # confirmed via test script
+    VEO_2       = ENV['ARNEIS_VEO_2_MODEL']       || "veo-2.0-generate-001"
+    VEO_DEFAULT = ENV['ARNEIS_VEO_DEFAULT_MODEL'] || "veo-3.0-generate-001"
 
     # Lyria Music Generation
-    LYRIA_CLIP = "lyria-3-clip-preview"
-    LYRIA_DEFAULT = "lyria-3-pro-preview"    # High quality
+    LYRIA_CLIP    = ENV['ARNEIS_LYRIA_CLIP_MODEL']    || "lyria-3-clip-preview"
+    LYRIA_DEFAULT = ENV['ARNEIS_LYRIA_DEFAULT_MODEL'] || "lyria-3-pro-preview"
 
     # Chirp Speech / Narration
-    CHIRP_2 = "chirp_2"
-    CHIRP_DEFAULT = "chirp_3"                # Latest GA
+    CHIRP_2       = ENV['ARNEIS_CHIRP_2_MODEL']       || "chirp_2"
+    CHIRP_DEFAULT = ENV['ARNEIS_CHIRP_DEFAULT_MODEL'] || "chirp_3"
 
     # Imagen / Nano Banana
-    IMAGEN_DEFAULT = "gemini-3.1-flash-image-preview"
+    IMAGEN_DEFAULT = ENV['ARNEIS_IMAGEN_MODEL'] || "gemini-3.1-flash-image-preview"
   end
 
   # Resource Pricing (Rough estimates)

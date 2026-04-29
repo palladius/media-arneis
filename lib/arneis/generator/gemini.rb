@@ -8,7 +8,7 @@ module Arneis
     class Gemini < Base
       def initialize(options = {})
         super
-        @model = Models::GEMINI_FLASH
+        @model = Models::MAIN
         @client = ::Gemini.new(
           credentials: {
             service: "vertex-ai-api",
