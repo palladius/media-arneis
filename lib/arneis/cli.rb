@@ -30,12 +30,21 @@ module Arneis
     desc "apply YAML_PATH", "Initialize and start a media project from a YAML specification"
     method_option :dryrun, type: :boolean, aliases: "-n", desc: "Validate YAML and dependencies without executing"
     method_option :output, type: :string, aliases: "-o", desc: "Custom output folder (defaults to timestamped)"
+    # Note: --force should NOT delete files. I would expect from a --force to kill other similar processes and suff or force some potentially unreliabile thing, but NOT to delete files
+    method_option :force_clean, type: :boolean, default: false, desc: "Force a clean run by deleting the output directory if it exists"
     def apply(yaml_path)
       if %w[--help -h].include?(yaml_path)
         help("apply")
         return
       end
       puts Rainbow("🎨 Applying #{yaml_path}...").green
+      
+      output_path = options[:media_folder] || options[:output] || "out/#{Time.now.strftime("%Y%m%d_%H%M%S")}_#{File.basename(yaml_path, ".*")}"
+      if options[:force_clean] && Dir.exist?(output_path)
+        puts Rainbow("  🔥 Deleting existing output directory due to --force flag: #{output_path}").yellow
+        FileUtils.rm_rf(output_path)
+      end
+      
       project = Arneis.load_project(yaml_path)
 
       output_path = options[:media_folder] || options[:output] || "out/#{Time.now.strftime("%Y%m%d_%H%M%S")}_#{File.basename(yaml_path, ".*")}"

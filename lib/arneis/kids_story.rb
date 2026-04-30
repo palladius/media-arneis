@@ -143,7 +143,7 @@ module Arneis
               target_text = enriched_text
               if lang != "en"
                 puts Rainbow("    🌐 [GEMINI] Translating Page #{page["page"]} to #{lang}...").cyan
-                translation_instruction = "You are a professional translator for children's books. Translate the following story text into #{lang}, maintaining the magical and adventurous tone. Output ONLY the translated text."
+                translation_instruction = "You are a professional translator for children's books. Translate the following English story text into the language with code '#{lang}'. Maintain a magical and adventurous tone. Output ONLY the translated text, with no preamble."
                 trans_resp = gemini_generator.generate(enriched_text, system_instruction: translation_instruction)
                 target_text = trans_resp[:content]
                 File.write(File.join(page_dir, "story_text_#{lang}.txt"), target_text)

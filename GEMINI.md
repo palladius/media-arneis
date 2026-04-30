@@ -48,4 +48,4 @@ Use Conductor extension to manage the BDD and SW dev
 
 
 * Keep all python files under util/ . Note they are supposed to be "external utilities" whereas ruby cant execute that logic for lack of good libraries.
-
+* Do NOT delete files without confirming prior with user.
