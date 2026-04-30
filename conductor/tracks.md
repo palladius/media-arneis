@@ -38,3 +38,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Multilingual audio generation for KidsStory using Chirp 2**
 *Link: [./tracks/kids_story_audio_20260426/](./tracks/kids_story_audio_20260426/)*
+
+---
+
+- [ ] **Track: Implement CharacterImage Generation with Gemini Vision Evaluation**
+*Link: [./tracks/character_image_20260430/](./tracks/character_image_20260430/)*

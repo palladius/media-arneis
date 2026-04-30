@@ -1,0 +1,8 @@
+{
+  "track_id": "character_image_20260430",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-04-30T10:00:00Z",
+  "updated_at": "2026-04-30T10:00:00Z",
+  "description": "I want to have a \"plan mode\" to chreate a CharacterPicture. The idea is to have a small YAML containing 1+ characters (from just arnectl characters list ) and say sth like \"Riccado pours a sake to Yukihiro\" -- characters riccardo,yukihiro. This can start as a yaml under data/samples/CharacterPicture/XXXX.yaml but could also be called with a simple arnectl create EntityName --characters XXXX --prompt \"....\" . Lets start with a single character, and test it e2e. Lets ensure there are eval to ensure the characters rensemblance in the output pic is good enough. Then lets add the second charactaer and finally lets add a way in the CLI to call it directly in a way that does NOT break the rest of the CLI."
+}
