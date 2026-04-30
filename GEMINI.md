@@ -34,6 +34,20 @@ Use Conductor extension to manage the BDD and SW dev
     * Use a Gemini cLI **SubAgent** when video/audio generation is involved.
 * Do not break POLA - Principles of Least Astonishment.
 
+## Git development
+
+* Use <git worktree> for multi-agent parallel working on same computer.
+* For every feature being worke dby conductor, create a feature branch called "YYYYMM-featurename".
+* move to `workstree/BRANCHNAME` and do the changes there.
+* When happy, do the usual VERSION/CHANGELOG change.
+* [a few times] Ensure user is happy, and confirm with user when its DONE. Iterate until user is happy.
+* Now user is happy: final commit/version/changelog.
+* merge with main.
+* delete the branch.
+* either exit or ask user what to do.
+
+**Note**: conductor changes should be applied to MAIN too (if this is difficult, maybe you can commit/merge IMMEDIATELY after confirming the new task or task execution). This ensure we dont have two conductor threads working on same job...
+
 ## Ruby
 
 * Use async. Read these docs from Carmine Paolino: https://rubyllm.com/async/ and https://paolino.me/async-ruby-is-the-future/
