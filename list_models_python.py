@@ -1,3 +1,4 @@
+#!/usr/bin/env -S uv run
 # /// script
 # requires-python = ">=3.11"
 # dependencies = [
@@ -10,5 +11,4 @@ from google import genai
 client = genai.Client(vertexai=False)
 print("Available Models (GenAI API):")
 for m in client.models.list():
-    if "imagen" in m.name.lower():
-        print(f"- {m.name}")
+    print(f"- {m.name}")

@@ -13,3 +13,4 @@
 /data/assets/characters/**/*.png
 /data/assets/characters/**/*.jpg
 !/data/assets/characters/**/.keep
+.gemini/settings.json

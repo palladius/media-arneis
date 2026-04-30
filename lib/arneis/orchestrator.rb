@@ -38,11 +38,12 @@ module Arneis
       puts Rainbow("🔀 Running orchestration in SYNC mode...").yellow
       loop do
         runnable = @tasks.values.reject { |t| @completed_tasks.include?(t.id) }
-          .select { |t| (t.dependencies - @completed_tasks).empty? }
+                                 .select { |t| (t.dependencies - @completed_tasks).empty? }
         break if runnable.empty?
 
         runnable.each do |task|
           task.execute
+          # We mark it as completed even if it failed, so the loop can finish
           @completed_tasks << task.id
         end
       end
@@ -57,28 +58,29 @@ module Arneis
         loop do
           scheduled_ids = task_fibers.keys
           runnable = @tasks.values.reject { |t| @completed_tasks.include?(t.id) || scheduled_ids.include?(t.id) }
-            .select { |t| (t.dependencies - @completed_tasks).empty? }
+                                   .select { |t| (t.dependencies - @completed_tasks).empty? }
 
           runnable.each do |task|
             task_fibers[task.id] = parent.async do
               @semaphore.acquire do
                 task.execute
               end
+              # Mark as completed (even if failed) so dependents can be evaluated (they might fail too or skip)
               @completed_tasks << task.id
             end
           end
 
           break if @tasks.values.all? { |t| @completed_tasks.include?(t.id) }
 
-          # Check for deadlocks (no tasks runnable and not all finished)
+          # Check for real deadlocks (no tasks runnable and all fibers finished, but not all tasks in completed_tasks)
+          # This should only happen if there are circular dependencies
           if runnable.empty? && task_fibers.values.all?(&:finished?) && !@tasks.values.all? { |t| @completed_tasks.include?(t.id) }
-            puts Rainbow("⚠️  Orchestration Deadlock detected! Some dependencies might be missing.").red
-            break
+             puts Rainbow("⚠️  Orchestration Deadlock detected! Circular dependencies might exist.").red
+             break
           end
 
-          sleep 0.1
+          sleep 0.1 
         end
       end
-    end
-  end
+    end  end
 end

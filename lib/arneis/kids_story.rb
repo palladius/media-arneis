@@ -69,6 +69,12 @@ module Arneis
         "background_music" => @data["background_music"] ? {"status" => "pending", "prompt" => @data["background_music"]["prompt"]} : nil,
         "final_story_assembly" => {"status" => "pending"}
       }
+      
+      # Add individual audio concatenation tasks
+      @story_audio.each do |lang|
+        state["final_audio_#{lang}"] = {"status" => "pending"}
+      end
+      
       File.write(state_file, state.to_yaml)
     end
 

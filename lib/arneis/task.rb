@@ -17,8 +17,14 @@ module Arneis
 
     def execute
       @status = :in_progress
-      @block.call if @block
-      @status = :done
+      begin
+        @block.call if @block
+        @status = :done
+      rescue => e
+        @status = :failed
+        puts Rainbow("  ❌ Task #{@id} failed: #{e.message}").red
+        # We don't re-raise, as the orchestrator handles the flow
+      end
     end
   end
 end

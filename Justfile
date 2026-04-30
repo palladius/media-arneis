@@ -35,10 +35,8 @@ autoarchive:
 	{{BUNDLE}} exec bin/arnectl cleanup
 archive: autoarchive
 
-# Running safe CLI arneis with limit of 300seconds
 arnectl *args:
-	@white "timeout 300 {{BUNDLE}} exec bin/arnectl {{args}}"
-	@timeout 300 {{BUNDLE}} exec bin/arnectl {{args}}
+	{{BUNDLE}} exec bin/arnectl {{args}}
 
 status:
 	just arnectl status

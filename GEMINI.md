@@ -3,7 +3,7 @@ Use Conductor extension to manage the BDD and SW dev
 
 ## Gemini models
 
-* Do not use any Gemini model before 2.5 (no 2. and no 1.5). So 2.5 is the minimum that I want to use.
+* Do **not** use any Gemini model before 2.5 (no 2. and no 1.5). So 2.5 is the minimum that I want to use.
 * `gemini-flash-latest` should be a good model to start with. It is cheap and fast.
 
 ### GenMedia Recommended Models
@@ -45,4 +45,7 @@ Use Conductor extension to manage the BDD and SW dev
 * All tests should pass before `git commit` and `git push`.
 * If you're testing something like "test_if_llm_works.rb", do NOT add it to git. To make sure you don't, use .gitignore for these files.
     * Maybe use regexes like tmp_*.rb or test_llm_*.rb, etc. to ignore them.
+
+
+* Keep all python files under util/ . Note they are supposed to be "external utilities" whereas ruby cant execute that logic for lack of good libraries.
 

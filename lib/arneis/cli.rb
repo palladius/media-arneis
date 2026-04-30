@@ -172,14 +172,22 @@ module Arneis
           artifact_name = state["scenes"] ? "scene_#{num}.mp4" : "illustration.png"
           artifact_file = File.join(folder_path, item_dir, artifact_name)
 
-          if item["status"] == "failed" || item["status"] == "done_with_warnings" || !File.exist?(artifact_file) || File.exist?("#{artifact_file}.mock")
+          if %w[failed done_with_warnings in_progress].include?(item["status"]) || !File.exist?(artifact_file) || File.exist?("#{artifact_file}.mock")
             item["status"] = "pending"
           end
         end
         if state["background_music"]
           music_file = File.join(folder_path, "audio", "background_music.wav") # Note: added audio/ subfolder which was missing in original resume logic
-          if state["background_music"]["status"] == "failed" || !File.exist?(music_file) || File.exist?("#{music_file}.mock")
+          if %w[failed in_progress].include?(state["background_music"]["status"]) || !File.exist?(music_file) || File.exist?("#{music_file}.mock")
             state["background_music"]["status"] = "pending"
+          end
+        end
+        # Also reset project-level tasks
+        state.each do |key, value|
+          next if %w[pages scenes status project_title story_title character_id story_audio metadata].include?(key)
+          next unless value.is_a?(Hash) && value["status"]
+          if %w[failed in_progress].include?(value["status"])
+            value["status"] = "pending"
           end
         end
         if state["final_story_assembly"]
@@ -300,32 +308,41 @@ module Arneis
       end
 
       puts "\nProject Tasks:"
+      # Show known specific tasks first
       if state["background_music"]
-        music_file = File.join(folder_path, "background_music.wav")
-        mock_music = "#{music_file}.mock"
-        bad_music = "#{music_file}.NOT_GOOD"
-        asset_json = "#{music_file}.asset.json"
+        status = state["background_music"]["status"]
+        artifact_file = File.join(folder_path, "audio", "background_music.wav")
+        mock_file = "#{artifact_file}.mock"
+        bad_file = "#{artifact_file}.NOT_GOOD"
+        asset_json = "#{artifact_file}.asset.json"
         eval_indicator = File.exist?(asset_json) ? "👍" : "🟣"
         suffix = ""
-        suffix = Rainbow(" 🤡").yellow if File.exist?(mock_music)
-        suffix = Rainbow(" 🚫 INVALID").red if File.exist?(bad_music)
-        puts "  #{status_emoji(state["background_music"]["status"])} 🎵 #{eval_indicator} Background Music" + suffix
+        suffix = Rainbow(" 🤡").yellow if File.exist?(mock_file)
+        suffix = Rainbow(" 🚫 INVALID").red if File.exist?(bad_file)
+        puts "  #{status_emoji(status)} 🎵 #{eval_indicator} Background Music" + suffix
       end
-      if state["montage"]
-        montage_file = File.join(folder_path, state["output_filename"] || "final_video.mp4")
-        mock_montage = "#{montage_file}.mock"
-        bad_montage = "#{montage_file}.NOT_GOOD"
-        asset_json = "#{montage_file}.asset.json"
-        eval_indicator = File.exist?(asset_json) ? "👍" : "🟣"
-        suffix = ""
-        suffix = Rainbow(" 🤡").yellow if File.exist?(mock_montage)
-        suffix = Rainbow(" 🚫 INVALID").red if File.exist?(bad_montage)
-        puts "  #{status_emoji(state["montage"]["status"])} 🎞️  #{eval_indicator} Final Montage" + suffix
-      end
-      if state["final_story_assembly"]
-        story_file = File.join(folder_path, "STORY.md")
-        link = File.exist?(story_file) ? " -> " + Rainbow(story_file).cyan.underline : ""
-        puts "  #{status_emoji(state["final_story_assembly"]["status"])} 📖 Final Story Assembly#{link}"
+      
+      # Show all other top-level keys that have a 'status' field and are not 'pages', 'scenes', or 'status'
+      state.each do |key, value|
+        next if %w[pages scenes status project_title story_title character_id story_audio metadata].include?(key)
+        next unless value.is_a?(Hash) && value["status"]
+        next if key == "background_music" # Already shown
+        
+        icon = case key
+               when /audio/ then "🔊"
+               when /assembly/ then "📖"
+               when /montage/ then "🎞️ "
+               when /marketing/ then "📢"
+               else "⚙️ "
+               end
+        
+        link = ""
+        if key == "final_story_assembly"
+          story_file = File.join(folder_path, "STORY.md")
+          link = File.exist?(story_file) ? " -> " + Rainbow(story_file).cyan.underline : ""
+        end
+
+        puts "  #{status_emoji(value["status"])} #{icon} #{key.capitalize.gsub("_", " ")}#{link}"
       end
 
       puts Rainbow("\n📊 Stats: 🪙 #{total_tokens} (⬆️ #{input_tokens} ⬇️ #{output_tokens}) | 💸 $#{"%.2f" % total_cost}").cyan.bold
