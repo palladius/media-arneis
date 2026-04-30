@@ -22,7 +22,7 @@ end
 
 unless File.exist?(audio_file_path)
   puts "Error: Audio file not found at '#{audio_file_path}'"
-  exit 1
+  exit 2
 end
 
 begin
@@ -38,8 +38,7 @@ begin
   response = RubyLLM.transcribe(audio_file_path, model: "gemini-2.5-flash")
 
   if response && response.text
-    puts "
---- TRANSCRIPTION ---"
+    puts "--- TRANSCRIPTION ---"
     puts response.text.strip
     puts "----------------------"
   elsif response
