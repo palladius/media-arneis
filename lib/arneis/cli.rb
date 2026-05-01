@@ -32,6 +32,7 @@ module Arneis
     method_option :output, type: :string, aliases: "-o", desc: "Custom output folder (defaults to timestamped)"
     # Note: --force should NOT delete files. I would expect from a --force to kill other similar processes and suff or force some potentially unreliabile thing, but NOT to delete files
     method_option :force_clean, type: :boolean, default: false, desc: "Force a clean run by deleting the output directory if it exists"
+    method_option :verify, type: :boolean, default: false, desc: "Enable multimodal E2E verification of generated artifacts"
     def apply(yaml_path)
       if %w[--help -h].include?(yaml_path)
         help("apply")
@@ -49,11 +50,10 @@ module Arneis
 
       output_path = options[:media_folder] || options[:output] || "out/#{Time.now.strftime("%Y%m%d_%H%M%S")}_#{File.basename(yaml_path, ".*")}"
 
-      project.initialize_output(output_path)
       puts Rainbow("🚀 Project initialized at #{output_path}").blue
 
       puts Rainbow("⚙️ Starting orchestration...").magenta
-      project.process(async: options[:async])
+      project.process(async: options[:async], verify: options[:verify], dryrun: options[:dryrun])
       puts Rainbow("✅ Generation complete!").green
     end
 

@@ -1,0 +1,72 @@
+#!/usr/bin/env ruby
+
+# git-worktree-statuses - Shows git status for main and all worktrees
+
+# ANSI Color Codes
+CLR_RESET  = "\e[0m"
+CLR_YELLOW = "\e[33m"
+CLR_CYAN   = "\e[36m"
+CLR_BOLD   = "\e[1m"
+
+def puts_header(title, emoji, color = CLR_CYAN)
+  puts "\n" + "#{color}#{CLR_BOLD}━" * 60
+  puts " #{emoji}  #{title}"
+  puts "━" * 60 + CLR_RESET
+end
+
+def get_current_branch
+  `git rev-parse --abbrev-ref HEAD 2>/dev/null`.strip
+end
+
+def show_status(path, skip_branch_line: false)
+  Dir.chdir(path) do
+    # -s: short format
+    # -b: show branch/tracking info
+    status = `git status -sb 2>&1`.strip
+    if status.empty?
+      puts "  ✨ Clean"
+    else
+      lines = status.lines
+      # The first line is usually the branch info (## branch_name)
+      branch_line = lines.shift
+      
+      unless skip_branch_line
+        if branch_line.start_with?("##")
+          puts "  #{CLR_YELLOW}#{CLR_BOLD}#{branch_line.strip}#{CLR_RESET}"
+        else
+          puts "  #{branch_line}"
+        end
+      end
+      
+      # Remaining lines are the file statuses
+      lines.each { |line| puts "  #{line}" }
+    end
+  end
+rescue => e
+  puts "  ❌ Error: #{e.message}"
+end
+
+# 1. Main repo
+main_branch = get_current_branch
+puts_header("Main Repository (#{main_branch})", "🏠")
+show_status(Dir.pwd)
+
+# 2. Worktrees
+worktree_dir = "worktree"
+if Dir.exist?(worktree_dir)
+  # Filter for directories only and sort them
+  subdirs = Dir.children(worktree_dir).select do |entry|
+    File.directory?(File.join(worktree_dir, entry))
+  end.sort
+
+  subdirs.each do |entry|
+    path = File.join(worktree_dir, entry)
+    puts_header("Worktree: #{entry}", "🌿", CLR_YELLOW)
+    # Skip branch line as it's redundant with the header
+    show_status(path, skip_branch_line: true)
+  end
+else
+  puts "\n💡 No 'worktree/' directory found."
+end
+
+puts "\n" + "━" * 60 + "\n"

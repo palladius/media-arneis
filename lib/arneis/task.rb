@@ -3,10 +3,12 @@
 module Arneis
   class Task
     attr_reader :id, :dependencies, :status, :block
+    attr_accessor :outputs
 
-    def initialize(id, dependencies: [], &block)
+    def initialize(id, dependencies: [], outputs: {}, &block)
       @id = id
       @dependencies = dependencies
+      @outputs = outputs # Hash of file_path => type
       @block = block
       @status = :pending
     end
