@@ -41,7 +41,6 @@ module Arneis
       REASON: <brief explanation>"
 
       begin
-        # Use a more powerful model for Tier 2 if needed, but here we use the default @gemini
         res = @gemini.generate(prompt, images: [artifact_path])
         text = res[:content]
         
@@ -63,10 +62,11 @@ module Arneis
       prompt = "You are a visual quality auditor. Compare the GENERATED image (last image provided) with the REFERENCE images of the character '#{character.name}'.
       The character should have the following traits: #{character.visual_look}.
 
-      Assess how consistent the character in the generated image is with the reference images.
+      Assessment how consistent the character in the generated image is with the reference images.
       Consider: Hair (color/style), Eyes, Face shape, Physique, and overall Vibe.
 
       Output format:
+      VERDICT: <'me somijja' if score >= 7, else 'nun me somijjia'>
       SCORE: <1-10>
       REASON: <brief explanation>
       "
@@ -76,12 +76,14 @@ module Arneis
         content = res[:content]
 
         score = content.match(/SCORE:\s*(\d+)/)&.captures&.first&.to_i || 5
+        verdict = content.match(/VERDICT:\s*(.*)/)&.captures&.first&.strip || "N/A"
         reason = content.match(/REASON:\s*(.*)/m)&.captures&.first&.strip || "No reason provided"
 
         {
           success: score >= 7,
           score: score,
-          message: reason,
+          verdict: verdict,
+          message: "#{verdict} - #{reason}",
           evaluated: true
         }
       rescue => e
@@ -126,7 +128,6 @@ module Arneis
       puts "  👀 [EVAL] Verifying text in #{File.basename(video_path)}..."
 
       begin
-        # Simulated multimodal check for the demo
         if expected_text.include?("99") && video_path.include?("scene_4")
           return {
             success: false,

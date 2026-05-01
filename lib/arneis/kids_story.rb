@@ -119,6 +119,7 @@ module Arneis
           page_dir = File.join(@output_path, "pages", "page_#{page["page"]}")
           FileUtils.mkdir_p(page_dir)
 
+          # image_output already defined
           update_page_status(page["page"], "in_progress")
 
           # Use Character to enhance the prompt
@@ -370,6 +371,10 @@ module Arneis
         state["status"] = status
         File.write(state_file, state.to_yaml)
       end
+    end
+
+    def primary_artifact
+      File.join(@output_path, "STORY.md")
     end
   end
 end

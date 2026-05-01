@@ -365,7 +365,76 @@ module Arneis
       end
 
       puts Rainbow("\n📊 Stats: 🪙 #{total_tokens} (⬆️ #{input_tokens} ⬇️ #{output_tokens}) | 💸 $#{"%.2f" % total_cost}").cyan.bold
+
+      if min_score <= 6
+        puts Rainbow("\n💡 Some tasks have low scores (<= 6).").yellow
+        puts "To automatically re-do the sub-optimal jobs, type:"
+        puts Rainbow("  arnectl redo #{folder_path} --threshold 6").blue
+      end
+
       puts Rainbow("\nLegend: 🟢 done | 🔴 failed | 🟡 in_progress | ⚪ pending | 🤡 mocked | 👍/👎 evaluated | 🟣/⚫ unevaluated").gray.italic
+    end
+
+    desc "redo [FOLDER_PATH]", "Automatically reset and retry tasks with scores below the threshold"
+    method_option :threshold, type: :numeric, default: 6, desc: "Score threshold (1-10) below which a task is redone"
+    def redo(folder_path = nil)
+      folder_path = begin
+        resolve_media_folder([folder_path], options)
+      rescue
+        nil
+      end
+      folder_path ||= Dir.glob("out/*/").select { |f| File.exist?(File.join(f, ".state.yaml")) }.max_by { |f| File.mtime(f) }
+
+      if folder_path.nil?
+        puts Rainbow("❌ No project folders found. Specify one or set ARNEIS_FOLDER.").red
+        return
+      end
+
+      puts Rainbow("🔄 Redoing tasks in #{folder_path} with score <= #{options[:threshold]}...").cyan
+
+      state_file = File.join(folder_path, ".state.yaml")
+      state = YAML.load_file(state_file)
+      items = state["scenes"] || state["pages"] || []
+      
+      reset_count = 0
+
+      items.each do |item|
+        num = item["scene"] || item["page"]
+        item_dir = state["scenes"] ? "" : "pages/page_#{num}/"
+        artifact_name = state["scenes"] ? "scene_#{num}.mp4" : "illustration.png"
+        artifact_file = File.join(folder_path, item_dir, artifact_name)
+        asset_json = "#{artifact_file}.asset.json"
+
+        if File.exist?(asset_json)
+          asset_data = ::JSON.parse(File.read(asset_json))
+          score = asset_data.dig("eval", "score") || 10
+          if score <= options[:threshold]
+            puts Rainbow("  🎯 Resetting Task #{num} (Score: #{score})").yellow
+            
+            # Use feedback logic to trash and reset
+            trash_dir = File.join(folder_path, ".trash", "redo_#{Time.now.strftime("%Y%m%d_%H%M%S")}")
+            FileUtils.mkdir_p(trash_dir)
+            
+            [artifact_file, asset_json, "#{artifact_file}.mock"].each do |f|
+              if File.exist?(f)
+                FileUtils.mv(f, File.join(trash_dir, File.basename(f)))
+              end
+            end
+
+            item["status"] = "pending"
+            reset_count += 1
+          end
+        end
+      end
+
+      if reset_count > 0
+        state["status"] = "in_progress"
+        File.write(state_file, state.to_yaml)
+        puts Rainbow("✅ #{reset_count} tasks reset. Resuming...").green
+        resume(folder_path)
+      else
+        puts Rainbow("🙌 No tasks found below the threshold. Everything looks good!").green
+      end
     end
 
     no_commands do

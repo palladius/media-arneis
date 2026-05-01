@@ -1,0 +1,10 @@
+apiVersion: media-arneis.palladius.it/v1
+kind: CharacterImage
+metadata:
+  name: riccardo-rubycon
+  template: CharacterImage
+spec:
+  project_title: "Riccardo Crosses the Rubicon"
+  characters: ["riccardo"]
+  prompt: "Riccardo wearing a classic white Roman toga with a red border, standing on the sandy beach of Rimini. He holds a ruby-colored laptop. Cinematic lighting, epic atmosphere."
+  aspect_ratio: "16:9"

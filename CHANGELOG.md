@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2026-05-01
+
+### Added
+- 👤 feat: implement `CharacterImage` project kind for high-resemblance character portraits.
+- 🔄 feat: add `arnectl redo` command to automatically reset and retry sub-optimal tasks.
+- ⚖️ feat: enhance `Evaluator` with "VERDICT" for character consistency (e.g., "me somijja").
+- 💡 `arnectl status` now suggests `redo` when low scores are detected.
+
+### Fixed
+- 🐛 Fix `KidsStory` orchestration bug where `image_output` was not correctly scoped.
+- 🧪 Fix `Data Samples` tests to support all project kinds.
+
 ## [0.1.5] - 2026-04-20
 
 ### Fixed
