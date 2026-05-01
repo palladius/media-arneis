@@ -43,3 +43,13 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [ ] **Track: Implement robust E2E testing suite and abolish mock generation**
 *Link: [./tracks/e2e_no_mocks_20260427/](./tracks/e2e_no_mocks_20260427/)*
+
+---
+
+- [ ] **Track: Implement CharacterImage Generation with Gemini Vision Evaluation**
+*Link: [./tracks/character_image_20260430/](./tracks/character_image_20260430/)*
+
+---
+
+- [ ] **Track: Implement E2E Evaluation & Verification Harness**
+*Link: [./tracks/e2e_eval_harness_20260430/](./tracks/e2e_eval_harness_20260430/)*
