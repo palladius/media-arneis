@@ -7,6 +7,53 @@ module Arneis
       @gemini = Generator::Gemini.new
     end
 
+    def check_json(content)
+      puts Rainbow("  ⚖️  [EVAL] Checking JSON logic and consistency (Tier 1)...").cyan
+      
+      system_instruction = "You are a logic auditor for JSON artifacts. Analyze the provided JSON content for any logical inconsistencies, schema violations, or contradictions between descriptive fields. 
+      Output format:
+      SUCCESS: <true/false>
+      REASON: <brief explanation>"
+
+      begin
+        res = @gemini.generate(content, system_instruction: system_instruction)
+        text = res[:content]
+        
+        success = text.match(/SUCCESS:\s*(true|false)/i)&.captures&.first&.downcase == "true"
+        reason = text.match(/REASON:\s*(.*)/m)&.captures&.first&.strip || "No reason provided"
+        
+        { success: success, message: reason, evaluated: true }
+      rescue => e
+        { success: false, message: "JSON Eval failed: #{e.message}", evaluated: false }
+      end
+    end
+
+    def check_multimodal(artifact_path, intent_prompt)
+      puts Rainbow("  ⚖️  [EVAL] Verifying intent matching for #{File.basename(artifact_path)} (Tier 2)...").cyan
+      
+      prompt = "You are a multimodal intent auditor. Compare the provided artifact (image or video) with the user's initial intent prompt.
+      INTENT PROMPT: \"#{intent_prompt}\"
+      
+      Does the visual output accurately represent the prompt? Check for subject matter, mood, and specific details mentioned.
+      
+      Output format:
+      SUCCESS: <true/false>
+      REASON: <brief explanation>"
+
+      begin
+        # Use a more powerful model for Tier 2 if needed, but here we use the default @gemini
+        res = @gemini.generate(prompt, images: [artifact_path])
+        text = res[:content]
+        
+        success = text.match(/SUCCESS:\s*(true|false)/i)&.captures&.first&.downcase == "true"
+        reason = text.match(/REASON:\s*(.*)/m)&.captures&.first&.strip || "No reason provided"
+        
+        { success: success, message: reason, evaluated: true }
+      rescue => e
+        { success: false, message: "Multimodal Eval failed: #{e.message}", evaluated: false }
+      end
+    end
+
     def evaluate_character_consistency(generated_image_path, character)
       puts Rainbow("  ⚖️  [EVAL] Checking character consistency for #{character.name}...").cyan
 
@@ -43,10 +90,6 @@ module Arneis
       end
     end
 
-    def evaluate_character_consistency(generated_image_path, character)
-      # ... existing logic ...
-    end
-
     def detailed_probability_eval(generated_image_path, reference_image_path, character_name)
       puts Rainbow("  ⚖️  [EVAL] Calculating similarity probability for #{character_name}...").cyan
       
@@ -81,8 +124,6 @@ module Arneis
 
     def evaluate_video_text(video_path, expected_text)
       puts "  👀 [EVAL] Verifying text in #{File.basename(video_path)}..."
-
-      # Multimodal prompt for Gemini
 
       begin
         # Simulated multimodal check for the demo

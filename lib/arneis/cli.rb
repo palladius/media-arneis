@@ -276,8 +276,9 @@ module Arneis
         bad_file = "#{artifact_file}.NOT_GOOD"
         asset_json = "#{artifact_file}.asset.json"
 
-        eval_indicator = "⚫" # No eval implementation yet
+        eval_indicator = "⚫"
         eval_score = ""
+        v_indicator = ""
         if File.exist?(asset_json)
           asset_data = ::JSON.parse(File.read(asset_json))
           if asset_data["eval"]
@@ -286,13 +287,17 @@ module Arneis
             eval_score = " (⭐ #{score}/10)"
             min_score = [min_score, score].min
           end
+          if asset_data["verification"]
+            v_all_success = asset_data["verification"].all? { |v| v["success"] }
+            v_indicator = v_all_success ? Rainbow(" 🛡️").green : Rainbow(" 🛡️").red
+          end
         end
 
         suffix = ""
         suffix = Rainbow(" 🤡").yellow if File.exist?(mock_file)
         suffix = Rainbow(" 🚫 INVALID").red if File.exist?(bad_file)
 
-        puts "  #{status_emoji(item["status"])} #{icon} #{eval_indicator}" + Rainbow(" #{label} #{num}:").orange + " " + Rainbow(desc).white + eval_score + suffix
+        puts "  #{status_emoji(item["status"])} #{icon} #{eval_indicator}#{v_indicator}" + Rainbow(" #{label} #{num}:").orange + " " + Rainbow(desc).white + eval_score + suffix
 
         output_base = File.join(folder_path, item_dir, state["scenes"] ? "scene_#{num}" : "illustration")
         Dir.glob("#{output_base}.*.error.json").each do |error_file|
