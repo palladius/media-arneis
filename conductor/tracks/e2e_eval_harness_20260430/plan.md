@@ -25,4 +25,6 @@
 - [x] Task: Full E2E Harness Test Drive [x] dc332a1
     - [x] Run a complete `KidsStory` generation with `--verify` and confirm success.
     - [x] Run a `VideoProject` generation with a deliberate mismatch and confirm "Hard Fail" behavior.
-- [x] Task: Conductor - User Manual Verification 'Observability & Final E2E Validation' (Protocol in workflow.md) [x] dc332a1
+- [ ] Task: Conductor - User Manual Verification 'Observability & Final E2E Validation' (Protocol in workflow.md)
+    - [x] Initial implementation merged to `main`.
+    - [ ] Perform follow-up E2E runs on production-grade YAMLs.
