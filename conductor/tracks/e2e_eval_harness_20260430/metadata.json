@@ -1,0 +1,8 @@
+{
+  "track_id": "e2e_eval_harness_20260430",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-04-30T10:30:00Z",
+  "updated_at": "2026-04-30T10:30:00Z",
+  "description": "Let's ensure and e2e generation is done and ALL works. Both the arnectl creation of a KidsStory, then of a Video. Additional one-off EVALs should be done by this harness to understand if the creatio output was good, and review EVERY json generated, EVERY file generated, use multimodality to check if the intent matches the output.If not, piggyback unit tests and maybe further EVALs into the KidsStory and VideoProject workflows. Read @GEMINI.md to use git-worktree for this feature IF you choose to implement it now."
+}

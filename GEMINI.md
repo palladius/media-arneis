@@ -38,7 +38,7 @@ Use Conductor extension to manage the BDD and SW dev
 
 * Use <git worktree> for multi-agent parallel working on same computer.
 * For every feature being worke dby conductor, create a feature branch called "YYYYMM-featurename".
-* move to `workstree/BRANCHNAME` and do the changes there.
+* move to `~/git/media-arneis/workstree/BRANCHNAME` and do the changes there.
 * When happy, do the usual VERSION/CHANGELOG change.
 * [a few times] Ensure user is happy, and confirm with user when its DONE. Iterate until user is happy.
 * Now user is happy: final commit/version/changelog.
