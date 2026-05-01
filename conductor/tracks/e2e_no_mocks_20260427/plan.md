@@ -2,15 +2,15 @@
 
 ## Phase 1: Mock Abolition Logic
 - [x] Task: Implement `ARNEIS_NO_MOCK` configuration in `Arneis::Config` ca93f5a
-- [~] Task: Update Generators to raise errors instead of creating mocks when `no_mock?` is true
-    - [ ] Update `Imagen` generator
-    - [ ] Update `Chirp` generator
-    - [ ] Update `Lyria` generator
-    - [ ] Update `Veo` generator
+- [x] Task: Update Generators to raise errors instead of creating mocks when `no_mock?` is true 2e8b120
+    - [x] Update `Imagen` generator
+    - [x] Update `Chirp` generator
+    - [x] Update `Lyria` generator
+    - [x] Update `Veo` generator
 - [ ] Task: Conductor - User Manual Verification 'Mock Abolition' (Protocol in workflow.md)
 
 ## Phase 2: KidsStory E2E Testing
-- [x] Task: Create `spec/e2e/kids_story_e2e_spec.rb`
+- [x] Task: Create `spec/e2e/kids_story_e2e_spec.rb` 2e8b120
 - [ ] Task: Implement independent E2E test for `KidsStory`
     - [ ] Use `data/samples/KidsStory/riccardo_story.yaml`
     - [ ] Set `ARNEIS_NO_MOCK=true`
@@ -19,7 +19,7 @@
 - [ ] Task: Conductor - User Manual Verification 'KidsStory E2E' (Protocol in workflow.md)
 
 ## Phase 3: VideoProject E2E Testing
-- [x] Task: Create `spec/e2e/video_project_e2e_spec.rb`
+- [x] Task: Create `spec/e2e/video_project_e2e_spec.rb` 2e8b120
 - [ ] Task: Implement independent E2E test for `VideoProject`
     - [ ] Use a small sample YAML (e.g., `data/samples/VideoProject/rubycon_pitch.yaml`)
     - [ ] Set `ARNEIS_NO_MOCK=true`
