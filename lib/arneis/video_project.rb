@@ -68,7 +68,11 @@ module Arneis
       File.write(state_file, state.to_yaml)
     end
 
-    def process(async: true)
+    def process(async: true, verify: false, dryrun: false)
+      if dryrun
+        puts Rainbow("🌵 [DRYRUN] Validation complete. Skipping orchestration...").yellow
+        return
+      end
       update_project_status("in_progress")
 
       state_file = File.join(@output_path, ".state.yaml")
@@ -82,7 +86,7 @@ module Arneis
       current_state["scenes"]&.each { |s| pre_completed << "scene_#{s["scene"]}" if s["status"] == "done" || s["status"] == "verified" }
       pre_completed << "background_music" if current_state["background_music"] && (current_state["background_music"]["status"] == "done" || current_state["background_music"]["status"] == "verified")
 
-      orchestrator = Orchestrator.new(async: async, pre_completed: pre_completed)
+      orchestrator = Orchestrator.new(async: async, pre_completed: pre_completed, verify: verify)
       gemini_generator = Generator::Gemini.new
       veo_generator = Generator::Veo.new
       lyria_generator = Generator::Lyria.new
