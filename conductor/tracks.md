@@ -41,7 +41,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Implement robust E2E testing suite and abolish mock generation**
+- [~] **Track: Implement robust E2E testing suite and abolish mock generation**
 *Link: [./tracks/e2e_no_mocks_20260427/](./tracks/e2e_no_mocks_20260427/)*
 
 ---
