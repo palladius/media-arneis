@@ -86,7 +86,8 @@ def main():
                 
                 with open(args.output, "wb") as f:
                     f.write(image_data)
-                print(f"🖼️ Saved to {args.output}", file=sys.stderr)
+                # Only color the output path in ANSI Bold (\033[1m) Bright Yellow (\033[93m)
+                print(f"🖼️ Saved to \033[1;93m{args.output}\033[0m", file=sys.stderr)
                 print(f"MEDIA:{args.output}")
                 image_saved = True
                 break
