@@ -1,15 +1,16 @@
 # Implementation Plan: E2E Evaluation & Verification
 
 ## Phase 1: Foundation & CLI Integration
-- [ ] Task: Extend CLI with `--verify` flag
-    - [ ] Update `lib/arneis/cli.rb` to accept the `--verify` boolean flag.
-    - [ ] Pass the flag through to the `Orchestrator` and `Planner`.
-- [ ] Task: Create E2E Test Fixtures
-    - [ ] Create a "corrupt" sample in `spec/fixtures/invalid_story.json` to test detection logic.
-    - [ ] Set up an RSpec suite in `spec/arneis/e2e_evaluator_spec.rb`.
-- [ ] Task: Implement Basic Asset Validator
-    - [ ] Write failing tests to verify file existence for a completed task.
-    - [ ] Implement `Arneis::Validator.verify_assets(task)` in `lib/arneis/validator.rb`.
+- [x] Task: Extend CLI with --verify flag
+    - [x] Update `lib/arneis/cli.rb` to accept the `--verify` boolean flag.
+    - [x] Pass the flag through to the `Orchestrator` and `Planner`.
+- [x] Task: Create E2E Test Fixtures
+    - [x] Create a "corrupt" sample in `spec/fixtures/invalid_story.json` to test detection logic.
+    - [x] Set up an RSpec suite in `spec/arneis/e2e_evaluator_spec.rb`.
+- [x] Task: Implement Basic Asset Validator
+    - [x] Write failing tests to verify file existence for a completed task.
+    - [x] Implement `Arneis::Validator.verify_assets(task)` in `lib/arneis/validator.rb`.
+
 - [ ] Task: Conductor - User Manual Verification 'Foundation & CLI Integration' (Protocol in workflow.md)
 
 ## Phase 2: Tiered Evaluation Harness
