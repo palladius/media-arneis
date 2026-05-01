@@ -105,11 +105,11 @@ module Arneis
           next
         end
 
-        orchestrator.add_task(scene_id) do
-          scene_dir = File.join(@output_path, "video", "scene_#{scene["scene"]}")
-          FileUtils.mkdir_p(scene_dir)
+        veo_output = File.join(@output_path, "video", "scene_#{scene["scene"]}", "video.mp4")
 
-          veo_output = File.join(scene_dir, "video.mp4")
+        orchestrator.add_task(scene_id, outputs: { veo_output => :video }, intent_prompt: scene["description"]) do
+          scene_dir = File.dirname(veo_output)
+          FileUtils.mkdir_p(scene_dir)
 
           state_scene = YAML.load_file(state_file)["scenes"]&.find { |s| s["scene"] == scene["scene"] }
           if state_scene && state_scene["status"] == "polling" && state_scene["operation_id"]
@@ -141,11 +141,10 @@ module Arneis
       # 2. Project-wide Music Task
       music_id = "background_music"
       if @data["background_music"]
-        orchestrator.add_task(music_id) do
+        music_output = File.join(@output_path, "audio", "background_music.wav")
+        orchestrator.add_task(music_id, outputs: { music_output => :audio }, intent_prompt: @data["background_music"]["prompt"]) do
           update_project_task_status("background_music", "in_progress")
-          music_dir = File.join(@output_path, "audio")
-          FileUtils.mkdir_p(music_dir)
-          music_output = File.join(music_dir, "background_music.wav")
+          FileUtils.mkdir_p(File.dirname(music_output))
 
           lyria_generator.generate(@data["background_music"]["prompt"], music_output, asset_id: "Project.music")
           update_project_task_status("background_music", "done")
@@ -153,55 +152,21 @@ module Arneis
         scene_task_ids << music_id
       end
 
-      # 3. Final Montage Task
-      montage_id = "montage"
-      orchestrator.add_task(montage_id, dependencies: scene_task_ids) do
-        update_project_task_status("montage", "in_progress")
-        puts Rainbow("🎞️  [MONTAGE] Assembling final video...").magenta
-
-        output_file = File.join(@output_path, @data["output_filename"] || "final_video.mp4")
-        # Collect all real mp4s from subfolders
-        @scenes.map { |s| File.join(@output_path, "video", "scene_#{s["scene"]}", "video.mp4") }
-        File.join(@output_path, "audio", "background_music.wav")
-
-        # ... (ffmpeg logic, omitting for brevity in this large rewrite but using the same robust pattern)
-        # Mocking for now to test folder structure
-        File.write(output_file, "MOCK_FINAL_VIDEO")
-        update_project_task_status("montage", "done")
-      end
-
-      # 4. Marketing Task (New Phase!)
-      marketing_id = "marketing"
-      orchestrator.add_task(marketing_id, dependencies: [montage_id]) do
-        update_project_task_status("marketing", "in_progress")
-        marketing_dir = File.join(@output_path, "marketing")
-
-        context = "A promotional video project: #{@project_title}"
-        marketing_generator.generate_all(@project_title, context, marketing_dir)
-        update_project_task_status("marketing", "done")
-      end
-
-      # 5. GIF Post-Production Task (New Phase!)
-      gif_id = "post_production_gif"
-      orchestrator.add_task(gif_id, dependencies: [montage_id]) do
-        final_video = File.join(@output_path, @data["output_filename"] || "final_video.mp4")
-        gif_output = final_video.sub(/\.mp4$/, ".gif")
-        gif_generator.generate(final_video, gif_output)
-      end
-
       # 3. Final Montage (LLM-driven)
       montage_id = "montage"
-      orchestrator.add_task(montage_id, dependencies: scene_task_ids + [music_id]) do
+      output_filename = @data["output_filename"] || "final_video.mp4"
+      final_video_output = File.join(@output_path, output_filename)
+      
+      orchestrator.add_task(montage_id, dependencies: scene_task_ids, outputs: { final_video_output => :video }, intent_prompt: "A montage of all scenes: #{@project_title}") do
         update_project_status("in_progress")
         puts Rainbow("🎬 [MONTAGE] Generating final movie using LLM-driven ffmpeg command...").magenta
 
         # Build context for Gemini
         video_files = @scenes.map { |s| File.join(@output_path, "video", "scene_#{s["scene"]}", "video.mp4") }
         audio_file = File.join(@output_path, "audio", "background_music.wav")
-        output_file = File.join(@output_path, @data["output_filename"] || "final_video.mp4")
 
         system_instruction = "You are an ffmpeg expert. Generate the EXACT shell command to concatenate the provided video files and add the background music as a loop or trimmed to the total video length. Output ONLY the command, no preamble, no code blocks."
-        prompt = "Video files: #{video_files.join(", ")}\nAudio file: #{audio_file}\nOutput file: #{output_file}"
+        prompt = "Video files: #{video_files.join(", ")}\nAudio file: #{audio_file}\nOutput file: #{final_video_output}"
 
         resp = gemini_generator.generate(prompt, system_instruction: system_instruction)
         ffmpeg_cmd = resp[:content].strip.gsub(/^`|`$/, "")
@@ -212,9 +177,27 @@ module Arneis
           system(ffmpeg_cmd)
         else
           puts Rainbow("  🤡 [MOCK] FFMPEG Montage mocked (ARNEIS_NO_MOCK is false)").yellow
-          File.write("#{output_file}.mock", "MOCK_VIDEO_MONTAGE: #{ffmpeg_cmd}")
+          File.write("#{final_video_output}.mock", "MOCK_VIDEO_MONTAGE: #{ffmpeg_cmd}")
         end
         update_task_status("montage", "done")
+      end
+
+      # 4. Marketing Task
+      marketing_id = "marketing"
+      orchestrator.add_task(marketing_id, dependencies: [montage_id]) do
+        update_project_task_status("marketing", "in_progress")
+        marketing_dir = File.join(@output_path, "marketing")
+
+        context = "A promotional video project: #{@project_title}"
+        marketing_generator.generate_all(@project_title, context, marketing_dir)
+        update_project_task_status("marketing", "done")
+      end
+
+      # 5. GIF Post-Production Task
+      gif_id = "post_production_gif"
+      gif_output = final_video_output.sub(/\.mp4$/, ".gif")
+      orchestrator.add_task(gif_id, dependencies: [montage_id], outputs: { gif_output => :image }) do
+        gif_generator.generate(final_video_output, gif_output)
       end
 
       orchestrator.run

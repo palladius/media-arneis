@@ -114,7 +114,7 @@ module Arneis
           next
         end
 
-        orchestrator.add_task(page_id) do
+        orchestrator.add_task(page_id, outputs: { image_output => :image }, intent_prompt: page["description"]) do
           page_dir = File.join(@output_path, "pages", "page_#{page["page"]}")
           FileUtils.mkdir_p(page_dir)
 
@@ -170,11 +170,10 @@ module Arneis
         if state_music && (state_music["status"] == "done" || state_music["status"] == "verified")
           puts Rainbow("  ⏭️  Skipping Background Music (already done)").blue
         else
-          orchestrator.add_task(music_id) do
+          music_output = File.join(@output_path, "audio", "background_music.wav")
+          orchestrator.add_task(music_id, outputs: { music_output => :audio }, intent_prompt: @data["background_music"]["prompt"]) do
             update_task_status("background_music", "in_progress")
-            music_dir = File.join(@output_path, "audio")
-            FileUtils.mkdir_p(music_dir)
-            music_output = File.join(music_dir, "background_music.wav")
+            FileUtils.mkdir_p(File.dirname(music_output))
 
             lyria_generator.generate(@data["background_music"]["prompt"], music_output, asset_id: "Story.music")
             update_task_status("background_music", "done")
@@ -186,8 +185,9 @@ module Arneis
       # 2.5 Final Audio Concatenation
       @story_audio.each do |lang|
         audio_id = "final_audio_#{lang}"
+        audio_output = File.join(@output_path, "audio", "final_story_#{lang}.wav")
         # Dependencies are all page tasks (which now include audio generation)
-        orchestrator.add_task(audio_id, dependencies: @pages.map { |p| "page_#{p["page"]}" }) do
+        orchestrator.add_task(audio_id, dependencies: @pages.map { |p| "page_#{p["page"]}" }, outputs: { audio_output => :audio }, intent_prompt: "Full story audio in #{lang} for #{@story_title}") do
           update_task_status(audio_id, "in_progress")
           puts Rainbow("  🔊 [AUDIO] Concatenating final audio for #{lang}...").magenta
           concatenate_audio(lang)
@@ -202,7 +202,8 @@ module Arneis
       if state_assembly && state_assembly["status"] == "done"
         puts Rainbow("  ⏭️  Skipping Final Story Assembly (already done)").blue
       else
-        orchestrator.add_task(story_md_id, dependencies: page_task_ids) do
+        story_file = File.join(@output_path, "STORY.md")
+        orchestrator.add_task(story_md_id, dependencies: page_task_ids, outputs: { story_file => :markdown }, intent_prompt: "Final Markdown storybook for #{@story_title}") do
           update_task_status("final_story_assembly", "in_progress")
           puts Rainbow("📖 Assembling final story Markdown...").magenta
           generate_final_story
