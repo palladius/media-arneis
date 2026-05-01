@@ -46,16 +46,44 @@ module Arneis
       end
       
       project = Arneis.load_project(yaml_path)
-
-      # Recalculate if not provided to ensure consistency
-      output_path = options[:media_folder] || options[:output] || "out/#{Time.now.strftime("%Y%m%d_%H%M%S")}_#{File.basename(yaml_path, ".*")}"
-
       project.initialize_output(output_path)
       puts Rainbow("🚀 Project initialized at #{output_path}").blue
 
       puts Rainbow("⚙️ Starting orchestration...").magenta
       project.process(async: options[:async], verify: options[:verify], dryrun: options[:dryrun])
       puts Rainbow("✅ Generation complete!").green
+    end
+
+    desc "generate KIND", "Generate a media project on the fly"
+    method_option :characters, type: :string, aliases: "-c", desc: "Comma-separated character IDs"
+    method_option :prompt, type: :string, aliases: "-p", desc: "Prompt for the generation"
+    method_option :aspect_ratio, type: :string, default: "1:1", desc: "Aspect ratio (1:1, 16:9, etc.)"
+    method_option :title, type: :string, desc: "Project title"
+    method_option :dryrun, type: :boolean, aliases: "-n", desc: "Validate without executing"
+    method_option :verify, type: :boolean, default: false, desc: "Enable verification"
+    def generate(kind)
+      puts Rainbow("🚀 Generating #{kind} ad-hoc...").green
+
+      # Create a temporary YAML to reuse existing hydration/validation logic
+      temp_yaml = "tmp_adhoc_#{Time.now.to_i}.yaml"
+      data = {
+        "apiVersion" => "media-arneis.palladius.it/v1",
+        "kind" => kind,
+        "metadata" => { "name" => "adhoc-gen", "template" => kind },
+        "spec" => {
+          "project_title" => options[:title] || "Ad-hoc #{kind}",
+          "characters" => (options[:characters] || "").split(","),
+          "prompt" => options[:prompt],
+          "aspect_ratio" => options[:aspect_ratio]
+        }
+      }
+      File.write(temp_yaml, data.to_yaml)
+
+      begin
+        apply(temp_yaml)
+      ensure
+        FileUtils.rm(temp_yaml) if File.exist?(temp_yaml)
+      end
     end
 
     desc "feedback [FOLDER_PATH] -p, --prompt=PROMPT", "Provide natural language feedback on a specific asset"
@@ -294,6 +322,18 @@ module Arneis
         puts "  #{status_emoji(item["status"])} #{icon} #{eval_indicator}#{v_indicator}" + Rainbow(" #{label} #{num}:").orange + " " + Rainbow(desc).white + eval_score + suffix
 
         output_base = File.join(folder_path, item_dir, state["scenes"] ? "scene_#{num}" : "illustration")
+        Dir.glob("#{output_base}.*.error.json").each do |error_file|
+          error_data = ::JSON.parse(File.read(error_file))
+          err_msg = error_data["error"]
+          model_name = error_data["model"] || error_file.split(".").first.split("_").last
+
+          if err_msg.include?("429")
+            puts Rainbow("    ❌ 429 (#{model_name})").red
+          else
+            puts Rainbow("    ❌ Error (#{model_name}): #{Config.sanitize(err_msg)}").red
+          end
+        end
+
         Dir.glob("#{output_base}.*.asset.json").each do |receipt_file|
           receipt = ::JSON.parse(File.read(receipt_file))
           input_tokens += receipt["input_tokens"] || 0
