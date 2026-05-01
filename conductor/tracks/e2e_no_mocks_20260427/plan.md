@@ -7,6 +7,7 @@
     - [x] Update `Chirp` generator
     - [x] Update `Lyria` generator
     - [x] Update `Veo` generator
+- [x] Task: Refine logic to allow mocks during `--dryrun` for better UX 46dee5b
 - [ ] Task: Conductor - User Manual Verification 'Mock Abolition' (Protocol in workflow.md)
 
 ## Phase 2: KidsStory E2E Testing
