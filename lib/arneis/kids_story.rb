@@ -107,6 +107,7 @@ module Arneis
       @pages.each do |page|
         page_id = "page_#{page["page"]}"
         page_task_ids << page_id
+        image_output = File.join(@output_path, "pages", "page_#{page["page"]}", "illustration.png")
 
         state_page = current_state["pages"]&.find { |p| p["page"] == page["page"] }
         if state_page && (state_page["status"] == "done" || state_page["status"] == "verified")
@@ -118,7 +119,6 @@ module Arneis
           page_dir = File.join(@output_path, "pages", "page_#{page["page"]}")
           FileUtils.mkdir_p(page_dir)
 
-          image_output = File.join(page_dir, "illustration.png")
           update_page_status(page["page"], "in_progress")
 
           # Use Character to enhance the prompt
