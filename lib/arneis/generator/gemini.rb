@@ -21,7 +21,7 @@ module Arneis
       end
 
       def generate(prompt, output_file = nil, system_instruction: nil, images: [], audio: [], timeout: 30, asset_id: nil)
-        puts "  [GEMINI] Generating #{images.empty? && audio.empty? ? "text" : "multimodal response"} for prompt: '#{prompt[0..50]}...'"
+        puts "  [GEMINI] Generating #{images.empty? && audio.empty? ? "text" : "multimodal response"} for prompt: '#{prompt[0..100]}#{prompt.length > 100 ? "..." : ""}'"
         receipt = AssetReceipt.new(asset_id: asset_id || "text_#{Time.now.to_i}", model: @model, prompt: prompt)
 
         parts = [{text: prompt}]

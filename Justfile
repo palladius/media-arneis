@@ -61,3 +61,8 @@ riccardo-consistent:
 status:
 	bin/git-worktree-statuses 
 
+
+riccardo-cc:
+	arnectl generate CharacterImage -c riccardo -p "Riccardo as a cyberpunk hacker in a neon-lit Tokyo" --aspect_ratio 16:9
+
+

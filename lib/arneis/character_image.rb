@@ -72,7 +72,7 @@ module Arneis
 
       image_output = File.join(@output_path, "character_image.png")
 
-      orchestrator.add_task(:generate_image, outputs: { image_output => :image }, intent_prompt: @prompt) do
+      orchestrator.add_task(:generate_image, outputs: { image_output => :image }, intent_prompt: "#{@character_ids.join(", ")}: #{@prompt}") do
         update_task_status("image", "in_progress")
 
         # Combine character contexts
