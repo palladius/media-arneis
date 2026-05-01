@@ -25,6 +25,9 @@
     - [ ] Use a small sample YAML (e.g., `data/samples/VideoProject/rubycon_pitch.yaml`)
     - [ ] Set `ARNEIS_NO_MOCK=true`
     - [ ] Verify creation of real `.mp4` and `.wav` files
+- [ ] Task: Investigate and fix Veo generator issues for real video creation
+    - [ ] Add granular tests for `Veo` synchronous generation
+    - [ ] Add granular tests for `Veo` asynchronous initiation and status checking
 - [ ] Task: Conductor - User Manual Verification 'VideoProject E2E' (Protocol in workflow.md)
 
 ## Phase 4: CI/CD & Documentation
