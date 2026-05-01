@@ -12,7 +12,7 @@
 
 ## Phase 2: KidsStory E2E Testing
 - [x] Task: Create `spec/e2e/kids_story_e2e_spec.rb` 2e8b120
-- [ ] Task: Implement independent E2E test for `KidsStory`
+- [~] Task: Implement independent E2E test for `KidsStory`
     - [ ] Use `data/samples/KidsStory/riccardo_story.yaml`
     - [ ] Set `ARNEIS_NO_MOCK=true`
     - [ ] Verify creation of real `.png`, `.wav`, and `.md` files
