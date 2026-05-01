@@ -6,6 +6,7 @@ require "yaml"
 require "json"
 require "fileutils"
 require "time"
+require "rbconfig"
 
 module Arneis
   class CharactersCli < Thor; end
@@ -32,6 +33,7 @@ module Arneis
     method_option :output, type: :string, aliases: "-o", desc: "Custom output folder (defaults to timestamped)"
     method_option :force_clean, type: :boolean, default: false, desc: "Force a clean run by deleting the output directory if it exists"
     method_option :verify, type: :boolean, default: false, desc: "Enable multimodal E2E verification of generated artifacts"
+    method_option :open, type: :boolean, default: false, desc: "Open the primary artifact after generation"
     def apply(yaml_path)
       if %w[--help -h].include?(yaml_path)
         help("apply")
@@ -52,6 +54,10 @@ module Arneis
       puts Rainbow("⚙️ Starting orchestration...").magenta
       project.process(async: options[:async], verify: options[:verify], dryrun: options[:dryrun])
       puts Rainbow("✅ Generation complete!").green
+
+      if options[:open] && !options[:dryrun]
+        open_file(project.primary_artifact)
+      end
     end
 
     desc "generate KIND", "Generate a media project on the fly"
@@ -61,6 +67,7 @@ module Arneis
     method_option :title, type: :string, desc: "Project title"
     method_option :dryrun, type: :boolean, aliases: "-n", desc: "Validate without executing"
     method_option :verify, type: :boolean, default: false, desc: "Enable verification"
+    method_option :open, type: :boolean, default: false, desc: "Open the primary artifact after generation"
     def generate(kind)
       puts Rainbow("🚀 Generating #{kind} ad-hoc...").green
 
@@ -438,6 +445,19 @@ module Arneis
     end
 
     no_commands do
+      def open_file(path)
+        return unless File.exist?(path)
+        puts Rainbow("📂 Opening #{path}...").cyan
+        case RbConfig::CONFIG["host_os"]
+        when /mswin|mingw|cygwin/
+          system "start #{path}"
+        when /darwin/
+          system "open #{path}"
+        when /linux|bsd/
+          system "xdg-open #{path}"
+        end
+      end
+
       def resolve_media_folder(args = [], options = {})
         folder = options["media_folder"] || args.first || ENV["ARNEIS_FOLDER"]
         raise "No media folder specified." if folder.nil? || folder.empty?

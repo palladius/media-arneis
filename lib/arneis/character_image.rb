@@ -156,5 +156,9 @@ module Arneis
         File.write(state_file, state.to_yaml)
       end
     end
+
+    def primary_artifact
+      File.join(@output_path, "character_image.png")
+    end
   end
 end
