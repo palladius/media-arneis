@@ -51,5 +51,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [x] **Track: Implement E2E Evaluation & Verification Harness**
+- [ ] **Track: Implement E2E Evaluation & Verification Harness**
 *Link: [./tracks/e2e_eval_harness_20260430/](./tracks/e2e_eval_harness_20260430/)*
