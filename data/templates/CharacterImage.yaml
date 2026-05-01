@@ -1,0 +1,10 @@
+apiVersion: media-arneis.palladius.it/v1
+kind: CharacterImage
+metadata:
+  name: CharacterImage
+spec:
+  project_title: "Character Portrait"
+  characters: ["riccardo"]
+  prompt: "A beautiful portrait of the character"
+  negative_prompt: "low quality, blurry, distorted"
+  aspect_ratio: "1:1"
