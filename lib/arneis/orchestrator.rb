@@ -53,7 +53,7 @@ module Arneis
     end
 
     def run_async
-      puts Rainbow("🚀 Running orchestration in ASYNC mode (Fibers)...").green
+      puts Rainbow("🏎️  Running orchestration in ASYNC mode (Fibers)...").green
       Async do |parent|
         task_fibers = {}
 

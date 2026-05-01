@@ -21,7 +21,7 @@
 
 ## Phase 3: VideoProject E2E Testing
 - [x] Task: Create `spec/e2e/video_project_e2e_spec.rb` 2e8b120
-- [ ] Task: Implement independent E2E test for `VideoProject`
+- [~] Task: Implement independent E2E test for `VideoProject`
     - [ ] Use a small sample YAML (e.g., `data/samples/VideoProject/rubycon_pitch.yaml`)
     - [ ] Set `ARNEIS_NO_MOCK=true`
     - [ ] Verify creation of real `.mp4` and `.wav` files

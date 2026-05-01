@@ -22,8 +22,8 @@ RSpec.describe "VideoProject End-to-End", :expensive do
     expect(Dir.exist?(File.join(output_dir, "audio"))).to be true
 
     # 2. Verify Scene Artifacts
-    # Sample has 3 scenes
-    (1..3).each do |i|
+    # Sample has 5 scenes
+    (1..5).each do |i|
       scene_dir = File.join(output_dir, "video", "scene_#{i}")
       expect(Dir.exist?(scene_dir)).to be true
       
@@ -34,6 +34,6 @@ RSpec.describe "VideoProject End-to-End", :expensive do
 
     # 3. Verify Final Artifacts
     expect(File.exist?(File.join(output_dir, "audio", "background_music.wav"))).to be true
-    expect(File.exist?(File.join(output_dir, "video", "final_montage.mp4"))).to be true
+    expect(File.exist?(File.join(output_dir, "rubycon_pitch_from_plan.mp4"))).to be true
   end
 end

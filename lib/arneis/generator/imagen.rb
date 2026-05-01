@@ -38,16 +38,22 @@ module Arneis
 
             # Print stderr to show progress
             t_err = Thread.new do
-              while line = stderr.gets
-                puts "    [IMAGEN SCRIPT] #{line.strip}"
+              begin
+                while line = stderr.gets
+                  puts "    [IMAGEN SCRIPT] #{line.strip}"
+                end
+              rescue IOError
               end
             end
 
             t_out = Thread.new do
-              while line = stdout.gets
-                if /^MEDIA:(.*)$/.match?(line)
-                  success = true
+              begin
+                while line = stdout.gets
+                  if /^MEDIA:(.*)$/.match?(line)
+                    success = true
+                  end
                 end
+              rescue IOError
               end
             end
 

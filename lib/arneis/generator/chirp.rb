@@ -104,8 +104,8 @@ module Arneis
         success = false
         Open3.popen3(env, cmd) do |stdin, stdout, stderr, wait_thr|
           stdin.close
-          t_err = Thread.new { while line = stderr.gets; puts "    [CHIRP SCRIPT] #{line.strip}"; end rescue nil }
-          t_out = Thread.new { while line = stdout.gets; success = true if /^MEDIA:(.*)$/.match?(line); end rescue nil }
+          t_err = Thread.new { begin; while line = stderr.gets; puts "    [CHIRP SCRIPT] #{line.strip}"; end; rescue IOError; end }
+          t_out = Thread.new { begin; while line = stdout.gets; success = true if /^MEDIA:(.*)$/.match?(line); end; rescue IOError; end }
           t_err.join; t_out.join
           success = wait_thr.value.success? if success.nil?
         end
