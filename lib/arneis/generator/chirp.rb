@@ -13,6 +13,8 @@ module Arneis
       end
 
       def generate(text, output_file, language_code: "en-US", voice_id: nil, asset_id: nil)
+        return maybe_mock(output_file, :audio, text) if dryrun?
+        
         puts Rainbow("  🗣️  [CHIRP] Generating audio for language #{language_code}...").magenta
         receipt = AssetReceipt.new(asset_id: asset_id || "audio_#{Time.now.to_i}", model: @model, prompt: text[0..100])
         start_time = Time.now

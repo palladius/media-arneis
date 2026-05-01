@@ -70,10 +70,10 @@ module Arneis
 
     def process(async: true, verify: false, dryrun: false)
       if dryrun
-        puts Rainbow("🌵 [DRYRUN] Validation complete. Skipping orchestration...").yellow
-        return
+        puts Rainbow("🌵 [DRYRUN] Validation complete. Running orchestration with MOCKS...").yellow
+      else
+        update_project_status("in_progress")
       end
-      update_project_status("in_progress")
 
       state_file = File.join(@output_path, ".state.yaml")
       current_state = begin
@@ -171,13 +171,18 @@ module Arneis
         resp = gemini_generator.generate(prompt, system_instruction: system_instruction)
         ffmpeg_cmd = resp[:content].strip.gsub(/^`|`$/, "")
 
-        puts "  💻 Executing: #{ffmpeg_cmd}"
-        # We mock this for now since we might not have all real files in tests
-        if ENV["ARNEIS_NO_MOCK"] == "true"
-          system(ffmpeg_cmd)
-        else
-          puts Rainbow("  🤡 [MOCK] FFMPEG Montage mocked (ARNEIS_NO_MOCK is false)").yellow
+        if dryrun
+          puts Rainbow("  🌵 [DRYRUN] Mocking MONTAGE command execution.").yellow
           File.write("#{final_video_output}.mock", "MOCK_VIDEO_MONTAGE: #{ffmpeg_cmd}")
+        else
+          puts "  💻 Executing: #{ffmpeg_cmd}"
+          # We mock this for now since we might not have all real files in tests
+          if ENV["ARNEIS_NO_MOCK"] == "true"
+            system(ffmpeg_cmd)
+          else
+            puts Rainbow("  🤡 [MOCK] FFMPEG Montage mocked (ARNEIS_NO_MOCK is false)").yellow
+            File.write("#{final_video_output}.mock", "MOCK_VIDEO_MONTAGE: #{ffmpeg_cmd}")
+          end
         end
         update_task_status("montage", "done")
       end

@@ -13,6 +13,8 @@ module Arneis
       end
 
       def generate(prompt, output_file, timeout: 300, asset_id: nil, aspect_ratio: "1:1", reference_images: nil)
+        return maybe_mock(output_file, :image, prompt) if dryrun?
+        
         puts Rainbow("  🎨 [IMAGEN] Starting real image generation via Python script (AR: #{aspect_ratio})...").magenta
         puts Rainbow("  👤 [CONSISTENCY] Using reference images: #{reference_images}").cyan if reference_images
         receipt = AssetReceipt.new(asset_id: asset_id || "image_#{Time.now.to_i}", model: @model, prompt: prompt)

@@ -80,10 +80,10 @@ module Arneis
 
     def process(async: true, verify: false, dryrun: false)
       if dryrun
-        puts Rainbow("🌵 [DRYRUN] Validation complete. Skipping orchestration...").yellow
-        return
+        puts Rainbow("🌵 [DRYRUN] Validation complete. Running orchestration with MOCKS...").yellow
+      else
+        update_status("in_progress")
       end
-      update_status("in_progress")
 
       state_file = File.join(@output_path, ".state.yaml")
       current_state = begin
@@ -114,11 +114,12 @@ module Arneis
           next
         end
 
+        image_output = File.join(@output_path, "pages", "page_#{page["page"]}", "illustration.png")
+
         orchestrator.add_task(page_id, outputs: { image_output => :image }, intent_prompt: page["description"]) do
-          page_dir = File.join(@output_path, "pages", "page_#{page["page"]}")
+          page_dir = File.dirname(image_output)
           FileUtils.mkdir_p(page_dir)
 
-          image_output = File.join(page_dir, "illustration.png")
           update_page_status(page["page"], "in_progress")
 
           # Use Character to enhance the prompt
@@ -260,14 +261,16 @@ module Arneis
       end
 
       # Verify all files exist
-      missing = audio_files.reject { |f| File.exist?(f) }
-      unless missing.empty?
-        puts Rainbow("  ⚠️ [AUDIO] Missing audio files for concatenation: #{missing.join(", ")}").yellow
-        return
+      unless Config.dryrun?
+        missing = audio_files.reject { |f| File.exist?(f) }
+        unless missing.empty?
+          puts Rainbow("  ⚠️ [AUDIO] Missing audio files for concatenation: #{missing.join(", ")}").yellow
+          return
+        end
       end
 
       # For now, we'll use a simple mock if ffmpeg is missing or just for the test
-      if ENV["RSPEC_RUNNING"] || !system("which ffmpeg > /dev/null 2>&1")
+      if Config.dryrun? || ENV["RSPEC_RUNNING"] || !system("which ffmpeg > /dev/null 2>&1")
         puts Rainbow("  🧪 [AUDIO] Simulating concatenation for #{lang}...").blue
         File.write(final_output, "CONCATENATED AUDIO DATA for #{lang}")
         return

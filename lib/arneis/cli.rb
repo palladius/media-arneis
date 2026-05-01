@@ -40,6 +40,7 @@ module Arneis
       end
       puts Rainbow("🎨 Applying #{yaml_path}...").green
       
+      Config.dryrun = options[:dryrun]
       output_path = options[:media_folder] || options[:output] || "out/#{Time.now.strftime("%Y%m%d_%H%M%S")}_#{File.basename(yaml_path, ".*")}"
       if options[:force_clean] && Dir.exist?(output_path)
         puts Rainbow("  🔥 Deleting existing output directory due to --force flag: #{output_path}").yellow
@@ -47,8 +48,7 @@ module Arneis
       end
       
       project = Arneis.load_project(yaml_path)
-
-      output_path = options[:media_folder] || options[:output] || "out/#{Time.now.strftime("%Y%m%d_%H%M%S")}_#{File.basename(yaml_path, ".*")}"
+      project.initialize_output(output_path)
 
       puts Rainbow("🚀 Project initialized at #{output_path}").blue
 

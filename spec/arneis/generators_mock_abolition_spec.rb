@@ -50,4 +50,18 @@ RSpec.describe "Generators Mock Abolition" do
       }.to raise_error("Simulated Failure")
     end
   end
+
+  context "when dryrun? is true" do
+    before do
+      allow(Arneis::Config).to receive(:dryrun?).and_return(true)
+    end
+
+    it "produces a mock file and does not raise an error even if no_mock? would be true" do
+      # Note: Config.no_mock? now returns false if dryrun? is true
+      generator = Arneis::Generator::Imagen.new
+      res = generator.generate("dryrun prompt", output_file)
+      expect(res[:status]).to eq("mocked")
+      expect(File.exist?("#{output_file}.mock")).to be true
+    end
+  end
 end

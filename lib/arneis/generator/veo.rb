@@ -57,6 +57,8 @@ module Arneis
       end
 
       def generate(prompt, output_file, timeout: 600, asset_id: nil, async: false)
+        return maybe_mock(output_file, :video, prompt) if dryrun?
+        
         receipt = AssetReceipt.new(asset_id: asset_id || "video_#{Time.now.to_i}", model: @model, prompt: prompt)
 
         # Throttling
