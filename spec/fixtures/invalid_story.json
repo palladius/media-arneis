@@ -1,0 +1,11 @@
+{
+  "asset_id": "Page1.image",
+  "status": "done",
+  "prompt": "A beautiful sunset over the ocean",
+  "output_file": "illustration.png",
+  "metadata": {
+    "detected_objects": ["moon", "snow"],
+    "primary_color": "blue"
+  },
+  "logic_error": "Prompt mentions sunset/ocean, but detected objects are moon/snow."
+}

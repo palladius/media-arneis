@@ -2,6 +2,7 @@
 # Uses the system 'file' command to check for expected media headers.
 
 require "rainbow"
+require "time"
 
 module Arneis
   class Validator
@@ -26,6 +27,22 @@ module Arneis
         {success: true, info: file_info.strip, metadata: extract_metadata(file_path, file_info)}
       else
         {success: false, info: file_info.strip, message: "Type mismatch: expected #{type}, got #{file_info.strip}"}
+      end
+    end
+
+    def self.verify_assets(task)
+      return {success: true, message: "No outputs to verify"} if task.outputs.empty?
+
+      results = []
+      task.outputs.each do |file_path, type|
+        results << verify(file_path, type)
+      end
+
+      if results.all? { |r| r[:success] }
+        {success: true, results: results}
+      else
+        failed = results.reject { |r| r[:success] }
+        {success: false, message: "Verification failed for some assets", errors: failed}
       end
     end
 

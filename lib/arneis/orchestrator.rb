@@ -8,11 +8,12 @@ require "zeitwerk"
 
 module Arneis
   class Orchestrator
-    attr_reader :completed_tasks
+    attr_reader :completed_tasks, :verify
 
-    def initialize(async: true, pre_completed: [])
+    def initialize(async: true, pre_completed: [], verify: false)
       @tasks = {}
       @async_enabled = async
+      @verify = verify
       @completed_tasks = Array(pre_completed).map(&:to_sym)
       # Limit concurrent AI operations to avoid rate limits
       @semaphore = Async::Semaphore.new(Arneis::Config.max_concurrent_tasks || 3)
