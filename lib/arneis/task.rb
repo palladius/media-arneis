@@ -2,8 +2,8 @@
 
 module Arneis
   class Task
-    attr_reader :id, :dependencies, :status, :block, :check_status_block
-    attr_accessor :outputs, :intent_prompt, :verification_results, :operation_id
+    attr_reader :id, :dependencies, :block, :check_status_block
+    attr_accessor :outputs, :intent_prompt, :verification_results, :operation_id, :status
 
     def initialize(id, dependencies: [], outputs: {}, intent_prompt: nil, check_status_block: nil, &block)
       @id = id
