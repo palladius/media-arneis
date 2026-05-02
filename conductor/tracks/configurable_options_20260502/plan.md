@@ -14,14 +14,14 @@ Implement the logic to resolve the status of "eval" and "open" based on flags, e
 ## Phase 2: CLI Integration
 Integrate the new flags into the `arnectl` CLI and update the help documentation.
 
-- [ ] Task: Create tests for CLI flag handling
-    - [ ] Add tests to `spec/arneis/cli_spec.rb`.
-    - [ ] Verify that `--no-eval` and `--no-open` are correctly parsed.
-- [ ] Task: Implement CLI flag handling in `Arneis::CLI`
-    - [ ] Add `class_option` to the Thor CLI definition in `lib/arneis/cli.rb`.
-    - [ ] Pass the resolved configuration to the relevant tasks.
-- [ ] Task: Update help text
-    - [ ] Ensure `arnectl help` shows the new flags and mentions the environment variables.
+- [x] Task: Create tests for CLI flag handling 174e27f
+    - [x] Add tests to `spec/arneis/cli_spec.rb`.
+    - [x] Verify that `--no-eval` and `--no-open` are correctly parsed.
+- [x] Task: Implement CLI flag handling in `Arneis::CLI` 174e27f
+    - [x] Add `class_option` to the Thor CLI definition in `lib/arneis/cli.rb`.
+    - [x] Pass the resolved configuration to the relevant tasks.
+- [x] Task: Update help text 174e27f
+    - [x] Ensure `arnectl help` shows the new flags and mentions the environment variables.
 - [ ] Task: Conductor - User Manual Verification 'CLI Integration' (Protocol in workflow.md)
 
 ## Phase 3: Orchestration Integration
