@@ -107,17 +107,31 @@ module Arneis
 
         veo_output = File.join(@output_path, "video", "scene_#{scene["scene"]}", "video.mp4")
 
-        orchestrator.add_task(scene_id, outputs: { veo_output => :video }, intent_prompt: scene["description"]) do
+        # Define the check_status_block for this task
+        check_status_proc = lambda do
+          # Load the latest state to get the operation_id
+          latest_state_scene = YAML.load_file(state_file)["scenes"]&.find { |s| s["scene"] == scene["scene"] }
+          if latest_state_scene && latest_state_scene["operation_id"]
+            res = veo_generator.check_status(latest_state_scene["operation_id"], veo_output)
+            if res[:status] == "done"
+              validate_scene(scene, veo_output) # Validate after it's done polling
+            end
+            res
+          else
+            {status: "failed", message: "No operation_id found for polling"}
+          end
+        end
+
+        orchestrator.add_task(scene_id, outputs: { veo_output => :video }, intent_prompt: scene["description"], check_status_block: check_status_proc) do
           scene_dir = File.dirname(veo_output)
           FileUtils.mkdir_p(scene_dir)
 
+          # If we are resuming and already polling, the orchestrator's polling mechanism will handle it
+          # This block should only initiate new generations or re-try failed ones
           state_scene = YAML.load_file(state_file)["scenes"]&.find { |s| s["scene"] == scene["scene"] }
-          if state_scene && state_scene["status"] == "polling" && state_scene["operation_id"]
-            res = veo_generator.check_status(state_scene["operation_id"], veo_output)
-            if res[:status] == "done"
-              validate_scene(scene, veo_output)
-            end
-            next
+          if state_scene && state_scene["status"] == "polling"
+            # If already polling, simply return polling status to Orchestrator, it will then use check_status_proc
+            next {status: "polling", operation_id: state_scene["operation_id"]}
           end
 
           update_scene_status(scene["scene"], "in_progress")
@@ -130,10 +144,13 @@ module Arneis
 
           if res[:status] == "polling"
             update_scene_status(scene["scene"], "polling", nil, res[:operation_id])
+            res # Return polling status to Orchestrator
           elsif res[:status] == "done"
             validate_scene(scene, veo_output)
+            {status: "done"} # Return done status to Orchestrator
           else
             update_scene_status(scene["scene"], "failed", "Generation failed")
+            {status: "failed", message: "Generation failed"} # Return failed status
           end
         end
       end

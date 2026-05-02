@@ -2,14 +2,15 @@
 
 module Arneis
   class Task
-    attr_reader :id, :dependencies, :status, :block
-    attr_accessor :outputs, :intent_prompt, :verification_results
+    attr_reader :id, :dependencies, :status, :block, :check_status_block
+    attr_accessor :outputs, :intent_prompt, :verification_results, :operation_id
 
-    def initialize(id, dependencies: [], outputs: {}, intent_prompt: nil, &block)
+    def initialize(id, dependencies: [], outputs: {}, intent_prompt: nil, check_status_block: nil, &block)
       @id = id
       @dependencies = dependencies
       @outputs = outputs # Hash of file_path => type
       @intent_prompt = intent_prompt
+      @check_status_block = check_status_block # New: Block to check status of polling tasks
       @block = block
       @status = :pending
       @verification_results = []
@@ -22,12 +23,18 @@ module Arneis
     def execute
       @status = :in_progress
       begin
-        @block.call if @block
-        @status = :done
+        result = @block.call if @block
+        if result && result[:status] == "polling"
+          @status = :polling
+          return result
+        else
+          @status = :done
+          return {status: "done"}
+        end
       rescue => e
         @status = :failed
         puts Rainbow("  ❌ Task #{@id} failed: #{e.message}").red
-        # We don't re-raise, as the orchestrator handles the flow
+        return {status: "failed", message: e.message}
       end
     end
 
