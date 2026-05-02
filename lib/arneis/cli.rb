@@ -14,6 +14,8 @@ module Arneis
   class Cli < Thor
     class_option :async, type: :boolean, default: true, desc: "Run media generation asynchronously using Fibers"
     class_option :media_folder, type: :string, aliases: "-f", desc: "Explicitly set the media folder"
+    class_option :eval, type: :boolean, desc: "Toggle automated evaluation (overrides ARNEIS_EVAL_ENABLED)"
+    class_option :open, type: :boolean, desc: "Open the primary artifact after generation (overrides ARNEIS_OPEN_ENABLED)"
 
     def initialize(*args)
       super
@@ -33,12 +35,16 @@ module Arneis
     method_option :output, type: :string, aliases: "-o", desc: "Custom output folder (defaults to timestamped)"
     method_option :force_clean, type: :boolean, default: false, desc: "Force a clean run by deleting the output directory if it exists"
     method_option :verify, type: :boolean, default: false, desc: "Enable multimodal E2E verification of generated artifacts"
-    method_option :open, type: :boolean, default: false, desc: "Open the primary artifact after generation"
     def apply(yaml_path)
       if %w[--help -h].include?(yaml_path)
         help("apply")
         return
       end
+
+      # Resolve configuration
+      eval_enabled = Config.eval_enabled?(eval: options[:eval])
+      open_enabled = Config.open_enabled?(open: options[:open])
+
       puts Rainbow("🎨 Applying #{yaml_path}...").green
       
       output_path = options[:media_folder] || options[:output] || "out/#{Time.now.strftime("%Y%m%d_%H%M%S")}_#{File.basename(yaml_path, ".*")}"
@@ -52,10 +58,15 @@ module Arneis
       puts Rainbow("🚀 Project initialized at #{output_path}").blue
 
       puts Rainbow("⚙️ Starting orchestration...").magenta
-      project.process(async: options[:async], verify: options[:verify], dryrun: options[:dryrun])
+      project.process(
+        async: options[:async],
+        verify: options[:verify],
+        dryrun: options[:dryrun],
+        eval: eval_enabled
+      )
       puts Rainbow("✅ Generation complete!").green
 
-      if options[:open] && !options[:dryrun]
+      if open_enabled && !options[:dryrun]
         open_file(project.primary_artifact)
       end
     end
@@ -67,7 +78,6 @@ module Arneis
     method_option :title, type: :string, desc: "Project title"
     method_option :dryrun, type: :boolean, aliases: "-n", desc: "Validate without executing"
     method_option :verify, type: :boolean, default: false, desc: "Enable verification"
-    method_option :open, type: :boolean, default: false, desc: "Open the primary artifact after generation"
     def generate(kind)
       puts Rainbow("🚀 Generating #{kind} ad-hoc...").green
 
