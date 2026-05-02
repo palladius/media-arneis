@@ -107,14 +107,13 @@ module Arneis
       @pages.each do |page|
         page_id = "page_#{page["page"]}"
         page_task_ids << page_id
+        image_output = File.join(@output_path, "pages", "page_#{page["page"]}", "illustration.png")
 
         state_page = current_state["pages"]&.find { |p| p["page"] == page["page"] }
         if state_page && (state_page["status"] == "done" || state_page["status"] == "verified")
           puts Rainbow("  ⏭️  Skipping Page #{page["page"]} (already done)").blue
           next
         end
-
-        image_output = File.join(@output_path, "pages", "page_#{page["page"]}", "illustration.png")
 
         orchestrator.add_task(page_id, outputs: { image_output => :image }, intent_prompt: page["description"]) do
           page_dir = File.dirname(image_output)
@@ -219,17 +218,23 @@ module Arneis
     private
 
     def generate_final_story
-      content = "# #{@story_title}\n\n"
+      content = "# #{@story_title}
+
+"
 
       if @data["background_music"]
-        content += "🎵 **Background Music:** [#{@data["background_music"]["prompt"]}](audio/background_music.wav)\n\n"
+        content += "🎵 **Background Music:** [#{@data["background_music"]["prompt"]}](audio/background_music.wav)
+
+"
       end
 
       # Add Final Audio links
       @story_audio.each do |lang|
         audio_rel_path = "audio/final_story_#{lang}.wav"
         if File.exist?(File.join(@output_path, audio_rel_path))
-          content += "🔊 **Full Story Audio (#{lang}):** [#{audio_rel_path}](#{audio_rel_path})\n\n"
+          content += "🔊 **Full Story Audio (#{lang}):** [#{audio_rel_path}](#{audio_rel_path})
+
+"
         end
       end
 
@@ -239,10 +244,18 @@ module Arneis
         text_file = File.join(@output_path, "pages", "page_#{num}", "story_text.txt")
         display_text = File.exist?(text_file) ? File.read(text_file) : page["text"]
 
-        content += "## Page #{num}\n\n"
-        content += "![Page #{num}](#{image_rel_path})\n\n"
-        content += "#{display_text}\n\n"
-        content += "---\n\n"
+        content += "## Page #{num}
+
+"
+        content += "![Page #{num}](#{image_rel_path})
+
+"
+        content += "#{display_text}
+
+"
+        content += "---
+
+"
       end
 
       story_file = File.join(@output_path, "STORY.md")
@@ -373,6 +386,10 @@ module Arneis
         state["status"] = status
         File.write(state_file, state.to_yaml)
       end
+    end
+
+    def primary_artifact # Added by main
+      File.join(@output_path, "STORY.md")
     end
   end
 end

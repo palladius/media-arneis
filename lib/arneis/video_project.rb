@@ -263,5 +263,10 @@ module Arneis
         File.write(state_file, state.to_yaml)
       end
     end
+
+    def primary_artifact
+      output_filename = @data["output_filename"] || "final_video.mp4"
+      File.join(@output_path, output_filename)
+    end
   end
 end

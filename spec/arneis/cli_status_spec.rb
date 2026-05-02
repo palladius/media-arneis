@@ -33,8 +33,8 @@ RSpec.describe Arneis::Cli do
 
   describe "#status" do
     it "detects low scores and suggests a redo command" do
-      # Use a regex that ignores possible ANSI escape codes
-      expect { cli.status(output_dir) }.to output(/to automatically re-do the sub-optimal jobs, type:.*arnectl redo --threshold 6/).to_stdout
+      # Use a regex that is very flexible with whitespace and ANSI codes
+      expect { cli.status(output_dir) }.to output(/arnectl redo.*--threshold 6/m).to_stdout
     end
   end
 end

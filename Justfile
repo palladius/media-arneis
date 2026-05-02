@@ -38,8 +38,8 @@ archive: autoarchive
 arnectl *args:
 	{{BUNDLE}} exec bin/arnectl {{args}}
 
-status:
-	just arnectl status
+#status:
+#	just arnectl status
 
 list:
 	just arnectl list
@@ -63,3 +63,11 @@ ricc-story:
 # timeout 300 bundle exec bin/arnectl apply data/samples/KidsStory/riccardo_story.yaml -o out/riccardo-consistent/
 riccardo-consistent:
 	just arnectl apply data/samples/KidsStory/riccardo_story.yaml --output out/riccardo-consistent/
+status:
+	bin/git-worktree-statuses 
+
+
+riccardo-cc:
+	arnectl generate CharacterImage -c riccardo -p "Riccardo as a cyberpunk hacker in a neon-lit Tokyo" --aspect_ratio 16:9 --open --eval
+
+

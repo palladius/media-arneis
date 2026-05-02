@@ -1,7 +1,7 @@
 # Arneis (Media Harness) - Core module.
 
 module Arneis
-  VERSION = "0.0.1"
+  VERSION = "0.1.6"
 
   def self.load_project(yaml_path)
     data = YAML.load_file(yaml_path)
@@ -40,3 +40,4 @@ require_relative "arneis/generator/chirp"
 require_relative "arneis/validator"
 require_relative "arneis/characters_cli"
 require_relative "arneis/cli"
+require_relative "arneis/character_image"

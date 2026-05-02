@@ -46,10 +46,16 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Implement CharacterImage Generation with Gemini Vision Evaluation**
+- [x] **Track: Implement CharacterImage Generation with Gemini Vision Evaluation**
 *Link: [./tracks/character_image_20260430/](./tracks/character_image_20260430/)*
 
 ---
 
 - [ ] **Track: Implement E2E Evaluation & Verification Harness**
 *Link: [./tracks/e2e_eval_harness_20260430/](./tracks/e2e_eval_harness_20260430/)*
+
+---
+
+- [ ] **Track: Implement --eval support for arnectl generate command**
+*Link: [./tracks/generate_eval_20260501/](./tracks/generate_eval_20260501/)*
+

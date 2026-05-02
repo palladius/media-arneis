@@ -6,6 +6,7 @@ require "yaml"
 require "json"
 require "fileutils"
 require "time"
+require "rbconfig" # Added by main
 
 module Arneis
   class CharactersCli < Thor; end
@@ -30,9 +31,9 @@ module Arneis
     desc "apply YAML_PATH", "Initialize and start a media project from a YAML specification"
     method_option :dryrun, type: :boolean, aliases: "-n", desc: "Validate YAML and dependencies without executing"
     method_option :output, type: :string, aliases: "-o", desc: "Custom output folder (defaults to timestamped)"
-    # Note: --force should NOT delete files. I would expect from a --force to kill other similar processes and suff or force some potentially unreliabile thing, but NOT to delete files
     method_option :force_clean, type: :boolean, default: false, desc: "Force a clean run by deleting the output directory if it exists"
     method_option :verify, type: :boolean, default: false, desc: "Enable multimodal E2E verification of generated artifacts"
+    method_option :open, type: :boolean, default: false, desc: "Open the primary artifact after generation" # Added by main
     def apply(yaml_path)
       if %w[--help -h].include?(yaml_path)
         help("apply")
@@ -49,12 +50,48 @@ module Arneis
       
       project = Arneis.load_project(yaml_path)
       project.initialize_output(output_path)
-
       puts Rainbow("🚀 Project initialized at #{output_path}").blue
 
       puts Rainbow("⚙️ Starting orchestration...").magenta
       project.process(async: options[:async], verify: options[:verify], dryrun: options[:dryrun])
       puts Rainbow("✅ Generation complete!").green
+
+      if options[:open] && !options[:dryrun] # Added by main
+        open_file(project.primary_artifact) # Added by main
+      end
+    end
+
+    desc "generate KIND", "Generate a media project on the fly"
+    method_option :characters, type: :string, aliases: "-c", desc: "Comma-separated character IDs"
+    method_option :prompt, type: :string, aliases: "-p", desc: "Prompt for the generation"
+    method_option :aspect_ratio, type: :string, default: "1:1", desc: "Aspect ratio (1:1, 16:9, etc.)"
+    method_option :title, type: :string, desc: "Project title"
+    method_option :dryrun, type: :boolean, aliases: "-n", desc: "Validate without executing"
+    method_option :verify, type: :boolean, default: false, desc: "Enable verification"
+    method_option :open, type: :boolean, default: false, desc: "Open the primary artifact after generation" # Added by main
+    def generate(kind)
+      puts Rainbow("🚀 Generating #{kind} ad-hoc...").green
+
+      # Create a temporary YAML to reuse existing hydration/validation logic
+      temp_yaml = "tmp_adhoc_#{Time.now.to_i}.yaml"
+      data = {
+        "apiVersion" => "media-arneis.palladius.it/v1",
+        "kind" => kind,
+        "metadata" => { "name" => "adhoc-gen", "template" => kind },
+        "spec" => {
+          "project_title" => options[:title] || "Ad-hoc #{kind}",
+          "characters" => (options[:characters] || "").split(","),
+          "prompt" => options[:prompt],
+          "aspect_ratio" => options[:aspect_ratio]
+        }
+      }
+      File.write(temp_yaml, data.to_yaml)
+
+      begin
+        apply(temp_yaml)
+      ensure
+        FileUtils.rm(temp_yaml) if File.exist?(temp_yaml)
+      end
     end
 
     desc "feedback [FOLDER_PATH] -p, --prompt=PROMPT", "Provide natural language feedback on a specific asset"
@@ -87,7 +124,8 @@ module Arneis
 
       gemini = Generator::Gemini.new
       id_prompt = "Based on the user feedback: '#{options[:prompt]}', identify which Asset ID they are referring to from this list:
-      #{asset_list.join("\n")}
+      #{asset_list.join("
+")}
 
       Output ONLY the Asset ID (e.g., 'scene_1' or 'background_music'). If unclear, output 'unknown'."
 
@@ -186,7 +224,7 @@ module Arneis
           end
         end
         if state["background_music"]
-          music_file = File.join(folder_path, "audio", "background_music.wav") # Note: added audio/ subfolder which was missing in original resume logic
+          music_file = File.join(folder_path, "audio", "background_music.wav")
           if %w[failed in_progress].include?(state["background_music"]["status"]) || !File.exist?(music_file) || File.exist?("#{music_file}.mock")
             state["background_music"]["status"] = "pending"
           end
@@ -197,12 +235,6 @@ module Arneis
           next unless value.is_a?(Hash) && value["status"]
           if %w[failed in_progress].include?(value["status"])
             value["status"] = "pending"
-          end
-        end
-        if state["final_story_assembly"]
-          story_file = File.join(folder_path, "STORY.md")
-          if !File.exist?(story_file) || options[:force]
-            state["final_story_assembly"]["status"] = "pending"
           end
         end
         File.write(state_file, state.to_yaml)
@@ -260,7 +292,8 @@ module Arneis
       icon = state["scenes"] ? "🎥" : "🖼️"
       has_failures = state["status"] == "failed"
 
-      puts "\n#{label}s:"
+      puts "
+#{label}s:"
       items.each do |item|
         num = item["scene"] || item["page"]
         desc = item["description"]
@@ -268,7 +301,6 @@ module Arneis
 
         has_failures = true if item["status"] == "failed"
 
-        state["scenes"] ? ".mp4" : "/illustration.png"
         item_dir = state["scenes"] ? "" : "pages/page_#{num}/"
         artifact_file = File.join(folder_path, item_dir, "#{state["scenes"] ? "scene_#{num}" : "illustration"}#{state["scenes"] ? ".mp4" : ".png"}")
 
@@ -321,26 +353,17 @@ module Arneis
         end
       end
 
-      puts "\nProject Tasks:"
-      # Show known specific tasks first
+      puts "
+Project Tasks:"
       if state["background_music"]
         status = state["background_music"]["status"]
-        artifact_file = File.join(folder_path, "audio", "background_music.wav")
-        mock_file = "#{artifact_file}.mock"
-        bad_file = "#{artifact_file}.NOT_GOOD"
-        asset_json = "#{artifact_file}.asset.json"
-        eval_indicator = File.exist?(asset_json) ? "👍" : "🟣"
-        suffix = ""
-        suffix = Rainbow(" 🤡").yellow if File.exist?(mock_file)
-        suffix = Rainbow(" 🚫 INVALID").red if File.exist?(bad_file)
-        puts "  #{status_emoji(status)} 🎵 #{eval_indicator} Background Music" + suffix
+        puts "  #{status_emoji(status)} 🎵 Background Music"
       end
       
-      # Show all other top-level keys that have a 'status' field and are not 'pages', 'scenes', or 'status'
       state.each do |key, value|
         next if %w[pages scenes status project_title story_title character_id story_audio metadata].include?(key)
         next unless value.is_a?(Hash) && value["status"]
-        next if key == "background_music" # Already shown
+        next if key == "background_music"
         
         icon = case key
                when /audio/ then "🔊"
@@ -349,33 +372,25 @@ module Arneis
                when /marketing/ then "📢"
                else "⚙️ "
                end
-        
-        link = ""
-        if key == "final_story_assembly"
-          story_file = File.join(folder_path, "STORY.md")
-          link = File.exist?(story_file) ? " -> " + Rainbow(story_file).cyan.underline : ""
-        end
-
-        puts "  #{status_emoji(value["status"])} #{icon} #{key.capitalize.gsub("_", " ")}#{link}"
+        puts "  #{status_emoji(value["status"])} #{icon} #{key.capitalize.gsub("_", " ")}"
       end
 
-      puts Rainbow("\n📊 Stats: 🪙 #{total_tokens} (⬆️ #{input_tokens} ⬇️ #{output_tokens}) | 💸 $#{"%.2f" % total_cost}").cyan.bold
+      puts Rainbow("
+📊 Stats: 🪙 #{total_tokens} (⬆️ #{input_tokens} ⬇️ #{output_tokens}) | 💸 $#{"%.2f" % total_cost}").cyan.bold
 
-      if min_score < 6
-        puts Rainbow("\n💡 Hint: Some evaluations are sub-optimal (score < 6).").yellow
-        puts "   to automatically re-do the sub-optimal jobs, type: " + Rainbow("arnectl redo --threshold 6").white
+      if min_score <= 6
+        puts Rainbow("
+💡 Some tasks have low scores (<= 6).").yellow
+        puts "To automatically re-do the sub-optimal jobs, type:"
+        puts Rainbow("  arnectl redo #{folder_path} --threshold 6").blue
       end
 
-      if has_failures
-        puts Rainbow("\n💡 Hint: Some parts failed. To fix, run:").yellow
-        puts Rainbow("   just arnectl resume #{folder_path} --force").white
-      end
-
-      puts Rainbow("\nLegend: 🟢 done | 🔴 failed | 🟡 in_progress | ⚪ pending | 🤡 mocked | 👍/👎 evaluated | 🟣/⚫ unevaluated").gray.italic
+      puts Rainbow("
+Legend: 🟢 done | 🔴 failed | 🟡 in_progress | ⚪ pending | 🤡 mocked | 👍/👎 evaluated | 🟣/⚫ unevaluated").gray.italic
     end
 
-    desc "redo [FOLDER_PATH]", "Invalidate and redo sub-optimal generation tasks"
-    method_option :threshold, type: :numeric, default: 6, aliases: "-t", desc: "Evaluation score threshold (0-10)"
+    desc "redo [FOLDER_PATH]", "Automatically reset and retry tasks with scores below the threshold"
+    method_option :threshold, type: :numeric, default: 6, desc: "Score threshold (1-10) below which a task is redone"
     def redo(folder_path = nil)
       folder_path = begin
         resolve_media_folder([folder_path], options)
@@ -389,282 +404,70 @@ module Arneis
         return
       end
 
-      threshold = options[:threshold]
-      puts Rainbow("🔄 Redoing tasks with evaluation score < #{threshold} in #{folder_path}...").cyan
+      puts Rainbow("🔄 Redoing tasks in #{folder_path} with score <= #{options[:threshold]}...").cyan
 
       state_file = File.join(folder_path, ".state.yaml")
       state = YAML.load_file(state_file)
-
-      # Handle both VideoProject (scenes) and KidsStory (pages)
       items = state["scenes"] || state["pages"] || []
-      invalidated_count = 0
-      trash_dir = File.join(folder_path, ".trash", "redo_#{Time.now.strftime("%Y%m%d_%H%M%S")}")
+      
+      reset_count = 0
 
       items.each do |item|
         num = item["scene"] || item["page"]
         item_dir = state["scenes"] ? "" : "pages/page_#{num}/"
-        artifact_base = File.join(folder_path, item_dir, state["scenes"] ? "scene_#{num}" : "illustration")
-        
-        # Check all possible media extensions
-        media_file = Dir.glob("#{artifact_base}.{mp4,png,wav}").first
-        next unless media_file
+        artifact_name = state["scenes"] ? "scene_#{num}.mp4" : "illustration.png"
+        artifact_file = File.join(folder_path, item_dir, artifact_name)
+        asset_json = "#{artifact_file}.asset.json"
 
-        asset_json = "#{media_file}.asset.json"
-        next unless File.exist?(asset_json)
+        if File.exist?(asset_json)
+          asset_data = ::JSON.parse(File.read(asset_json))
+          score = asset_data.dig("eval", "score") || 10
+          if score <= options[:threshold]
+            puts Rainbow("  🎯 Resetting Task #{num} (Score: #{score})").yellow
+            
+            # Use feedback logic to trash and reset
+            trash_dir = File.join(folder_path, ".trash", "redo_#{Time.now.strftime("%Y%m%d_%H%M%S")}")
+            FileUtils.mkdir_p(trash_dir)
+            
+            [artifact_file, asset_json, "#{artifact_file}.mock"].each do |f|
+              if File.exist?(f)
+                FileUtils.mv(f, File.join(trash_dir, File.basename(f)))
+              end
+            end
 
-        asset_data = ::JSON.parse(File.read(asset_json))
-        score = asset_data.dig("eval", "score") || 10
-
-        if score < threshold
-          puts Rainbow("  🗑️  Invalidating Page/Scene #{num} (Score: #{score})").yellow
-          FileUtils.mkdir_p(trash_dir)
-          
-          # Move files to trash
-          Dir.glob("#{artifact_base}*").each do |f|
-            FileUtils.mv(f, File.join(trash_dir, File.basename(f)))
+            item["status"] = "pending"
+            reset_count += 1
           end
-          
-          item["status"] = "pending"
-          invalidated_count += 1
         end
       end
 
-      if invalidated_count > 0
+      if reset_count > 0
         state["status"] = "in_progress"
-        # Also reset final assembly
-        state["final_story_assembly"]["status"] = "pending" if state["final_story_assembly"]
-        state["montage"]["status"] = "pending" if state["montage"]
-        
         File.write(state_file, state.to_yaml)
-        puts Rainbow("✅ Successfully invalidated #{invalidated_count} tasks.").green
-        puts Rainbow("🚀 Run 'just arnectl resume #{folder_path}' to re-generate.").blue
+        puts Rainbow("✅ #{reset_count} tasks reset. Resuming...").green
+        resume(folder_path)
       else
-        puts Rainbow("✨ No tasks found below the threshold of #{threshold}.").green
+        puts Rainbow("🙌 No tasks found below the threshold. Everything looks good!").green
       end
-    end
-
-    desc "list", "List all meaningful projects in out/"
-    def list
-      puts Rainbow("📂 Listing Arneis projects...").cyan.bold
-      projects_paths = Dir.glob("out/*/").select { |f| File.exist?(File.join(f, ".state.yaml")) }
-
-      if projects_paths.empty?
-        puts "No projects found."
-        return
-      end
-
-      data = projects_paths.sort_by { |f| File.mtime(f) }.reverse.map do |path|
-        state = YAML.load_file(File.join(path, ".state.yaml"))
-        title = state["project_title"] || state["story_title"] || File.basename(path)
-        status = state["status"]
-
-        all_media = Dir.glob(File.join(path, "**", "*.{mp4,png,wav}"))
-        real_media = all_media.reject { |f| File.exist?("#{f}.mock") || File.exist?("#{f}.NOT_GOOD") }
-        Dir.glob(File.join(path, "**", "*.mock"))
-        bad_media_files = Dir.glob(File.join(path, "**", "*.NOT_GOOD"))
-
-        honest_status = status
-        if status == "done" && real_media.empty?
-          honest_status = bad_media_files.empty? ? "mocked" : "failed"
-        end
-        honest_status = "failed" if !bad_media_files.empty?
-
-        total_cost = 0.0
-        Dir.glob(File.join(path, "**", "*.asset.json")).each do |f|
-          total_cost += ::JSON.parse(File.read(f))["cost_usd"] || 0.0
-        end
-
-        mtime = File.mtime(path).strftime("%Y-%m-%d %H:%M")
-        is_symlink = File.symlink?(path.chomp("/"))
-
-        {
-          path: path,
-          mtime: mtime,
-          is_symlink: is_symlink,
-          status: honest_status,
-          title: title,
-          cost: total_cost,
-          video_count: real_media.select { |f| f.end_with?(".mp4") }.count,
-          image_count: real_media.select { |f| f.end_with?(".png") }.count,
-          audio_count: real_media.select { |f| f.end_with?(".wav", ".mp3") }.count,
-          text_count: Dir.glob(File.join(path, "**", "*.{txt,md}")).count
-        }
-      end
-
-      max_path = data.map { |d| d[:path].length }.max
-      data.each do |d|
-        folder_color = d[:is_symlink] ? :cyan : :blue
-        folder_emoji = d[:is_symlink] ? "🔗" : "📂"
-
-        media_stats = []
-        media_stats << "#{d[:video_count]}🎥" if d[:video_count] > 0
-        media_stats << "#{d[:image_count]}🖼️" if d[:image_count] > 0
-        media_stats << "#{d[:audio_count]}🎵" if d[:audio_count] > 0
-        media_stats << "#{d[:text_count]}📝" if d[:text_count] > 0
-
-        total_assets = d[:video_count] + d[:image_count] + d[:audio_count] + d[:text_count]
-        stats_str = ""
-        stats_str += "🫘 #{total_assets}: " if total_assets > 0
-        stats_str += media_stats.join(" ")
-
-        display_title = (d[:title].length > 40) ? "#{d[:title][0...37]}..." : d[:title].ljust(40)
-        puts "#{folder_emoji} #{Rainbow(d[:path].ljust(max_path + 1)).send(folder_color)} #{status_emoji(d[:status])} #{Rainbow(display_title).yellow} 💸 $#{"%.2f" % d[:cost]} #{stats_str}"
-      end
-    end
-
-    desc "cleanup", "Archive projects without any REAL media to out/archived/"
-    def cleanup
-      puts Rainbow("🧹 Starting aggressive deterministic cleanup...").cyan
-      projects = Dir.glob("out/*/").reject { |f| f.include?("archived") }
-      archived_count = 0
-      projects.each do |path|
-        # Real media = exists and no .mock / .NOT_GOOD
-        media_files = Dir.glob(File.join(path, "*.{mp4,png,wav,mp3}"))
-        real_media = media_files.reject { |f| File.exist?("#{f}.mock") || File.exist?("#{f}.NOT_GOOD") }
-
-        if real_media.empty?
-          puts "  📦 Archiving project with ZERO real media: #{path}"
-          FileUtils.mkdir_p("out/archived")
-          # Handle potential symlinks or busy folders
-          begin
-            FileUtils.mv(path, File.join("out/archived", File.basename(path)))
-            archived_count += 1
-          rescue => e
-            puts Rainbow("    ⚠️  Failed to move #{path}: #{e.message}").yellow
-          end
-        end
-      end
-      puts Rainbow("✅ Cleanup complete. Archived #{archived_count} junk projects.").green
-    end
-
-    desc "check-fake-media [FOLDER_PATH]", "Rigorously verify all media files in a project or all projects"
-    def check_fake_media(folder_path = nil)
-      folder_path = begin
-        resolve_media_folder([folder_path], options)
-      rescue
-        "out"
-      end
-      search_path = folder_path ? File.join(folder_path, "**", "*.{mp4,png,wav}") : "out/**/*.{mp4,png,wav}"
-      puts Rainbow("🛡️  Rigorously checking media artifacts in #{search_path}...").cyan.bold
-
-      files = Dir.glob(search_path).reject do |f|
-        f.include?(".mock") || f.include?(".NOT_GOOD") || f.include?("archived/")
-      end
-
-      if files.empty?
-        puts "No media files found to check."
-        return
-      end
-
-      found_fakes = 0
-      files.each do |file|
-        type = case File.extname(file).downcase
-        when ".mp4" then :video
-        when ".png" then :image
-        when ".wav" then :audio
-        end
-
-        result = Validator.validate_and_rename!(file, type)
-        if result[:success]
-          puts "  ✅ #{file}: #{Rainbow("REAL").green} (#{result[:info]})"
-        else
-          puts "  ❌ #{file}: #{Rainbow("FAKE").red} (#{result[:info]}) -> Renamed to .NOT_GOOD"
-          found_fakes += 1
-        end
-      end
-
-      if found_fakes > 0
-        puts Rainbow("\n⚠️  Found and neutralized #{found_fakes} fake media files!").yellow.bold
-      else
-        puts Rainbow("\n✨ All checked media files are genuine.").green.bold
-      end
-    end
-
-    desc "graph YAML_PATH", "Generate a Mermaid.js dependency graph"
-    method_option :output, type: :string, aliases: "-o", desc: "Output file"
-    def graph(yaml_path)
-      if %w[--help -h].include?(yaml_path)
-        help("graph")
-        return
-      end
-      puts Rainbow("📊 Generating graph for #{yaml_path}...").cyan
-      project = Arneis.load_project(yaml_path)
-
-      tasks = []
-      core_task_ids = []
-
-      # Handle both VideoProject (scenes) and KidsStory (pages)
-      items = project.respond_to?(:scenes) ? project.scenes : project.pages
-      label_prefix = project.respond_to?(:scenes) ? "scene_" : "page_"
-
-      items.each do |item|
-        num = item["scene"] || item["page"]
-        item_id = :"#{label_prefix}#{num}"
-        tasks << Arneis::Task.new(item_id)
-        core_task_ids << item_id
-      end
-
-      if project.data["background_music"]
-        tasks << Arneis::Task.new(:background_music)
-        core_task_ids << :background_music
-      end
-
-      # Add assembly tasks based on kind
-      if project.is_a?(Arneis::VideoProject)
-        tasks << Arneis::Task.new(:montage, dependencies: core_task_ids)
-        tasks << Arneis::Task.new(:marketing, dependencies: [:montage])
-      elsif project.is_a?(Arneis::KidsStory)
-        tasks << Arneis::Task.new(:final_story_assembly, dependencies: core_task_ids)
-      end
-
-      visualizer = Visualizer.new(tasks)
-      mermaid = visualizer.to_mermaid
-
-      # Determine output folder
-      output_dir = options[:media_folder] || options[:output] || Dir.glob("out/*/").select { |f| File.exist?(File.join(f, ".state.yaml")) }.max_by { |f| File.mtime(f) } || "out/latest_graph"
-      FileUtils.mkdir_p(output_dir) if output_dir.start_with?("out/")
-
-      output_file = options[:output] || File.join(output_dir, "DEPENDENCIES.md")
-      title = project.respond_to?(:project_title) ? project.project_title : project.story_title
-      content = "# Dependency Graph: #{title}\n\n```mermaid\n#{mermaid}\n```"
-
-      File.write(output_file, content)
-      puts Rainbow("✅ Graph generated and saved to #{output_file}").green
-    end
-
-    desc "research-pitch RESEARCH_PATH", "Generate a sales pitch YAML"
-    def research_pitch(research_path)
-      if %w[--help -h].include?(research_path)
-        help("research_pitch")
-        return
-      end
-      puts Rainbow("🧠 Researching #{research_path}...").cyan
-      research_content = File.read(research_path)
-      File.read("data/templates/VideoProject.yaml")
-      gemini = Generator::Gemini.new
-      system_prompt = "You are an expert Copywriter. Create a VideoProject YAML based on the research. Follow the schema. Output ONLY the YAML."
-      resp = gemini.generate(research_content, system_instruction: system_prompt)
-      yaml_content = resp[:content].gsub(/```yaml\n|```/, "")
-      output_dir = "data/samples/VideoProject"
-      FileUtils.mkdir_p(output_dir)
-      output_file = File.join(output_dir, "#{File.basename(research_path, ".*")}.yaml")
-      File.write(output_file, yaml_content)
-      puts Rainbow("✅ Pitch generated and saved to #{output_file}").green
     end
 
     no_commands do
-      def resolve_media_folder(args = [], options = {})
-        # Precedence:
-        # 1. Command-line flag (-f / --media-folder)
-        # 2. Positional argument
-        # 3. Environment variable (ARNEIS_FOLDER)
-
-        folder = options["media_folder"] || args.first || ENV["ARNEIS_FOLDER"]
-
-        if folder.nil? || folder.empty?
-          raise "No media folder specified. Use -f, a positional argument, or set ARNEIS_FOLDER ENV."
+      def open_file(path) # Added by main
+        return unless File.exist?(path)
+        puts Rainbow("📂 Opening #{path}...").cyan
+        case RbConfig::CONFIG["host_os"]
+        when /mswin|mingw|cygwin/
+          system "start #{path}"
+        when /darwin/
+          system "open #{path}"
+        when /linux|bsd/
+          system "xdg-open #{path}"
         end
+      end
 
+      def resolve_media_folder(args = [], options = {})
+        folder = options["media_folder"] || args.first || ENV["ARNEIS_FOLDER"]
+        raise "No media folder specified." if folder.nil? || folder.empty?
         folder
       end
 
@@ -676,7 +479,6 @@ module Arneis
         when "polling" then "🔵"
         when "in_progress" then "🟡"
         when "pending" then "⚪"
-        when "waiting" then "🩶"
         when "failed" then "🔴"
         when "initialized" then "🚀"
         else "❓"

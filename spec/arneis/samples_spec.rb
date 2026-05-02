@@ -6,7 +6,7 @@ RSpec.describe "Data Samples" do
     describe "Sample: #{File.basename(sample_path)}" do
       it "can be hydrated and validated successfully" do
         # We wrap it in a project initialization which performs both hydration and validation
-        expect { Arneis::VideoProject.new(sample_path) }.not_to raise_error
+        expect { Arneis.load_project(sample_path) }.not_to raise_error
       end
     end
   end

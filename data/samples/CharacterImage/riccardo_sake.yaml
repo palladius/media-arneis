@@ -1,0 +1,10 @@
+apiVersion: media-arneis.palladius.it/v1
+kind: CharacterImage
+metadata:
+  name: riccardo-sake
+  template: CharacterImage
+spec:
+  project_title: "Riccardo Pours Sake"
+  characters: ["riccardo"]
+  prompt: "Riccardo pouring a cold sake into a small ceramic cup in a cozy izakaya in Tokyo"
+  aspect_ratio: "1:1"

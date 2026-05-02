@@ -1,0 +1,10 @@
+apiVersion: media-arneis.palladius.it/v1
+kind: CharacterImage
+metadata:
+  name: riccardo-yukihiro-sake
+  template: CharacterImage
+spec:
+  project_title: "Riccardo and Yukihiro"
+  characters: ["riccardo", "yukihiro"]
+  prompt: "Riccardo pouring a cold sake to Yukihiro. They are both smiling and enjoying the evening in a Tokyo izakaya."
+  aspect_ratio: "1:1"
