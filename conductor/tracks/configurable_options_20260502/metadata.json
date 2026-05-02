@@ -1,0 +1,8 @@
+{
+  "track_id": "configurable_options_20260502",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-05-02T07:45:00Z",
+  "updated_at": "2026-05-02T07:45:00Z",
+  "description": "Add configurable options (--eval, --open) and environment variables (ARNEIS_EVAL_ENABLED, ARNEIS_OPEN_ENABLED)."
+}

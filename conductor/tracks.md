@@ -59,3 +59,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [ ] **Track: Implement --eval support for arnectl generate command**
 *Link: [./tracks/generate_eval_20260501/](./tracks/generate_eval_20260501/)*
 
+---
+
+- [ ] **Track: Configurable Post-Creation Actions (Flags and ENVs for --eval and --open)**
+*Link: [./tracks/configurable_options_20260502/](./tracks/configurable_options_20260502/)*
+
