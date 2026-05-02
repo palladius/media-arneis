@@ -27,11 +27,11 @@ Integrate the new flags into the `arnectl` CLI and update the help documentation
 ## Phase 3: Orchestration Integration
 Update the orchestration logic to respect the new configuration settings during media generation.
 
-- [ ] Task: Create tests for Orchestration respect of config
-    - [ ] Update `spec/arneis/orchestrator_spec.rb` or task-specific specs.
-    - [ ] Verify that `Evaluator` is not called when disabled.
-    - [ ] Verify that system "open" is not called when disabled.
-- [ ] Task: Implement conditional execution in Orchestrator/Tasks
-    - [ ] Wrap evaluation calls in a conditional check.
-    - [ ] Wrap "open" calls in a conditional check.
+- [x] Task: Create tests for Orchestration respect of config c57cbdc
+    - [x] Update `spec/arneis/orchestrator_spec.rb` or task-specific specs.
+    - [x] Verify that `Evaluator` is not called when disabled.
+    - [x] Verify that system "open" is not called when disabled.
+- [x] Task: Implement conditional execution in Orchestrator/Tasks c57cbdc
+    - [x] Wrap evaluation calls in a conditional check.
+    - [x] Wrap "open" calls in a conditional check.
 - [ ] Task: Conductor - User Manual Verification 'Orchestration Integration' (Protocol in workflow.md)
