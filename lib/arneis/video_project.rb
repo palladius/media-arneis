@@ -68,7 +68,7 @@ module Arneis
       File.write(state_file, state.to_yaml)
     end
 
-    def process(async: true, verify: false, dryrun: false)
+    def process(async: true, verify: false, dryrun: false, eval: true)
       if dryrun
         puts Rainbow("🌵 [DRYRUN] Validation complete. Skipping orchestration...").yellow
         return
@@ -86,7 +86,7 @@ module Arneis
       current_state["scenes"]&.each { |s| pre_completed << "scene_#{s["scene"]}" if s["status"] == "done" || s["status"] == "verified" }
       pre_completed << "background_music" if current_state["background_music"] && (current_state["background_music"]["status"] == "done" || current_state["background_music"]["status"] == "verified")
 
-      orchestrator = Orchestrator.new(async: async, pre_completed: pre_completed, verify: verify)
+      orchestrator = Orchestrator.new(async: async, pre_completed: pre_completed, verify: verify, eval: eval)
       gemini_generator = Generator::Gemini.new
       veo_generator = Generator::Veo.new
       lyria_generator = Generator::Lyria.new
@@ -131,7 +131,7 @@ module Arneis
           if res[:status] == "polling"
             update_scene_status(scene["scene"], "polling", nil, res[:operation_id])
           elsif res[:status] == "done"
-            validate_scene(scene, veo_output)
+            validate_scene(scene, veo_output, eval)
           else
             update_scene_status(scene["scene"], "failed", "Generation failed")
           end
@@ -216,11 +216,18 @@ module Arneis
       end
     end
 
-    def validate_scene(scene, veo_output)
+    def validate_scene(scene, veo_output, eval_enabled = true)
       puts "  🛡️  Validating scene #{scene["scene"]} artifact..."
       v_result = Validator.validate_and_rename!(veo_output, :video)
       if v_result[:success]
-        update_scene_status(scene["scene"], "verified")
+        if eval_enabled
+          # Note: Currently VideoProject doesn't have per-scene evaluation like CharacterImage
+          # But we mark it verified anyway if it passes basic validation and eval is enabled
+          update_scene_status(scene["scene"], "verified")
+        else
+          puts Rainbow("  ⏭️  [EVAL] Skipping Scene Evaluation (disabled)").yellow
+          update_scene_status(scene["scene"], "done")
+        end
       else
         update_scene_status(scene["scene"], "failed", v_result[:message])
       end

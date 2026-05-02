@@ -78,7 +78,7 @@ module Arneis
       File.write(state_file, state.to_yaml)
     end
 
-    def process(async: true, verify: false, dryrun: false)
+    def process(async: true, verify: false, dryrun: false, eval: true)
       if dryrun
         puts Rainbow("🌵 [DRYRUN] Validation complete. Skipping orchestration...").yellow
         return
@@ -96,7 +96,7 @@ module Arneis
       current_state["pages"]&.each { |p| pre_completed << "page_#{p["page"]}" if p["status"] == "done" || p["status"] == "verified" }
       pre_completed << "background_music" if current_state["background_music"] && (current_state["background_music"]["status"] == "done" || current_state["background_music"]["status"] == "verified")
 
-      orchestrator = Orchestrator.new(async: async, pre_completed: pre_completed, verify: verify)
+      orchestrator = Orchestrator.new(async: async, pre_completed: pre_completed, verify: verify, eval: eval)
       gemini_generator = Generator::Gemini.new
       imagen_generator = Generator::Imagen.new
       lyria_generator = Generator::Lyria.new
@@ -157,7 +157,7 @@ module Arneis
               chirp_generator.generate(target_text, audio_output, language_code: lang, asset_id: "Page#{page["page"]}.audio.#{lang}")
             end
 
-            validate_page(page, image_output)
+            validate_page(page, image_output, eval)
           else
             update_page_status(page["page"], "failed", "Generation failed")
           end
@@ -291,50 +291,55 @@ module Arneis
       FileUtils.rm(list_file) if File.exist?(list_file)
     end
 
-    def validate_page(page, image_output)
+    def validate_page(page, image_output, eval_enabled = true)
       v_result = Validator.validate_and_rename!(image_output, :image)
       if v_result[:success]
         # Perform Character Consistency EVAL
-        evaluator = Evaluator.new
-        e_result = evaluator.evaluate_character_consistency(image_output, @character)
+        if eval_enabled
+          evaluator = Evaluator.new
+          e_result = evaluator.evaluate_character_consistency(image_output, @character)
 
-        # Save Eval result to asset json
-        asset_json = "#{image_output}.asset.json"
-        if File.exist?(asset_json) && e_result
-          asset_data = ::JSON.parse(File.read(asset_json))
-          asset_data["eval"] = e_result
-          File.write(asset_json, ::JSON.pretty_generate(asset_data))
-        end
+          # Save Eval result to asset json
+          asset_json = "#{image_output}.asset.json"
+          if File.exist?(asset_json) && e_result
+            asset_data = ::JSON.parse(File.read(asset_json))
+            asset_data["eval"] = e_result
+            File.write(asset_json, ::JSON.pretty_generate(asset_data))
+          end
 
-        # AUDIO EVAL
-        @story_audio.each do |lang|
-          audio_file = File.join(File.dirname(image_output), "audio_#{lang}.wav")
-          if File.exist?(audio_file)
-            # Find the text for this page in this language
-            text_file = File.join(File.dirname(image_output), "story_text_#{lang}.txt")
-            text_file = File.join(File.dirname(image_output), "story_text.txt") if lang == "en" && !File.exist?(text_file)
-            
-            if File.exist?(text_file)
-              expected_text = File.read(text_file)
-              a_result = evaluator.evaluate_audio_intelligibility(audio_file, expected_text)
+          # AUDIO EVAL
+          @story_audio.each do |lang|
+            audio_file = File.join(File.dirname(image_output), "audio_#{lang}.wav")
+            if File.exist?(audio_file)
+              # Find the text for this page in this language
+              text_file = File.join(File.dirname(image_output), "story_text_#{lang}.txt")
+              text_file = File.join(File.dirname(image_output), "story_text.txt") if lang == "en" && !File.exist?(text_file)
               
-              # Save audio eval to asset json
-              audio_asset_json = "#{audio_file}.asset.json"
-              if File.exist?(audio_asset_json) && a_result
-                audio_asset_data = ::JSON.parse(File.read(audio_asset_json))
-                audio_asset_data["eval"] = a_result
-                File.write(audio_asset_json, ::JSON.pretty_generate(audio_asset_data))
+              if File.exist?(text_file)
+                expected_text = File.read(text_file)
+                a_result = evaluator.evaluate_audio_intelligibility(audio_file, expected_text)
+                
+                # Save audio eval to asset json
+                audio_asset_json = "#{audio_file}.asset.json"
+                if File.exist?(audio_asset_json) && a_result
+                  audio_asset_data = ::JSON.parse(File.read(audio_asset_json))
+                  audio_asset_data["eval"] = a_result
+                  File.write(audio_asset_json, ::JSON.pretty_generate(audio_asset_data))
+                end
               end
             end
           end
-        end
 
-        if e_result && e_result[:success]
-          update_page_status(page["page"], "verified")
-        elsif e_result
-          update_page_status(page["page"], "done_with_warnings", "CC Score: #{e_result[:score]}/10 - #{e_result[:message]}")
+          if e_result && e_result[:success]
+            update_page_status(page["page"], "verified")
+          elsif e_result
+            update_page_status(page["page"], "done_with_warnings", "CC Score: #{e_result[:score]}/10 - #{e_result[:message]}")
+          else
+            update_page_status(page["page"], "done_with_warnings", "Evaluation failed")
+          end
         else
-          update_page_status(page["page"], "done_with_warnings", "Evaluation failed")
+          puts Rainbow("  ⏭️  [EVAL] Skipping Page Evaluation (disabled)").yellow
+          update_page_status(page["page"], "done")
         end
       else
         update_page_status(page["page"], "failed", v_result[:message])

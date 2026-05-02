@@ -6,15 +6,17 @@ require "async/barrier"
 require "async/semaphore"
 require "zeitwerk"
 require "json"
+require "rainbow"
 
 module Arneis
   class Orchestrator
-    attr_reader :completed_tasks, :verify
+    attr_reader :completed_tasks, :verify, :eval_enabled
 
-    def initialize(async: true, pre_completed: [], verify: false)
+    def initialize(async: true, pre_completed: [], verify: false, eval: true)
       @tasks = {}
       @async_enabled = async
       @verify = verify
+      @eval_enabled = eval
       @completed_tasks = Array(pre_completed).map(&:to_sym)
       # Limit concurrent AI operations to avoid rate limits
       @semaphore = Async::Semaphore.new(Arneis::Config.max_concurrent_tasks || 3)
@@ -89,7 +91,6 @@ module Arneis
 
     def verify_task(task)
       puts Rainbow("  🛡️  [VERIFY] Verifying task #{task.id}...").cyan
-      evaluator = Evaluator.new
       
       # 1. Basic Asset Check
       v_result = Validator.verify_assets(task)
@@ -100,6 +101,15 @@ module Arneis
         return
       end
 
+      # Skip LLM evaluation if disabled
+      unless @eval_enabled
+        puts Rainbow("  ⏭️  [EVAL] Automated evaluation disabled (via flag or ENV)").yellow
+        save_verification_metadata(task)
+        return
+      end
+
+      evaluator = Evaluator.new
+      
       # 2. JSON/Logic Check (Tier 1)
       task.outputs.each do |path, type|
         if type == :json && File.exist?(path)
