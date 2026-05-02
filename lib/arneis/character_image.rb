@@ -59,14 +59,14 @@ module Arneis
       File.write(state_file, state.to_yaml)
     end
 
-    def process(async: true, verify: false, dryrun: false, eval: true)
+    def process(async: true, verify: false, dryrun: false)
       if dryrun
         puts Rainbow("🌵 [DRYRUN] Validation complete. Skipping orchestration...").yellow
         return
       end
       update_status("in_progress")
 
-      orchestrator = Orchestrator.new(async: async, verify: verify, eval: eval)
+      orchestrator = Orchestrator.new(async: async, verify: verify)
       gemini_generator = Generator::Gemini.new
       imagen_generator = Generator::Imagen.new
 
@@ -76,11 +76,19 @@ module Arneis
         update_task_status("image", "in_progress")
 
         # Combine character contexts
-        char_contexts = @characters.map(&:prompt_context).join(" ")
-        full_prompt = "#{char_contexts} #{@prompt}"
+        char_contexts = @characters.map(&:prompt_context).join("\n")
+        
+        system_instruction = <<~PROMPT
+          You are an expert Image Prompt Engineer. 
+          Your goal is to enhance the user's requested SCENARIO into a highly descriptive, artistic image prompt.
+          You will be provided with Character Definitions (Name, Personality, Visual Look).
+          You MUST respect the physical traits of the characters, but the SCENARIO provided by the user is the PRIMARY focus.
+          CRITICAL: ONLY include character details from the bio that are compatible with the SCENARIO. For example, if the bio mentions drinking but the scenario is playing chess, do NOT include drinking. Focus 100% on the character PERFORMING the scenario activity.
+          Output ONLY the enhanced prompt.
+        PROMPT
 
-        system_instruction = "You are an expert Image Prompt Engineer. Enhance the user's character image prompt to be highly descriptive, artistic, and suitable for high-quality image generation. Ensure character physical traits are respected. Output ONLY the enhanced prompt."
-        enhancement = gemini_generator.generate("Enhance this character image prompt: #{full_prompt}", system_instruction: system_instruction)
+        prompt_to_enhance = "SCENARIO: #{@prompt}\n\nCHARACTER DEFINITIONS:\n#{char_contexts}"
+        enhancement = gemini_generator.generate(prompt_to_enhance, system_instruction: system_instruction)
         enhanced_prompt = enhancement[:content]
         File.write(File.join(@output_path, "prompt.txt"), enhanced_prompt)
 
@@ -90,7 +98,7 @@ module Arneis
         res = imagen_generator.generate(enhanced_prompt, image_output, asset_id: "CharacterImage.image", reference_images: all_refs, aspect_ratio: @aspect_ratio)
 
         if res[:status] == "done" || res[:status] == "mocked"
-          validate_image(image_output, eval)
+          validate_image(image_output)
         else
           update_task_status("image", "failed", "Generation failed")
         end
@@ -98,48 +106,6 @@ module Arneis
 
       orchestrator.run
       update_status("done")
-    end
-
-    private
-
-    def validate_image(image_output, eval_enabled = true)
-      v_result = Validator.validate_and_rename!(image_output, :image)
-      if v_result[:success]
-        # Perform Character Consistency EVAL for each character
-        if eval_enabled
-          evaluator = Evaluator.new
-          overall_success = true
-          warnings = []
-
-          @characters.each do |char|
-            e_result = evaluator.evaluate_character_consistency(image_output, char)
-            
-            # Merge results into asset json
-            asset_json = "#{image_output}.asset.json"
-            if File.exist?(asset_json)
-              asset_data = ::JSON.parse(File.read(asset_json))
-              asset_data["eval_#{char.name}"] = e_result
-              File.write(asset_json, ::JSON.pretty_generate(asset_data))
-            end
-
-            unless e_result[:success]
-              overall_success = false
-              warnings << "#{char.name} Score: #{e_result[:score]}/10"
-            end
-          end
-
-          if overall_success
-            update_task_status("image", "verified")
-          else
-            update_task_status("image", "done_with_warnings", warnings.join(", "))
-          end
-        else
-          puts Rainbow("  ⏭️  [EVAL] Skipping Character Consistency Evaluation (disabled)").yellow
-          update_task_status("image", "done")
-        end
-      else
-        update_task_status("image", "failed", v_result[:message])
-      end
     end
 
     def update_task_status(task_key, status, error_msg = nil)
@@ -162,8 +128,53 @@ module Arneis
       end
     end
 
+    def media?
+      true
+    end
+
+    def primary_artifact_type
+      :image
+    end
+
     def primary_artifact
       File.join(@output_path, "character_image.png")
+    end
+
+    private
+
+    def validate_image(image_output)
+      v_result = Validator.validate_and_rename!(image_output, :image)
+      if v_result[:success]
+        # Perform Character Consistency EVAL for each character
+        evaluator = Evaluator.new
+        overall_success = true
+        warnings = []
+
+        @characters.each do |char|
+          e_result = evaluator.evaluate_character_consistency(image_output, char)
+          
+          # Merge results into asset json
+          asset_json = "#{image_output}.asset.json"
+          if File.exist?(asset_json)
+            asset_data = ::JSON.parse(File.read(asset_json))
+            asset_data["eval_#{char.name}"] = e_result
+            File.write(asset_json, ::JSON.pretty_generate(asset_data))
+          end
+
+          unless e_result[:success]
+            overall_success = false
+            warnings << "#{char.name} Score: #{e_result[:score]}/10"
+          end
+        end
+
+        if overall_success
+          update_task_status("image", "verified")
+        else
+          update_task_status("image", "done_with_warnings", warnings.join(", "))
+        end
+      else
+        update_task_status("image", "failed", v_result[:message])
+      end
     end
   end
 end

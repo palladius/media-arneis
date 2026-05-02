@@ -78,7 +78,7 @@ module Arneis
       File.write(state_file, state.to_yaml)
     end
 
-    def process(async: true, verify: false, dryrun: false, eval: true)
+    def process(async: true, verify: false, dryrun: false)
       if dryrun
         puts Rainbow("🌵 [DRYRUN] Validation complete. Skipping orchestration...").yellow
         return
@@ -96,7 +96,7 @@ module Arneis
       current_state["pages"]&.each { |p| pre_completed << "page_#{p["page"]}" if p["status"] == "done" || p["status"] == "verified" }
       pre_completed << "background_music" if current_state["background_music"] && (current_state["background_music"]["status"] == "done" || current_state["background_music"]["status"] == "verified")
 
-      orchestrator = Orchestrator.new(async: async, pre_completed: pre_completed, verify: verify, eval: eval)
+      orchestrator = Orchestrator.new(async: async, pre_completed: pre_completed, verify: verify)
       gemini_generator = Generator::Gemini.new
       imagen_generator = Generator::Imagen.new
       lyria_generator = Generator::Lyria.new
@@ -123,11 +123,19 @@ module Arneis
           update_page_status(page["page"], "in_progress")
 
           # Use Character to enhance the prompt
-          character_prompt = @character ? @character.prompt_context : ""
-          full_prompt = "#{character_prompt} #{page["description"]}"
+          character_prompt = @character ? @character.prompt_context : "No character defined."
+          
+          system_instruction = <<~PROMPT
+            You are an expert Image Prompt Engineer. 
+            Your goal is to enhance the user's requested SCENARIO into a highly descriptive, artistic children's book illustration prompt.
+            You will be provided with Character Definitions (Name, Personality, Visual Look).
+            You MUST respect the physical traits of the characters, but the SCENARIO provided by the user is the PRIMARY focus.
+            CRITICAL: ONLY include character details from the bio that are compatible with the SCENARIO. Focus 100% on the character PERFORMING the scenario activity. Do NOT add unrelated items from the bio (like drinks or pets) unless they are part of the scenario.
+            Output ONLY the enhanced prompt.
+          PROMPT
 
-          system_instruction = "You are an expert Image Prompt Engineer. Enhance the user's children's story prompt to be highly descriptive, artistic, and suitable for high-quality image generation. Output ONLY the enhanced prompt, no conversational filler, no options, no preamble."
-          enhancement = gemini_generator.generate("Enhance this children's story illustration prompt: #{full_prompt}", system_instruction: system_instruction)
+          prompt_to_enhance = "SCENARIO: #{page["description"]}\n\nCHARACTER DEFINITION:\n#{character_prompt}"
+          enhancement = gemini_generator.generate(prompt_to_enhance, system_instruction: system_instruction)
           enhanced_prompt = enhancement[:content]
           File.write(File.join(page_dir, "prompt.txt"), enhanced_prompt)
 
@@ -157,7 +165,7 @@ module Arneis
               chirp_generator.generate(target_text, audio_output, language_code: lang, asset_id: "Page#{page["page"]}.audio.#{lang}")
             end
 
-            validate_page(page, image_output, eval)
+            validate_page(page, image_output)
           else
             update_page_status(page["page"], "failed", "Generation failed")
           end
@@ -214,6 +222,50 @@ module Arneis
 
       orchestrator.run
       update_status("done")
+    end
+
+    def update_task_status(task_key, status)
+      @mutex.synchronize do
+        state_file = File.join(File.expand_path(@output_path), ".state.yaml")
+        state = YAML.load_file(state_file)
+        state[task_key] ||= {}
+        state[task_key]["status"] = status
+        File.write(state_file, state.to_yaml)
+      end
+    end
+
+    def update_page_status(page_num, status, error_msg = nil)
+      @mutex.synchronize do
+        state_file = File.join(File.expand_path(@output_path), ".state.yaml")
+        state = YAML.load_file(state_file)
+        page = state["pages"].find { |p| p["page"] == page_num }
+        if page
+          page["status"] = status
+          page["error"] = error_msg if error_msg
+        end
+        File.write(state_file, state.to_yaml)
+      end
+    end
+
+    def update_status(status)
+      @mutex.synchronize do
+        state_file = File.join(File.expand_path(@output_path), ".state.yaml")
+        state = YAML.load_file(state_file)
+        state["status"] = status
+        File.write(state_file, state.to_yaml)
+      end
+    end
+
+    def media?
+      true
+    end
+
+    def primary_artifact_type
+      :markdown
+    end
+
+    def primary_artifact
+      File.join(@output_path, "STORY.md")
     end
 
     private
@@ -291,95 +343,54 @@ module Arneis
       FileUtils.rm(list_file) if File.exist?(list_file)
     end
 
-    def validate_page(page, image_output, eval_enabled = true)
+    def validate_page(page, image_output)
       v_result = Validator.validate_and_rename!(image_output, :image)
       if v_result[:success]
         # Perform Character Consistency EVAL
-        if eval_enabled
-          evaluator = Evaluator.new
-          e_result = evaluator.evaluate_character_consistency(image_output, @character)
+        evaluator = Evaluator.new
+        e_result = evaluator.evaluate_character_consistency(image_output, @character)
 
-          # Save Eval result to asset json
-          asset_json = "#{image_output}.asset.json"
-          if File.exist?(asset_json) && e_result
-            asset_data = ::JSON.parse(File.read(asset_json))
-            asset_data["eval"] = e_result
-            File.write(asset_json, ::JSON.pretty_generate(asset_data))
-          end
+        # Save Eval result to asset json
+        asset_json = "#{image_output}.asset.json"
+        if File.exist?(asset_json) && e_result
+          asset_data = ::JSON.parse(File.read(asset_json))
+          asset_data["eval"] = e_result
+          File.write(asset_json, ::JSON.pretty_generate(asset_data))
+        end
 
-          # AUDIO EVAL
-          @story_audio.each do |lang|
-            audio_file = File.join(File.dirname(image_output), "audio_#{lang}.wav")
-            if File.exist?(audio_file)
-              # Find the text for this page in this language
-              text_file = File.join(File.dirname(image_output), "story_text_#{lang}.txt")
-              text_file = File.join(File.dirname(image_output), "story_text.txt") if lang == "en" && !File.exist?(text_file)
+        # AUDIO EVAL
+        @story_audio.each do |lang|
+          audio_file = File.join(File.dirname(image_output), "audio_#{lang}.wav")
+          if File.exist?(audio_file)
+            # Find the text for this page in this language
+            text_file = File.join(File.dirname(image_output), "story_text_#{lang}.txt")
+            text_file = File.join(File.dirname(image_output), "story_text.txt") if lang == "en" && !File.exist?(text_file)
+            
+            if File.exist?(text_file)
+              expected_text = File.read(text_file)
+              a_result = evaluator.evaluate_audio_intelligibility(audio_file, expected_text)
               
-              if File.exist?(text_file)
-                expected_text = File.read(text_file)
-                a_result = evaluator.evaluate_audio_intelligibility(audio_file, expected_text)
-                
-                # Save audio eval to asset json
-                audio_asset_json = "#{audio_file}.asset.json"
-                if File.exist?(audio_asset_json) && a_result
-                  audio_asset_data = ::JSON.parse(File.read(audio_asset_json))
-                  audio_asset_data["eval"] = a_result
-                  File.write(audio_asset_json, ::JSON.pretty_generate(audio_asset_data))
-                end
+              # Save audio eval to asset json
+              audio_asset_json = "#{audio_file}.asset.json"
+              if File.exist?(audio_asset_json) && a_result
+                audio_asset_data = ::JSON.parse(File.read(audio_asset_json))
+                audio_asset_data["eval"] = a_result
+                File.write(audio_asset_json, ::JSON.pretty_generate(audio_asset_data))
               end
             end
           end
+        end
 
-          if e_result && e_result[:success]
-            update_page_status(page["page"], "verified")
-          elsif e_result
-            update_page_status(page["page"], "done_with_warnings", "CC Score: #{e_result[:score]}/10 - #{e_result[:message]}")
-          else
-            update_page_status(page["page"], "done_with_warnings", "Evaluation failed")
-          end
+        if e_result && e_result[:success]
+          update_page_status(page["page"], "verified")
+        elsif e_result
+          update_page_status(page["page"], "done_with_warnings", "CC Score: #{e_result[:score]}/10 - #{e_result[:message]}")
         else
-          puts Rainbow("  ⏭️  [EVAL] Skipping Page Evaluation (disabled)").yellow
-          update_page_status(page["page"], "done")
+          update_page_status(page["page"], "done_with_warnings", "Evaluation failed")
         end
       else
         update_page_status(page["page"], "failed", v_result[:message])
       end
-    end
-
-    def update_task_status(task_key, status)
-      @mutex.synchronize do
-        state_file = File.join(File.expand_path(@output_path), ".state.yaml")
-        state = YAML.load_file(state_file)
-        state[task_key] ||= {}
-        state[task_key]["status"] = status
-        File.write(state_file, state.to_yaml)
-      end
-    end
-
-    def update_page_status(page_num, status, error_msg = nil)
-      @mutex.synchronize do
-        state_file = File.join(File.expand_path(@output_path), ".state.yaml")
-        state = YAML.load_file(state_file)
-        page = state["pages"].find { |p| p["page"] == page_num }
-        if page
-          page["status"] = status
-          page["error"] = error_msg if error_msg
-        end
-        File.write(state_file, state.to_yaml)
-      end
-    end
-
-    def update_status(status)
-      @mutex.synchronize do
-        state_file = File.join(File.expand_path(@output_path), ".state.yaml")
-        state = YAML.load_file(state_file)
-        state["status"] = status
-        File.write(state_file, state.to_yaml)
-      end
-    end
-
-    def primary_artifact
-      File.join(@output_path, "STORY.md")
     end
   end
 end

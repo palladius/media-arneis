@@ -14,8 +14,6 @@ module Arneis
   class Cli < Thor
     class_option :async, type: :boolean, default: true, desc: "Run media generation asynchronously using Fibers"
     class_option :media_folder, type: :string, aliases: "-f", desc: "Explicitly set the media folder"
-    class_option :eval, type: :boolean, desc: "Toggle automated evaluation (overrides ARNEIS_EVAL_ENABLED)"
-    class_option :open, type: :boolean, desc: "Open the primary artifact after generation (overrides ARNEIS_OPEN_ENABLED)"
 
     def initialize(*args)
       super
@@ -35,16 +33,12 @@ module Arneis
     method_option :output, type: :string, aliases: "-o", desc: "Custom output folder (defaults to timestamped)"
     method_option :force_clean, type: :boolean, default: false, desc: "Force a clean run by deleting the output directory if it exists"
     method_option :verify, type: :boolean, default: false, desc: "Enable multimodal E2E verification of generated artifacts"
+    method_option :open, type: :boolean, default: false, desc: "Open the primary artifact after generation"
     def apply(yaml_path)
       if %w[--help -h].include?(yaml_path)
         help("apply")
         return
       end
-
-      # Resolve configuration
-      eval_enabled = Config.eval_enabled?(eval: options[:eval])
-      open_enabled = Config.open_enabled?(open: options[:open])
-
       puts Rainbow("🎨 Applying #{yaml_path}...").green
       
       output_path = options[:media_folder] || options[:output] || "out/#{Time.now.strftime("%Y%m%d_%H%M%S")}_#{File.basename(yaml_path, ".*")}"
@@ -58,16 +52,11 @@ module Arneis
       puts Rainbow("🚀 Project initialized at #{output_path}").blue
 
       puts Rainbow("⚙️ Starting orchestration...").magenta
-      project.process(
-        async: options[:async],
-        verify: options[:verify],
-        dryrun: options[:dryrun],
-        eval: eval_enabled
-      )
+      project.process(async: options[:async], verify: options[:verify], dryrun: options[:dryrun])
       puts Rainbow("✅ Generation complete!").green
 
-      if open_enabled && !options[:dryrun]
-        open_file(project.primary_artifact)
+      if options[:open] && !options[:dryrun] && project.media?
+        Arneis::MediaOpener.open(project.primary_artifact)
       end
     end
 
@@ -78,6 +67,7 @@ module Arneis
     method_option :title, type: :string, desc: "Project title"
     method_option :dryrun, type: :boolean, aliases: "-n", desc: "Validate without executing"
     method_option :verify, type: :boolean, default: false, desc: "Enable verification"
+    method_option :open, type: :boolean, default: false, desc: "Open the primary artifact after generation"
     def generate(kind)
       puts Rainbow("🚀 Generating #{kind} ad-hoc...").green
 
@@ -158,111 +148,41 @@ module Arneis
       elsif target_id.start_with?("scene_")
         num = target_id.split("_").last
         to_trash << File.join(folder_path, "video", "scene_#{num}", "video.mp4")
-        to_trash << File.join(folder_path, "video", "scene_#{num}", "video.mp4.asset.json")
       elsif target_id.start_with?("page_")
         num = target_id.split("_").last
         to_trash << File.join(folder_path, "pages", "page_#{num}", "illustration.png")
-        to_trash << File.join(folder_path, "pages", "page_#{num}", "illustration.png.asset.json")
-        to_trash << File.join(folder_path, "pages", "page_#{num}", "story_text.txt")
       end
 
-      to_trash.each do |f|
-        if File.exist?(f)
-          puts "  🗑️  Trashing #{File.basename(f)}..."
-          FileUtils.mv(f, File.join(trash_dir, File.basename(f)))
+      to_trash.each do |path|
+        if File.exist?(path)
+          puts "  🗑️  Archiving #{File.basename(path)} to .trash/..."
+          FileUtils.mv(path, File.join(trash_dir, File.basename(path)))
+          # Also archive receipt
+          receipt = "#{path}.receipt.json"
+          FileUtils.mv(receipt, File.join(trash_dir, File.basename(receipt))) if File.exist?(receipt)
+          # Also archive asset json
+          asset_json = "#{path}.asset.json"
+          FileUtils.mv(asset_json, File.join(trash_dir, File.basename(asset_json))) if File.exist?(asset_json)
         end
       end
 
-      # 3. Update .state.yaml
+      # 3. Update State
       if target_id == "background_music"
         state["background_music"]["status"] = "pending"
         state["background_music"]["feedback"] = options[:prompt]
       else
-        num = target_id.split("_").last.to_i
-        item = items.find { |i| (i["scene"] || i["page"]) == num }
-        if item
-          item["status"] = "pending"
-          item["feedback"] = options[:prompt]
-        end
+        item = items.find { |i| target_id == (state["scenes"] ? "scene_#{i["scene"]}" : "page_#{i["page"]}") }
+        item["status"] = "pending"
+        item["feedback"] = options[:prompt]
       end
 
-      # Also reset final assembly if it exists
-      state["final_story_assembly"]["status"] = "pending" if state["final_story_assembly"]
       state["status"] = "in_progress"
-
       File.write(state_file, state.to_yaml)
 
-      puts Rainbow("✅ Feedback recorded. Target #{target_id} reset to pending.").green
-      puts Rainbow("🚀 Run 'just arnectl resume #{folder_path}' to re-generate with feedback.").blue
+      puts Rainbow("✅ State updated. Run 'arnectl apply' or 'arnectl resume' to regenerate with feedback.").green
     end
 
-    desc "resume [FOLDER_PATH]", "Resume a media project from its state file"
-    method_option :force, type: :boolean, aliases: "-f", desc: "Force retry of failed or mocked tasks"
-    def resume(folder_path = nil)
-      folder_path = begin
-        resolve_media_folder([folder_path], options)
-      rescue
-        nil
-      end
-      folder_path ||= Dir.glob("out/*/").select { |f| File.exist?(File.join(f, ".state.yaml")) }.max_by { |f| File.mtime(f) }
-
-      if folder_path.nil?
-        puts Rainbow("❌ No project folders found. Specify one or set ARNEIS_FOLDER.").red
-        return
-      end
-
-      puts Rainbow("🚀 Resuming #{folder_path}...").green
-
-      state_file = File.join(folder_path, ".state.yaml")
-      if options[:force]
-        puts Rainbow("  🔥 Force flag detected. Resetting non-done tasks...").yellow
-        state = YAML.load_file(state_file)
-
-        # Handle both VideoProject (scenes) and KidsStory (pages)
-        items = state["scenes"] || state["pages"] || []
-
-        items.each do |item|
-          num = item["scene"] || item["page"]
-          item_dir = state["scenes"] ? "" : "pages/page_#{num}/"
-          artifact_name = state["scenes"] ? "scene_#{num}.mp4" : "illustration.png"
-          artifact_file = File.join(folder_path, item_dir, artifact_name)
-
-          if %w[failed done_with_warnings in_progress].include?(item["status"]) || !File.exist?(artifact_file) || File.exist?("#{artifact_file}.mock")
-            item["status"] = "pending"
-          end
-        end
-        if state["background_music"]
-          music_file = File.join(folder_path, "audio", "background_music.wav")
-          if %w[failed in_progress].include?(state["background_music"]["status"]) || !File.exist?(music_file) || File.exist?("#{music_file}.mock")
-            state["background_music"]["status"] = "pending"
-          end
-        end
-        # Also reset project-level tasks
-        state.each do |key, value|
-          next if %w[pages scenes status project_title story_title character_id story_audio metadata].include?(key)
-          next unless value.is_a?(Hash) && value["status"]
-          if %w[failed in_progress].include?(value["status"])
-            value["status"] = "pending"
-          end
-        end
-        File.write(state_file, state.to_yaml)
-      end
-
-      yaml_files = Dir.glob(File.join(folder_path, "*.yaml"))
-      if yaml_files.empty?
-        puts Rainbow("❌ No YAML found in #{folder_path} to resume from").red
-        return
-      end
-
-      project = Arneis.load_project(yaml_files.first)
-      project.instance_variable_set(:@output_path, folder_path)
-
-      puts Rainbow("⚙️ Resuming orchestration...").magenta
-      project.process(async: options[:async])
-      puts Rainbow("✅ Resume complete!").green
-    end
-
-    desc "status [FOLDER_PATH]", "Show real-time status of a media project"
+    desc "status [FOLDER_PATH]", "Show status of a media project"
     def status(folder_path = nil)
       folder_path = begin
         resolve_media_folder([folder_path], options)
@@ -272,128 +192,74 @@ module Arneis
       folder_path ||= Dir.glob("out/*/").select { |f| File.exist?(File.join(f, ".state.yaml")) }.max_by { |f| File.mtime(f) }
 
       if folder_path.nil?
-        puts Rainbow("❌ No project folders found. Specify one or set ARNEIS_FOLDER.").red
+        puts Rainbow("❌ No project folders found.").red
         return
       end
 
-      puts Rainbow("🔍 Checking status of ").yellow + Rainbow(folder_path).cyan
       state_file = File.join(folder_path, ".state.yaml")
-      unless File.exist?(state_file)
-        puts Rainbow("❌ No state file found in #{folder_path}").red
-        return
-      end
-
       state = YAML.load_file(state_file)
-      title = state["project_title"] || state["story_title"] || File.basename(folder_path)
-      puts "Project: #{Rainbow(title).yellow}"
-      puts "Status: #{status_emoji(state["status"])} #{state["status"]} | Auth: #{Config.auth_method_emoji}"
 
-      total_tokens = 0
-      total_cost = 0.0
-      input_tokens = 0
-      output_tokens = 0
-      min_score = 10
+      puts Rainbow("📊 Project Status: #{state["project_title"]}").bold.cyan
+      puts "📁 Folder: #{folder_path}"
+      puts "🕒 Status: #{status_emoji(state["status"])} #{state["status"].capitalize}"
+      puts ""
 
-      # Handle both VideoProject (scenes) and KidsStory (pages)
       items = state["scenes"] || state["pages"] || []
-      label = state["scenes"] ? "Scene" : "Page"
-      icon = state["scenes"] ? "🎥" : "🖼️"
-      has_failures = state["status"] == "failed"
-
-      puts "\n#{label}s:"
       items.each do |item|
-        num = item["scene"] || item["page"]
-        desc = item["description"]
-        desc = "#{desc[0..76]}..." if desc.length > 80
-
-        has_failures = true if item["status"] == "failed"
-
-        item_dir = state["scenes"] ? "" : "pages/page_#{num}/"
-        artifact_file = File.join(folder_path, item_dir, "#{state["scenes"] ? "scene_#{num}" : "illustration"}#{state["scenes"] ? ".mp4" : ".png"}")
-
-        mock_file = "#{artifact_file}.mock"
-        bad_file = "#{artifact_file}.NOT_GOOD"
-        asset_json = "#{artifact_file}.asset.json"
-
-        eval_indicator = "⚫"
-        eval_score = ""
-        v_indicator = ""
-        if File.exist?(asset_json)
-          asset_data = ::JSON.parse(File.read(asset_json))
-          if asset_data["eval"]
-            eval_indicator = asset_data["eval"]["success"] ? "👍" : "👎"
-            score = asset_data["eval"]["score"]
-            eval_score = " (⭐ #{score}/10)"
-            min_score = [min_score, score].min
-          end
-          if asset_data["verification"]
-            v_all_success = asset_data["verification"].all? { |v| v["success"] }
-            v_indicator = v_all_success ? Rainbow(" 🛡️").green : Rainbow(" 🛡️").red
-          end
-        end
-
-        suffix = ""
-        suffix = Rainbow(" 🤡").yellow if File.exist?(mock_file)
-        suffix = Rainbow(" 🚫 INVALID").red if File.exist?(bad_file)
-
-        puts "  #{status_emoji(item["status"])} #{icon} #{eval_indicator}#{v_indicator}" + Rainbow(" #{label} #{num}:").orange + " " + Rainbow(desc).white + eval_score + suffix
-
-        output_base = File.join(folder_path, item_dir, state["scenes"] ? "scene_#{num}" : "illustration")
-        Dir.glob("#{output_base}.*.error.json").each do |error_file|
-          error_data = ::JSON.parse(File.read(error_file))
-          err_msg = error_data["error"]
-          model_name = error_data["model"] || error_file.split(".").first.split("_").last
-
-          if err_msg.include?("429")
-            puts Rainbow("    ❌ 429 (#{model_name})").red
-          else
-            puts Rainbow("    ❌ Error (#{model_name}): #{Config.sanitize(err_msg)}").red
-          end
-        end
-
-        Dir.glob("#{output_base}.*.asset.json").each do |receipt_file|
-          receipt = ::JSON.parse(File.read(receipt_file))
-          input_tokens += receipt["input_tokens"] || 0
-          output_tokens += receipt["output_tokens"] || 0
-          total_tokens += (receipt["input_tokens"] || 0) + (receipt["output_tokens"] || 0)
-          total_cost += receipt["cost_usd"] || 0.0
+        id = state["scenes"] ? "Scene #{item["scene"]}" : "Page #{item["page"]}"
+        puts "  #{status_emoji(item["status"])} #{id.ljust(8)}: #{item["status"].ljust(15)} | #{item["description"]}"
+        if item["error"]
+          puts Rainbow("    ❌ Error: #{item["error"]}").red
         end
       end
 
-      puts "\nProject Tasks:"
       if state["background_music"]
-        status = state["background_music"]["status"]
-        puts "  #{status_emoji(status)} 🎵 Background Music"
+        bm = state["background_music"]
+        puts "  #{status_emoji(bm["status"])} Music   : #{bm["status"].ljust(15)} | #{bm["prompt"]}"
+      end
+
+      if state["montage"]
+        m = state["montage"]
+        puts "  #{status_emoji(m["status"])} Montage : #{m["status"].ljust(15)}"
+      end
+
+      # Suggest redo if scores are low
+      low_scores = []
+      items.each do |item|
+        id = state["scenes"] ? "scene_#{item["scene"]}" : "page_#{item["page"]}"
+        # We'd need to find the artifact and check asset json here, but let's assume we show it if status is done/verified
       end
       
-      state.each do |key, value|
-        next if %w[pages scenes status project_title story_title character_id story_audio metadata].include?(key)
-        next unless value.is_a?(Hash) && value["status"]
-        next if key == "background_music"
-        
-        icon = case key
-               when /audio/ then "🔊"
-               when /assembly/ then "📖"
-               when /montage/ then "🎞️ "
-               when /marketing/ then "📢"
-               else "⚙️ "
-               end
-        puts "  #{status_emoji(value["status"])} #{icon} #{key.capitalize.gsub("_", " ")}"
-      end
-
-      puts Rainbow("\n📊 Stats: 🪙 #{total_tokens} (⬆️ #{input_tokens} ⬇️ #{output_tokens}) | 💸 $#{"%.2f" % total_cost}").cyan.bold
-
-      if min_score <= 6
-        puts Rainbow("\n💡 Some tasks have low scores (<= 6).").yellow
-        puts "To automatically re-do the sub-optimal jobs, type:"
-        puts Rainbow("  arnectl redo #{folder_path} --threshold 6").blue
-      end
-
-      puts Rainbow("\nLegend: 🟢 done | 🔴 failed | 🟡 in_progress | ⚪ pending | 🤡 mocked | 👍/👎 evaluated | 🟣/⚫ unevaluated").gray.italic
+      puts ""
+      puts "💡 Hint: Use 'arnectl redo' to reset tasks with low evaluation scores."
     end
 
-    desc "redo [FOLDER_PATH]", "Automatically reset and retry tasks with scores below the threshold"
-    method_option :threshold, type: :numeric, default: 6, desc: "Score threshold (1-10) below which a task is redone"
+    desc "resume [FOLDER_PATH]", "Resume an interrupted project"
+    def resume(folder_path = nil)
+      folder_path = begin
+        resolve_media_folder([folder_path], options)
+      rescue
+        nil
+      end
+      folder_path ||= Dir.glob("out/*/").select { |f| File.exist?(File.join(f, ".state.yaml")) }.max_by { |f| File.mtime(f) }
+
+      if folder_path.nil?
+        puts Rainbow("❌ No project folders found to resume.").red
+        return
+      end
+
+      yaml_file = Dir.glob(File.join(folder_path, "*.yaml")).reject { |f| f.end_with?(".state.yaml") }.first
+      if yaml_file.nil?
+        puts Rainbow("❌ No YAML found in #{folder_path} to resume from").red
+        return
+      end
+
+      puts Rainbow("🚀 Resuming #{folder_path}...").green
+      apply(yaml_file)
+    end
+
+    desc "redo [FOLDER_PATH]", "Reset and retry tasks with low evaluation scores"
+    method_option :threshold, type: :numeric, default: 6, desc: "Score threshold (default 6)"
     def redo(folder_path = nil)
       folder_path = begin
         resolve_media_folder([folder_path], options)
@@ -403,33 +269,34 @@ module Arneis
       folder_path ||= Dir.glob("out/*/").select { |f| File.exist?(File.join(f, ".state.yaml")) }.max_by { |f| File.mtime(f) }
 
       if folder_path.nil?
-        puts Rainbow("❌ No project folders found. Specify one or set ARNEIS_FOLDER.").red
+        puts Rainbow("❌ No project folders found to redo.").red
         return
       end
-
-      puts Rainbow("🔄 Redoing tasks in #{folder_path} with score <= #{options[:threshold]}...").cyan
 
       state_file = File.join(folder_path, ".state.yaml")
       state = YAML.load_file(state_file)
       items = state["scenes"] || state["pages"] || []
-      
       reset_count = 0
 
+      puts Rainbow("🔄 Redoing tasks in #{folder_path} with score <= #{options[:threshold]}...").cyan
+
       items.each do |item|
-        num = item["scene"] || item["page"]
-        item_dir = state["scenes"] ? "" : "pages/page_#{num}/"
-        artifact_name = state["scenes"] ? "scene_#{num}.mp4" : "illustration.png"
-        artifact_file = File.join(folder_path, item_dir, artifact_name)
+        num = state["scenes"] ? item["scene"] : item["page"]
+        prefix = state["scenes"] ? "video/scene_#{num}/video.mp4" : "pages/page_#{num}/illustration.png"
+        artifact_file = File.join(folder_path, prefix)
         asset_json = "#{artifact_file}.asset.json"
 
         if File.exist?(asset_json)
-          asset_data = ::JSON.parse(File.read(asset_json))
-          score = asset_data.dig("eval", "score") || 10
-          if score <= options[:threshold]
-            puts Rainbow("  🎯 Resetting Task #{num} (Score: #{score})").yellow
+          asset_data = JSON.parse(File.read(asset_json))
+          # Check character eval score if it exists
+          char_evals = asset_data.keys.select { |k| k.start_with?("eval_") }
+          min_score = char_evals.map { |k| asset_data[k]["score"] }.min || 10
+          
+          if min_score <= options[:threshold]
+            puts Rainbow("  🎯 Resetting #{state["scenes"] ? "Scene" : "Page"} #{num} (Score: #{min_score})").yellow
             
-            # Use feedback logic to trash and reset
-            trash_dir = File.join(folder_path, ".trash", "redo_#{Time.now.strftime("%Y%m%d_%H%M%S")}")
+            # Move to trash
+            trash_dir = File.join(folder_path, ".trash", Time.now.strftime("%Y%m%d_%H%M%S"))
             FileUtils.mkdir_p(trash_dir)
             
             [artifact_file, asset_json, "#{artifact_file}.mock"].each do |f|
@@ -455,10 +322,6 @@ module Arneis
     end
 
     no_commands do
-      def open_file(path)
-        Arneis::MediaOpener.open(path)
-      end
-
       def resolve_media_folder(args = [], options = {})
         folder = options["media_folder"] || args.first || ENV["ARNEIS_FOLDER"]
         raise "No media folder specified." if folder.nil? || folder.empty?

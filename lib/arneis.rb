@@ -1,7 +1,7 @@
 # Arneis (Media Harness) - Core module.
 
 module Arneis
-  VERSION = "0.1.6"
+  VERSION = "0.1.7"
 
   def self.load_project(yaml_path)
     data = YAML.load_file(yaml_path)
