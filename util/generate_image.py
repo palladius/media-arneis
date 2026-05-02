@@ -58,7 +58,7 @@ def main():
                     contents.append(types.Part.from_bytes(data=image_data, mime_type=mime_type))
     
     # Precise instruction for character consistency
-    full_prompt = f"Using the provided reference images of the same person, generate a new image matching this description: {args.prompt}. It is CRITICAL that the generated person has the EXACT same facial features, hair, and build as the reference person. Output ONLY the image."
+    full_prompt = f"Using the provided reference images of the same person, generate a new image matching this description: {args.prompt}. It is CRITICAL that the generated person has the EXACT same facial features, hair, and build as the reference person. Unless the prompt specifies otherwise, the style MUST be PHOTOREALISTIC and highly detailed, avoiding any cartoon, anime, or stylized artistic effects. Output ONLY the image."
     contents.append(full_prompt)
 
     try:

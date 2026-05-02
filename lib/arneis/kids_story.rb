@@ -131,6 +131,7 @@ module Arneis
             You will be provided with Character Definitions (Name, Personality, Visual Look).
             You MUST respect the physical traits of the characters, but the SCENARIO provided by the user is the PRIMARY focus.
             CRITICAL: ONLY include character details from the bio that are compatible with the SCENARIO. Focus 100% on the character PERFORMING the scenario activity. Do NOT add unrelated items from the bio (like drinks or pets) unless they are part of the scenario.
+            STYLE MANDATE: Unless the user explicitly asks for a cartoon or specific illustration style, the style MUST be PHOTOREALISTIC and highly detailed.
             Output ONLY the enhanced prompt.
           PROMPT
 
@@ -146,7 +147,7 @@ module Arneis
           enriched_text = narrative_resp[:content]
           File.write(File.join(page_dir, "story_text.txt"), enriched_text)
 
-          res = imagen_generator.generate(enhanced_prompt, image_output, asset_id: "Page#{page["page"]}.image", reference_images: @character&.all_reference_images)
+          res = imagen_generator.generate(enhanced_prompt, image_output, asset_id: "Page#{page["page"]}.image", reference_images: @character&.consistency_images)
 
           if res[:status] == "done" || res[:status] == "mocked"
             # GENERATE AUDIO for each language

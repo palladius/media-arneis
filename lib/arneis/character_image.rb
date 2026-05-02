@@ -84,6 +84,7 @@ module Arneis
           You will be provided with Character Definitions (Name, Personality, Visual Look).
           You MUST respect the physical traits of the characters, but the SCENARIO provided by the user is the PRIMARY focus.
           CRITICAL: ONLY include character details from the bio that are compatible with the SCENARIO. For example, if the bio mentions drinking but the scenario is playing chess, do NOT include drinking. Focus 100% on the character PERFORMING the scenario activity.
+          STYLE MANDATE: Unless the user explicitly asks for a cartoon, anime, or stylized look, the style MUST be PHOTOREALISTIC, CINEMATIC, and highly detailed.
           Output ONLY the enhanced prompt.
         PROMPT
 
@@ -93,7 +94,7 @@ module Arneis
         File.write(File.join(@output_path, "prompt.txt"), enhanced_prompt)
 
         # Collect all reference images for consistency
-        all_refs = @characters.map(&:all_reference_images).flatten.uniq
+        all_refs = @characters.map(&:consistency_images).flatten.uniq
 
         res = imagen_generator.generate(enhanced_prompt, image_output, asset_id: "CharacterImage.image", reference_images: all_refs, aspect_ratio: @aspect_ratio)
 
