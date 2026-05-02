@@ -77,9 +77,9 @@ module Arneis
         puts Rainbow("  🎥 [VEO] Starting real video generation via Python script (Async: #{async})...").magenta
 
         # Call script
-        escaped_prompt = prompt.gsub('"', '\"').gsub("`", '\`').gsub("$", '\$')
+        escaped_prompt = Shellwords.escape(prompt)
         async_flag = async ? "--async-only" : ""
-        cmd = "uv run #{Config.veo_script} \"#{escaped_prompt}\" -o #{output_file} #{async_flag}"
+        cmd = "uv run #{Config.veo_script} #{escaped_prompt} -o #{output_file} #{async_flag}"
 
         env = {
           "GOOGLE_CLOUD_PROJECT" => Config.google_cloud_project,
