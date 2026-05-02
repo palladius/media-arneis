@@ -1,6 +1,6 @@
 # Implementation Plan: Configurable Post-Creation Actions
 
-## Phase 1: Core Configuration Logic
+## Phase 1: Core Configuration Logic [checkpoint: d05f56c]
 Implement the logic to resolve the status of "eval" and "open" based on flags, environment variables, and defaults.
 
 - [x] Task: Create unit tests for Configuration Resolution e653eb9
@@ -9,7 +9,7 @@ Implement the logic to resolve the status of "eval" and "open" based on flags, e
 - [x] Task: Implement Configuration Resolution logic e653eb9
     - [x] Update `lib/arneis/config.rb` to handle the new settings.
     - [x] Ensure `ENV` variables are read correctly.
-- [ ] Task: Conductor - User Manual Verification 'Core Configuration Logic' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Core Configuration Logic' (Protocol in workflow.md) d05f56c
 
 ## Phase 2: CLI Integration
 Integrate the new flags into the `arnectl` CLI and update the help documentation.
