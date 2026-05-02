@@ -3,12 +3,12 @@
 ## Phase 1: Core Configuration Logic
 Implement the logic to resolve the status of "eval" and "open" based on flags, environment variables, and defaults.
 
-- [ ] Task: Create unit tests for Configuration Resolution
-    - [ ] Define tests in `spec/arneis/config_spec.rb`.
-    - [ ] Test precedence: Flag > ENV > Default.
-- [ ] Task: Implement Configuration Resolution logic
-    - [ ] Update `lib/arneis/config.rb` to handle the new settings.
-    - [ ] Ensure `ENV` variables are read correctly.
+- [x] Task: Create unit tests for Configuration Resolution e653eb9
+    - [x] Define tests in `spec/arneis/config_spec.rb`.
+    - [x] Test precedence: Flag > ENV > Default.
+- [x] Task: Implement Configuration Resolution logic e653eb9
+    - [x] Update `lib/arneis/config.rb` to handle the new settings.
+    - [x] Ensure `ENV` variables are read correctly.
 - [ ] Task: Conductor - User Manual Verification 'Core Configuration Logic' (Protocol in workflow.md)
 
 ## Phase 2: CLI Integration
