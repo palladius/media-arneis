@@ -51,7 +51,7 @@ module Arneis
     def self.eval_enabled?(flags = {})
       return flags[:eval] unless flags[:eval].nil?
 
-      env_val = ENV["ARNEIS_EVAL_ENABLED"]
+      env_val = ENV["ARNEIS_EVAL_ENABLED"] || ENV["EVAL"]
       return env_val == "true" unless env_val.nil?
 
       true # Default
@@ -60,7 +60,7 @@ module Arneis
     def self.open_enabled?(flags = {})
       return flags[:open] unless flags[:open].nil?
 
-      env_val = ENV["ARNEIS_OPEN_ENABLED"]
+      env_val = ENV["ARNEIS_OPEN_ENABLED"] || ENV["OPEN"]
       return env_val == "true" unless env_val.nil?
 
       true # Default

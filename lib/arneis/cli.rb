@@ -32,8 +32,8 @@ module Arneis
     method_option :dryrun, type: :boolean, aliases: "-n", desc: "Validate YAML and dependencies without executing"
     method_option :output, type: :string, aliases: "-o", desc: "Custom output folder (defaults to timestamped)"
     method_option :force_clean, type: :boolean, default: false, desc: "Force a clean run by deleting the output directory if it exists"
-    method_option :verify, type: :boolean, default: false, desc: "Enable multimodal E2E verification of generated artifacts"
-    method_option :open, type: :boolean, default: false, desc: "Open the primary artifact after generation"
+    method_option :verify, type: :boolean, desc: "Enable multimodal E2E verification of generated artifacts"
+    method_option :open, type: :boolean, desc: "Open the primary artifact after generation"
     def apply(yaml_path)
       if %w[--help -h].include?(yaml_path)
         help("apply")
@@ -52,10 +52,12 @@ module Arneis
       puts Rainbow("🚀 Project initialized at #{output_path}").blue
 
       puts Rainbow("⚙️ Starting orchestration...").magenta
-      project.process(async: options[:async], verify: options[:verify], dryrun: options[:dryrun])
+      verify_flag = Arneis::Config.eval_enabled?(eval: options[:verify])
+      project.process(async: options[:async], verify: verify_flag, dryrun: options[:dryrun])
       puts Rainbow("✅ Generation complete!").green
 
-      if options[:open] && !options[:dryrun] && project.media?
+      open_flag = Arneis::Config.open_enabled?(open: options[:open])
+      if open_flag && !options[:dryrun] && project.media?
         Arneis::MediaOpener.open(project.primary_artifact)
       end
     end
@@ -66,8 +68,8 @@ module Arneis
     method_option :aspect_ratio, type: :string, default: "1:1", desc: "Aspect ratio (1:1, 16:9, etc.)"
     method_option :title, type: :string, desc: "Project title"
     method_option :dryrun, type: :boolean, aliases: "-n", desc: "Validate without executing"
-    method_option :verify, type: :boolean, default: false, desc: "Enable verification"
-    method_option :open, type: :boolean, default: false, desc: "Open the primary artifact after generation"
+    method_option :verify, type: :boolean, desc: "Enable verification"
+    method_option :open, type: :boolean, desc: "Open the primary artifact after generation"
     def generate(kind)
       puts Rainbow("🚀 Generating #{kind} ad-hoc...").green
 
