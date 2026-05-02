@@ -24,7 +24,7 @@ Integrate the new flags into the `arnectl` CLI and update the help documentation
     - [x] Ensure `arnectl help` shows the new flags and mentions the environment variables.
 - [x] Task: Conductor - User Manual Verification 'CLI Integration' (Protocol in workflow.md) 89153a5
 
-## Phase 3: Orchestration Integration
+## Phase 3: Orchestration Integration [checkpoint: 96ec36f]
 Update the orchestration logic to respect the new configuration settings during media generation.
 
 - [x] Task: Create tests for Orchestration respect of config c57cbdc
@@ -34,4 +34,4 @@ Update the orchestration logic to respect the new configuration settings during 
 - [x] Task: Implement conditional execution in Orchestrator/Tasks c57cbdc
     - [x] Wrap evaluation calls in a conditional check.
     - [x] Wrap "open" calls in a conditional check.
-- [ ] Task: Conductor - User Manual Verification 'Orchestration Integration' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Orchestration Integration' (Protocol in workflow.md) 96ec36f
