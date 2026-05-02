@@ -48,6 +48,24 @@ module Arneis
       ENV["ARNEIS_NO_MOCK"] == "true" || ENV["ARNEIS_NO_MOCK"] == "1"
     end
 
+    def self.eval_enabled?(flags = {})
+      return flags[:eval] unless flags[:eval].nil?
+
+      env_val = ENV["ARNEIS_EVAL_ENABLED"]
+      return env_val == "true" unless env_val.nil?
+
+      true # Default
+    end
+
+    def self.open_enabled?(flags = {})
+      return flags[:open] unless flags[:open].nil?
+
+      env_val = ENV["ARNEIS_OPEN_ENABLED"]
+      return env_val == "true" unless env_val.nil?
+
+      true # Default
+    end
+
     def self.sanitize(text)
       return text unless text.is_a?(String)
 
