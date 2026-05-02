@@ -11,7 +11,7 @@ Implement the logic to resolve the status of "eval" and "open" based on flags, e
     - [x] Ensure `ENV` variables are read correctly.
 - [x] Task: Conductor - User Manual Verification 'Core Configuration Logic' (Protocol in workflow.md) d05f56c
 
-## Phase 2: CLI Integration
+## Phase 2: CLI Integration [checkpoint: 89153a5]
 Integrate the new flags into the `arnectl` CLI and update the help documentation.
 
 - [x] Task: Create tests for CLI flag handling 174e27f
@@ -22,7 +22,7 @@ Integrate the new flags into the `arnectl` CLI and update the help documentation
     - [x] Pass the resolved configuration to the relevant tasks.
 - [x] Task: Update help text 174e27f
     - [x] Ensure `arnectl help` shows the new flags and mentions the environment variables.
-- [ ] Task: Conductor - User Manual Verification 'CLI Integration' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'CLI Integration' (Protocol in workflow.md) 89153a5
 
 ## Phase 3: Orchestration Integration
 Update the orchestration logic to respect the new configuration settings during media generation.
