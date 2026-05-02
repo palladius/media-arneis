@@ -456,16 +456,7 @@ module Arneis
 
     no_commands do
       def open_file(path)
-        return unless File.exist?(path)
-        puts Rainbow("📂 Opening #{path}...").cyan
-        case RbConfig::CONFIG["host_os"]
-        when /mswin|mingw|cygwin/
-          system "start #{path}"
-        when /darwin/
-          system "open #{path}"
-        when /linux|bsd/
-          system "xdg-open #{path}"
-        end
+        Arneis::MediaOpener.open(path)
       end
 
       def resolve_media_folder(args = [], options = {})

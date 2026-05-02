@@ -59,14 +59,14 @@ module Arneis
       File.write(state_file, state.to_yaml)
     end
 
-    def process(async: true, verify: false, dryrun: false)
+    def process(async: true, verify: false, dryrun: false, eval: true)
       if dryrun
         puts Rainbow("🌵 [DRYRUN] Validation complete. Skipping orchestration...").yellow
         return
       end
       update_status("in_progress")
 
-      orchestrator = Orchestrator.new(async: async, verify: verify)
+      orchestrator = Orchestrator.new(async: async, verify: verify, eval: eval)
       gemini_generator = Generator::Gemini.new
       imagen_generator = Generator::Imagen.new
 
@@ -90,7 +90,7 @@ module Arneis
         res = imagen_generator.generate(enhanced_prompt, image_output, asset_id: "CharacterImage.image", reference_images: all_refs, aspect_ratio: @aspect_ratio)
 
         if res[:status] == "done" || res[:status] == "mocked"
-          validate_image(image_output)
+          validate_image(image_output, eval)
         else
           update_task_status("image", "failed", "Generation failed")
         end
@@ -102,35 +102,40 @@ module Arneis
 
     private
 
-    def validate_image(image_output)
+    def validate_image(image_output, eval_enabled = true)
       v_result = Validator.validate_and_rename!(image_output, :image)
       if v_result[:success]
         # Perform Character Consistency EVAL for each character
-        evaluator = Evaluator.new
-        overall_success = true
-        warnings = []
+        if eval_enabled
+          evaluator = Evaluator.new
+          overall_success = true
+          warnings = []
 
-        @characters.each do |char|
-          e_result = evaluator.evaluate_character_consistency(image_output, char)
-          
-          # Merge results into asset json
-          asset_json = "#{image_output}.asset.json"
-          if File.exist?(asset_json)
-            asset_data = ::JSON.parse(File.read(asset_json))
-            asset_data["eval_#{char.name}"] = e_result
-            File.write(asset_json, ::JSON.pretty_generate(asset_data))
+          @characters.each do |char|
+            e_result = evaluator.evaluate_character_consistency(image_output, char)
+            
+            # Merge results into asset json
+            asset_json = "#{image_output}.asset.json"
+            if File.exist?(asset_json)
+              asset_data = ::JSON.parse(File.read(asset_json))
+              asset_data["eval_#{char.name}"] = e_result
+              File.write(asset_json, ::JSON.pretty_generate(asset_data))
+            end
+
+            unless e_result[:success]
+              overall_success = false
+              warnings << "#{char.name} Score: #{e_result[:score]}/10"
+            end
           end
 
-          unless e_result[:success]
-            overall_success = false
-            warnings << "#{char.name} Score: #{e_result[:score]}/10"
+          if overall_success
+            update_task_status("image", "verified")
+          else
+            update_task_status("image", "done_with_warnings", warnings.join(", "))
           end
-        end
-
-        if overall_success
-          update_task_status("image", "verified")
         else
-          update_task_status("image", "done_with_warnings", warnings.join(", "))
+          puts Rainbow("  ⏭️  [EVAL] Skipping Character Consistency Evaluation (disabled)").yellow
+          update_task_status("image", "done")
         end
       else
         update_task_status("image", "failed", v_result[:message])
