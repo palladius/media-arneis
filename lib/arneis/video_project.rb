@@ -165,8 +165,14 @@ module Arneis
         video_files = @scenes.map { |s| File.join(@output_path, "video", "scene_#{s["scene"]}", "video.mp4") }
         audio_file = File.join(@output_path, "audio", "background_music.wav")
 
-        system_instruction = "You are an ffmpeg expert. Generate the EXACT shell command to concatenate the provided video files and add the background music as a loop or trimmed to the total video length. Output ONLY the command, no preamble, no code blocks."
-        prompt = "Video files: #{video_files.join(", ")}\nAudio file: #{audio_file}\nOutput file: #{final_video_output}"
+        # Create a temporary file list for ffmpeg
+        list_file = File.join(@output_path, "input.txt")
+        File.open(list_file, "w") do |f|
+          video_files.each { |path| f.puts "file '#{File.expand_path(path)}'" }
+        end
+
+        system_instruction = "You are an ffmpeg expert. Generate the EXACT shell command to concatenate the video files listed in 'input.txt' and add the background music as a loop or trimmed to the total video length. Output ONLY the command, no preamble, no code blocks."
+        prompt = "Video files list: #{list_file}\nAudio file: #{audio_file}\nOutput file: #{final_video_output}"
 
         resp = gemini_generator.generate(prompt, system_instruction: system_instruction)
         ffmpeg_cmd = resp[:content].strip.gsub(/^`|`$/, "")
@@ -184,6 +190,7 @@ module Arneis
             File.write("#{final_video_output}.mock", "MOCK_VIDEO_MONTAGE: #{ffmpeg_cmd}")
           end
         end
+        FileUtils.rm(list_file) if File.exist?(list_file) # Clean up
         update_task_status("montage", "done")
       end
 
