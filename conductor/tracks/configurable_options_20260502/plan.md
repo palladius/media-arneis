@@ -39,7 +39,8 @@ Update the orchestration logic to respect the new configuration settings during 
 ## Phase 4: ENV Refinement
 Implement simple resolution for the newly added environment variables in a way that isn't over-engineered.
 
-- [ ] Task: Implement simple resolution for `OPEN` and `EVAL` in `Arneis::Config`
-- [ ] Task: Ensure `Arneis::Cli` respects these simple defaults when flags are missing
-- [ ] Task: Verify with manual run and documented evidence
+- [x] Task: Implement simple resolution for `OPEN` and `EVAL` in `Arneis::Config` 74e32c7
+- [x] Task: Ensure `Arneis::Cli` respects these simple defaults when flags are missing 74e32c7
+- [x] Task: Verify with manual run and documented evidence 74e32c7
+
 
