@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 def main():
     load_dotenv()
     parser = argparse.ArgumentParser(description="Generate high-fidelity videos using Google Veo.")
-    parser.add_argument("prompt", type=str, help="The text prompt for video generation.")
+    parser.add_argument("prompt", type=str, nargs='?', help="The text prompt for video generation.")
     parser.add_argument("-o", "--output", type=str, required=True, help="Output file path.")
     parser.add_argument("-i", "--image", type=str, help="Path to a reference image.")
     default_model = os.environ.get("ARNEIS_VEO_DEFAULT_MODEL", "veo-3.0-generate-001")
