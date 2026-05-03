@@ -65,4 +65,6 @@ status:
 riccardo-cc:
 	arnectl generate CharacterImage -c riccardo -p "Riccardo as a cyberpunk hacker in a neon-lit Tokyo" --aspect_ratio 16:9 --open --eval
 
+character-consistency-with-2:
+  arnectl generate CharacterImage -c riccardo,sebastian --aspect_ratio 4:3 --open -p "Riccardo is lifting his foot and Sebastian is holding his nose saying 'OMG that stinks!'"
 
