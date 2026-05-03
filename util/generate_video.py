@@ -89,7 +89,7 @@ def main():
         print(f"⏳ Operation started: {op_name}", file=sys.stderr)
         
         if args.async_only:
-            print(f"OPERATION_ID:{op_name}")
+            print(f"OPERATION_ID:{op_name}") # Print full resource name
             sys.exit(0)
 
         # Poll for completion
