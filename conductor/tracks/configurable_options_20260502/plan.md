@@ -35,3 +35,11 @@ Update the orchestration logic to respect the new configuration settings during 
     - [x] Wrap evaluation calls in a conditional check.
     - [x] Wrap "open" calls in a conditional check.
 - [x] Task: Conductor - User Manual Verification 'Orchestration Integration' (Protocol in workflow.md) 96ec36f
+
+## Phase 4: ENV Refinement
+Implement simple resolution for the newly added environment variables in a way that isn't over-engineered.
+
+- [ ] Task: Implement simple resolution for `OPEN` and `EVAL` in `Arneis::Config`
+- [ ] Task: Ensure `Arneis::Cli` respects these simple defaults when flags are missing
+- [ ] Task: Verify with manual run and documented evidence
+
