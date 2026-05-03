@@ -38,7 +38,10 @@ def main():
 
     if args.check_status:
         print(f"🔍 Checking status for: {args.check_status}", file=sys.stderr)
-        op_status = client.operations.get(args.check_status)
+        # Construct the full operation resource name
+        operation_resource_name = f"projects/{project}/locations/{location}/operations/{args.check_status}"
+        op_status = client.operations.get(operation_resource_name)
+        
         if op_status.done:
             if op_status.error:
                 print(f"❌ Error: {op_status.error.message}", file=sys.stderr)
