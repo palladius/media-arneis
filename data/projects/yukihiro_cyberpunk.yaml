@@ -1,0 +1,10 @@
+apiVersion: media-arneis.palladius.it/v1
+kind: CharacterImage
+metadata:
+  name: yukihiro-cyberpunk
+  template: CharacterImage
+spec:
+  project_title: "Cyberpunk yukihiro"
+  characters: ["yukihiro"]
+  prompt: "yukihiro as a cyberpunk samurai in a acquerel-sakura-lit Kyoto"
+  aspect_ratio: "4:3"

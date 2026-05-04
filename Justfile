@@ -35,42 +35,38 @@ autoarchive:
         {{BUNDLE}} exec bin/arnectl cleanup
 archive: autoarchive
 
+# Helper to run arnectl from root
 arnectl *args:
         @cd {{justfile_directory()}} && {{BUNDLE}} exec bin/arnectl {{args}}
-
-#status:
-#       just arnectl status
 
 list:
         just arnectl list
 
-
 test-story:
         just arnectl apply data/samples/KidsStory/riccardo_story.yaml -f out/riccardo-manhouse/
-# Run expensive LLM integration tests (opt-in via ARNEIS_EXPENSIVE_TESTS=true)
+
 test-expensive:
         {{BUNDLE}} exec bin/test_llm_expensive.rb
-
 
 ricc-story:
         just arnectl apply data/samples/KidsStory/riccardo_story.yaml --output out/just-ricc-story/
 
-# timeout 300 bundle exec bin/arnectl apply data/samples/KidsStory/riccardo_story.yaml -o out/riccardo-consistent/
 riccardo-consistent:
         just arnectl apply data/samples/KidsStory/riccardo_story.yaml --output out/just-ricc-story/
 
 status:
         @cd {{justfile_directory()}} && bin/git-worktree-statuses 
 
-
 riccardo-cc:
-        just arnectl generate CharacterImage -c riccardo -p "Riccardo as a cyberpunk hacker in a neon-lit Tokyo" --aspect-ratio 16:9 --open
+        just arnectl apply data/projects/riccardo_cyberpunk.yaml --open
 
 alessandro-cc:
         just arnectl apply data/projects/alessandro_pokemon.yaml --open
 
 alessandro-sebastian-cc:
+ale-seby-cc:
+	just arnectl apply data/projects/ale_seby_portrait.yaml --open
         just arnectl apply data/projects/alessandro_sebastian_garden.yaml --open
 
 character-consistency-with-2:
-        just arnectl generate CharacterImage -c riccardo,sebastian --aspect_ratio 4:3 --open -p "Riccardo is lifting his foot and Sebastian is holding his nose saying 'OMG that stinks!'"
+        just arnectl apply data/projects/stinky_riccardo.yaml --open
