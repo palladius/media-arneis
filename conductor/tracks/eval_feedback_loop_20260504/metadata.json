@@ -1,0 +1,8 @@
+{
+  "track_id": "eval_feedback_loop_20260504",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-05-04T08:15:00Z",
+  "updated_at": "2026-05-04T08:15:00Z",
+  "description": "Implement a feedback loop mechanism that feeds evaluation failures back into the generation prompt for retries via a CLI flag."
+}
