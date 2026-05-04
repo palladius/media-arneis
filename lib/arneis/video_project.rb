@@ -160,11 +160,11 @@ module Arneis
       if @data["background_music"]
         music_output = File.join(@output_path, "audio", "background_music.wav")
         orchestrator.add_task(music_id, outputs: { music_output => :audio }, intent_prompt: @data["background_music"]["prompt"]) do
-          update_project_task_status("background_music", "in_progress")
+          update_task_status("background_music", "in_progress")
           FileUtils.mkdir_p(File.dirname(music_output))
 
           lyria_generator.generate(@data["background_music"]["prompt"], music_output, asset_id: "Project.music")
-          update_project_task_status("background_music", "done")
+          update_task_status("background_music", "done")
         end
         scene_task_ids << music_id
       end
@@ -214,12 +214,12 @@ module Arneis
       # 4. Marketing Task
       marketing_id = "marketing"
       orchestrator.add_task(marketing_id, dependencies: [montage_id]) do
-        update_project_task_status("marketing", "in_progress")
+        update_task_status("marketing", "in_progress")
         marketing_dir = File.join(@output_path, "marketing")
 
         context = "A promotional video project: #{@project_title}"
         marketing_generator.generate_all(@project_title, context, marketing_dir)
-        update_project_task_status("marketing", "done")
+        update_task_status("marketing", "done")
       end
 
       # 5. GIF Post-Production Task
@@ -236,6 +236,7 @@ module Arneis
     private
 
     def update_task_status(task_key, status)
+      task_key = task_key.to_s
       @mutex.synchronize do
         state_file = File.join(File.expand_path(@output_path), ".state.yaml")
         state = YAML.load_file(state_file)
@@ -252,16 +253,6 @@ module Arneis
         update_scene_status(scene["scene"], "verified")
       else
         update_scene_status(scene["scene"], "failed", v_result[:message])
-      end
-    end
-
-    def update_project_task_status(task_key, status)
-      @mutex.synchronize do
-        state_file = File.join(File.expand_path(@output_path), ".state.yaml")
-        state = YAML.load_file(state_file)
-        state[task_key] ||= {}
-        state[task_key]["status"] = status
-        File.write(state_file, state.to_yaml)
       end
     end
 

@@ -8,12 +8,12 @@ spec:
   output_filename: "rubycon_pitch_from_plan.mp4"
   scenes:
     - scene: 1
-      description: "Opening scene with Rubycon logo and intro music."
+      description: "A professional logo animation on a dark background with ambient music."
     - scene: 2
-      description: "The creator of Ruby, Matz, says 'Rubycon? Sugoi!'"
+      description: "A person with glasses working at a desk, looking happy."
     - scene: 3
-      description: "Developers, including a Japanese speaker with glasses, materialize into a conference room."
+      description: "A modern office with people talking and collaborating."
     - scene: 4
-      description: "Showcasing the solution."
+      description: "A close-up of a high-tech computer screen showing code."
     - scene: 5
-      description: "Call to action."
+      description: "A beautiful sunset over a city skyline with text overlaying 'Join us!'"

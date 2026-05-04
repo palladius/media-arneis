@@ -38,20 +38,25 @@ def main():
 
     if args.check_status:
         print(f"🔍 Checking status for: {args.check_status}", file=sys.stderr)
-        # Construct the full operation resource name
-        operation_resource_name = f"projects/{project}/locations/{location}/operations/{args.check_status}"
-        op_status = client.operations.get(operation_resource_name)
+        # Ensure we're always working with an Operation object, not just its name string
+        operation_name = args.check_status
+        if not operation_name.startswith("projects/"):
+            operation_name = f"projects/{project}/locations/{location}/operations/{args.check_status}"
+            
+        op_initial = types.GenerateVideosOperation(name=operation_name)
+        op_status = client.operations.get(op_initial)
         
         if op_status.done:
             if op_status.error:
-                print(f"❌ Error: {op_status.error.message}", file=sys.stderr)
+                error_msg = op_status.error.get('message', str(op_status.error))
+                print(f"❌ Error: {error_msg}", file=sys.stderr)
                 sys.exit(1)
             # Process result
             if op_status.result and op_status.result.generated_videos:
                 video_part = op_status.result.generated_videos[0].video
-                if video_part.bytes:
+                if video_part.video_bytes:
                     with open(args.output, "wb") as f:
-                        f.write(video_part.bytes)
+                        f.write(video_part.video_bytes)
                     print(f"🎞️ Saved to {args.output}", file=sys.stderr)
                     print(f"MEDIA:{args.output}")
                     sys.exit(0)
@@ -94,24 +99,25 @@ def main():
 
         # Poll for completion
         while True:
-            # Refresh status using op_name
-            op_status = client.operations.get(op_name)
+            # Refresh status using operation object
+            op_status = client.operations.get(operation)
             if op_status.done:
                 break
             print("  Polling...", file=sys.stderr)
             time.sleep(15)
 
         if op_status.error:
-            raise ValueError(f"API Error: {op_status.error.message}")
+            error_msg = op_status.error.get('message', str(op_status.error))
+            raise ValueError(f"API Error: {error_msg}")
 
         # The result structure for generate_videos contains generated_videos list
         if op_status.result and op_status.result.generated_videos:
             # We assume it saves to GCS by default or returns bytes
             # If it returns bytes in the video object:
             video_part = op_status.result.generated_videos[0].video
-            if video_part.bytes:
+            if video_part.video_bytes:
                 with open(args.output, "wb") as f:
-                    f.write(video_part.bytes)
+                    f.write(video_part.video_bytes)
                 print(f"🎞️ Saved to {args.output}", file=sys.stderr)
                 print(f"MEDIA:{args.output}")
                 sys.exit(0)
