@@ -154,7 +154,7 @@ module Arneis
       template_data = YAML.load_file(template_path)
 
       # Deep Merge: sample overrides template
-      hydrated_data = template_data.dup.deep_merge!(sample_data)
+      hydrated_data = template_data.dup.deep_merge!(sample_data, {overwrite_arrays: true})
 
       # Ensure metadata name comes from sample
       hydrated_data["metadata"] ||= {}

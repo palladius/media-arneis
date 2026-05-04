@@ -1,0 +1,10 @@
+apiVersion: media-arneis.palladius.it/v1
+kind: CharacterImage
+metadata:
+  name: alessandro-sebastian-garden
+  template: CharacterImage
+spec:
+  project_title: "Brothers in the Magical Garden"
+  characters: ["alessandro", "sebastian"]
+  prompt: "Alessandro and his brother Sebastian are playing together with Pokemon cards and some toy dragons in a magical garden"
+  aspect_ratio: "16:9"
