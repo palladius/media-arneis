@@ -1,0 +1,8 @@
+{
+  "track_id": "e2e_no_mocks_20260427",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-04-27T00:00:00Z",
+  "updated_at": "2026-04-27T00:00:00Z",
+  "description": "Robust independent E2E testing suite and removal of mock fallbacks"
+}
