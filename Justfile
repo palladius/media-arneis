@@ -75,7 +75,7 @@ alessandro-cc:
         just arnectl apply data/projects/alessandro_pokemon.yaml --open
 
 sebastian-cc:
-        just arnectl apply data/projects/sebastian_irish.yaml --open
+        just arnectl apply data/projects/sebastian_hotwheels.yaml  --open
 
 alessandro-sebastian-cc:
         just arnectl apply data/projects/alessandro_sebastian_garden.yaml --open
