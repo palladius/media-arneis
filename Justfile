@@ -9,10 +9,15 @@ default:
 install:
         {{BUNDLE}} install
 
-# Run tests
+# Run fast tests (unit tests)
 test:
-        @echo "🟢 Running tests..."
-        {{BUNDLE}} exec rspec
+        @echo "🟢 Running fast tests..."
+        {{BUNDLE}} exec rspec --tag ~expensive
+
+# Run long tests (e2e and expensive tests)
+long-tests:
+        @echo "🟢 Running long tests..."
+        {{BUNDLE}} exec rspec --tag expensive
 
 # Run linter
 lint:
@@ -42,34 +47,38 @@ arnectl *args:
 list:
         just arnectl list
 
+
 test-story:
         just arnectl apply data/samples/KidsStory/riccardo_story.yaml -f out/riccardo-manhouse/
-
+# Run expensive LLM integration tests (opt-in via ARNEIS_EXPENSIVE_TESTS=true)
 test-expensive:
         {{BUNDLE}} exec bin/test_llm_expensive.rb
 
 # Run full End-to-End expensive tests
 test-e2e:
-        @echo "🚀 Running expensive E2E tests..."
-        ARNEIS_NO_MOCK=true {{BUNDLE}} exec rspec spec/e2e/
+	@echo "🚀 Running expensive E2E tests..."
+	ARNEIS_NO_MOCK=true {{BUNDLE}} exec rspec spec/e2e/
+
 
 ricc-story:
         just arnectl apply data/samples/KidsStory/riccardo_story.yaml --output out/just-ricc-story/
 
+# timeout 300 bundle exec bin/arnectl apply data/samples/KidsStory/riccardo_story.yaml -o out/riccardo-consistent/
 riccardo-consistent:
         just arnectl apply data/samples/KidsStory/riccardo_story.yaml --output out/just-ricc-story/
 
 status:
         @cd {{justfile_directory()}} && bin/git-worktree-statuses 
 
+
 riccardo-cc:
-        just arnectl apply data/projects/riccardo_cyberpunk.yaml --open
+        just arnectl generate CharacterImage -c riccardo -p "Riccardo as a cyberpunk hacker in a neon-lit Tokyo" --aspect_ratio 16:9 --open
 
 alessandro-cc:
         just arnectl apply data/projects/alessandro_pokemon.yaml --open
 
 sebastian-cc:
-        just arnectl apply data/projects/sebastian_hotwheels.yaml --open
+        just arnectl apply data/projects/sebastian_hotwheels.yaml  --open
 
 alessandro-sebastian-cc:
         just arnectl apply data/projects/alessandro_sebastian_garden.yaml --open
@@ -77,5 +86,8 @@ alessandro-sebastian-cc:
 ale-seby-cc:
         just arnectl apply data/projects/ale_seby_portrait.yaml --open
 
+ale-seby-super-ninja-cc:
+        just arnectl apply data/projects/ale_seby_super_ninja.yaml --open
+
 character-consistency-with-2:
-        just arnectl apply data/projects/stinky_riccardo.yaml --open
+        just arnectl generate CharacterImage -c riccardo,sebastian --aspect_ratio 4:3 --open -p "Riccardo is lifting his foot and Sebastian is holding his nose saying 'OMG that stinks!'"

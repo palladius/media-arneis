@@ -1,0 +1,10 @@
+apiVersion: media-arneis.palladius.it/v1
+kind: CharacterImage
+metadata:
+  name: ale-seby-super-ninja
+  template: CharacterImage
+spec:
+  project_title: "Super Hero Ale and Ninja Seby vs Demon"
+  characters: ["alessandro", "sebastian"]
+  prompt: "A realistic hyperkinetic comic book style action scene in a modern city setting. Alessandro (a boy with brown hair and green eyes) is a powerful superhero with glowing energy around his hands, and his younger brother Sebastian (a boy with light-brown hair and blue-grey eyes) is a skilled ninja wearing dark tactical gear and holding two katanas. Their real faces are clearly visible and highly resembling the references. They are fighting together against a large, terrifying dark demon in the middle of a modern urban street. The lighting is dramatic and cinematic, with high contrast and intense energy effects."
+  aspect_ratio: "16:9"
