@@ -51,6 +51,11 @@ test-story:
 test-expensive:
         {{BUNDLE}} exec bin/test_llm_expensive.rb
 
+# Run full End-to-End expensive tests
+test-e2e:
+	@echo "🚀 Running expensive E2E tests..."
+	ARNEIS_NO_MOCK=true {{BUNDLE}} exec rspec spec/e2e/
+
 
 ricc-story:
         just arnectl apply data/samples/KidsStory/riccardo_story.yaml --output out/just-ricc-story/

@@ -80,10 +80,10 @@ module Arneis
 
     def process(async: true, verify: false, dryrun: false)
       if dryrun
-        puts Rainbow("🌵 [DRYRUN] Validation complete. Skipping orchestration...").yellow
-        return
+        puts Rainbow("🌵 [DRYRUN] Validation complete. Running orchestration with MOCKS...").yellow
+      else
+        update_status("in_progress")
       end
-      update_status("in_progress")
 
       state_file = File.join(@output_path, ".state.yaml")
       current_state = begin
@@ -116,27 +116,17 @@ module Arneis
         end
 
         orchestrator.add_task(page_id, outputs: { image_output => :image }, intent_prompt: page["description"]) do
-          page_dir = File.join(@output_path, "pages", "page_#{page["page"]}")
+          page_dir = File.dirname(image_output)
           FileUtils.mkdir_p(page_dir)
 
-          # image_output already defined
           update_page_status(page["page"], "in_progress")
 
           # Use Character to enhance the prompt
-          character_prompt = @character ? @character.prompt_context : "No character defined."
-          
-          system_instruction = <<~PROMPT
-            You are an expert Image Prompt Engineer. 
-            Your goal is to enhance the user's requested SCENARIO into a highly descriptive, artistic children's book illustration prompt.
-            You will be provided with Character Definitions (Name, Personality, Visual Look).
-            You MUST respect the physical traits of the characters, but the SCENARIO provided by the user is the PRIMARY focus.
-            CRITICAL: ONLY include character details from the bio that are compatible with the SCENARIO. Focus 100% on the character PERFORMING the scenario activity. Do NOT add unrelated items from the bio (like drinks or pets) unless they are part of the scenario.
-            STYLE MANDATE: Unless the user explicitly asks for a cartoon or specific illustration style, the style MUST be PHOTOREALISTIC and highly detailed.
-            Output ONLY the enhanced prompt.
-          PROMPT
+          character_prompt = @character ? @character.prompt_context : ""
+          full_prompt = "#{character_prompt} #{page["description"]}"
 
-          prompt_to_enhance = "SCENARIO: #{page["description"]}\n\nCHARACTER DEFINITION:\n#{character_prompt}"
-          enhancement = gemini_generator.generate(prompt_to_enhance, system_instruction: system_instruction)
+          system_instruction = "You are an expert Image Prompt Engineer. Enhance the user's children's story prompt to be highly descriptive, artistic, and suitable for high-quality image generation. Output ONLY the enhanced prompt, no conversational filler, no options, no preamble."
+          enhancement = gemini_generator.generate("Enhance this children's story illustration prompt: #{full_prompt}", system_instruction: system_instruction)
           enhanced_prompt = enhancement[:content]
           File.write(File.join(page_dir, "prompt.txt"), enhanced_prompt)
 
@@ -147,7 +137,7 @@ module Arneis
           enriched_text = narrative_resp[:content]
           File.write(File.join(page_dir, "story_text.txt"), enriched_text)
 
-          res = imagen_generator.generate(enhanced_prompt, image_output, asset_id: "Page#{page["page"]}.image", reference_images: @character&.consistency_images)
+          res = imagen_generator.generate(enhanced_prompt, image_output, asset_id: "Page#{page["page"]}.image", reference_images: @character&.all_reference_images)
 
           if res[:status] == "done" || res[:status] == "mocked"
             # GENERATE AUDIO for each language
@@ -225,64 +215,26 @@ module Arneis
       update_status("done")
     end
 
-    def update_task_status(task_key, status)
-      @mutex.synchronize do
-        state_file = File.join(File.expand_path(@output_path), ".state.yaml")
-        state = YAML.load_file(state_file)
-        state[task_key] ||= {}
-        state[task_key]["status"] = status
-        File.write(state_file, state.to_yaml)
-      end
-    end
-
-    def update_page_status(page_num, status, error_msg = nil)
-      @mutex.synchronize do
-        state_file = File.join(File.expand_path(@output_path), ".state.yaml")
-        state = YAML.load_file(state_file)
-        page = state["pages"].find { |p| p["page"] == page_num }
-        if page
-          page["status"] = status
-          page["error"] = error_msg if error_msg
-        end
-        File.write(state_file, state.to_yaml)
-      end
-    end
-
-    def update_status(status)
-      @mutex.synchronize do
-        state_file = File.join(File.expand_path(@output_path), ".state.yaml")
-        state = YAML.load_file(state_file)
-        state["status"] = status
-        File.write(state_file, state.to_yaml)
-      end
-    end
-
-    def media?
-      true
-    end
-
-    def primary_artifact_type
-      :markdown
-    end
-
-    def primary_artifact
-      File.join(@output_path, "STORY.md")
-    end
-
     private
 
     def generate_final_story
-      content = "# #{@story_title}\n\n"
+      content = "# #{@story_title}
+
+"
 
       if @data["background_music"]
-        content += "🎵 **Background Music:** [#{@data["background_music"]["prompt"]}](audio/background_music.wav)\n\n"
+        content += "🎵 **Background Music:** [#{@data["background_music"]["prompt"]}](audio/background_music.wav)
+
+"
       end
 
       # Add Final Audio links
       @story_audio.each do |lang|
         audio_rel_path = "audio/final_story_#{lang}.wav"
         if File.exist?(File.join(@output_path, audio_rel_path))
-          content += "🔊 **Full Story Audio (#{lang}):** [#{audio_rel_path}](#{audio_rel_path})\n\n"
+          content += "🔊 **Full Story Audio (#{lang}):** [#{audio_rel_path}](#{audio_rel_path})
+
+"
         end
       end
 
@@ -292,10 +244,18 @@ module Arneis
         text_file = File.join(@output_path, "pages", "page_#{num}", "story_text.txt")
         display_text = File.exist?(text_file) ? File.read(text_file) : page["text"]
 
-        content += "## Page #{num}\n\n"
-        content += "![Page #{num}](#{image_rel_path})\n\n"
-        content += "#{display_text}\n\n"
-        content += "---\n\n"
+        content += "## Page #{num}
+
+"
+        content += "![Page #{num}](#{image_rel_path})
+
+"
+        content += "#{display_text}
+
+"
+        content += "---
+
+"
       end
 
       story_file = File.join(@output_path, "STORY.md")
@@ -314,14 +274,16 @@ module Arneis
       end
 
       # Verify all files exist
-      missing = audio_files.reject { |f| File.exist?(f) }
-      unless missing.empty?
-        puts Rainbow("  ⚠️ [AUDIO] Missing audio files for concatenation: #{missing.join(", ")}").yellow
-        return
+      unless Config.dryrun?
+        missing = audio_files.reject { |f| File.exist?(f) }
+        unless missing.empty?
+          puts Rainbow("  ⚠️ [AUDIO] Missing audio files for concatenation: #{missing.join(", ")}").yellow
+          return
+        end
       end
 
       # For now, we'll use a simple mock if ffmpeg is missing or just for the test
-      if ENV["RSPEC_RUNNING"] || !system("which ffmpeg > /dev/null 2>&1")
+      if Config.dryrun? || ENV["RSPEC_RUNNING"] || !system("which ffmpeg > /dev/null 2>&1")
         puts Rainbow("  🧪 [AUDIO] Simulating concatenation for #{lang}...").blue
         File.write(final_output, "CONCATENATED AUDIO DATA for #{lang}")
         return
@@ -392,6 +354,42 @@ module Arneis
       else
         update_page_status(page["page"], "failed", v_result[:message])
       end
+    end
+
+    def update_task_status(task_key, status)
+      @mutex.synchronize do
+        state_file = File.join(File.expand_path(@output_path), ".state.yaml")
+        state = YAML.load_file(state_file)
+        state[task_key] ||= {}
+        state[task_key]["status"] = status
+        File.write(state_file, state.to_yaml)
+      end
+    end
+
+    def update_page_status(page_num, status, error_msg = nil)
+      @mutex.synchronize do
+        state_file = File.join(File.expand_path(@output_path), ".state.yaml")
+        state = YAML.load_file(state_file)
+        page = state["pages"].find { |p| p["page"] == page_num }
+        if page
+          page["status"] = status
+          page["error"] = error_msg if error_msg
+        end
+        File.write(state_file, state.to_yaml)
+      end
+    end
+
+    def update_status(status)
+      @mutex.synchronize do
+        state_file = File.join(File.expand_path(@output_path), ".state.yaml")
+        state = YAML.load_file(state_file)
+        state["status"] = status
+        File.write(state_file, state.to_yaml)
+      end
+    end
+
+    def primary_artifact # Added by main
+      File.join(@output_path, "STORY.md")
     end
   end
 end

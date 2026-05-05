@@ -14,6 +14,7 @@ module Arneis
 
     def initialize(async: true, pre_completed: [], verify: false, eval: true)
       @tasks = {}
+      @polling_tasks = {} # New: Stores tasks that need polling
       @async_enabled = async
       @verify = verify
       @eval_enabled = eval
@@ -22,8 +23,8 @@ module Arneis
       @semaphore = Async::Semaphore.new(Arneis::Config.max_concurrent_tasks || 3)
     end
 
-    def add_task(id, dependencies: [], outputs: {}, intent_prompt: nil, &block)
-      @tasks[id.to_sym] = Task.new(id.to_sym, dependencies: dependencies.map(&:to_sym), outputs: outputs, intent_prompt: intent_prompt, &block)
+    def add_task(id, dependencies: [], outputs: {}, intent_prompt: nil, check_status_block: nil, &block)
+      @tasks[id.to_sym] = Task.new(id.to_sym, dependencies: dependencies.map(&:to_sym), outputs: outputs, intent_prompt: intent_prompt, check_status_block: check_status_block, &block)
     end
 
     def run
@@ -39,52 +40,131 @@ module Arneis
     private
 
     def run_sync
-      puts Rainbow("🔀 Running orchestration in SYNC mode...").yellow
+      puts Rainbow("⌛ Running orchestration in SYNC mode...").yellow
       loop do
-        runnable = @tasks.values.reject { |t| @completed_tasks.include?(t.id) }
+        # 1. Process currently polling tasks
+        @polling_tasks.each do |id, task|
+          puts Rainbow("  🔍 Polling task #{id}...").cyan
+          result = task.check_status_block.call
+          if result[:status] == "done"
+            puts Rainbow("  ✅ Task #{id} completed polling!").green
+            task.status = :done # Update task status directly
+            @completed_tasks << id
+            @polling_tasks.delete(id)
+          elsif result[:status] == "failed"
+            puts Rainbow("  ❌ Task #{id} failed during polling: #{result[:message]}").red
+            task.status = :failed # Update task status directly
+            @completed_tasks << id
+            @polling_tasks.delete(id)
+          end
+        end
+
+        # 2. Find new runnable tasks (excluding those already polling)
+        runnable = @tasks.values.reject { |t| @completed_tasks.include?(t.id) || @polling_tasks.key?(t.id) }
                                  .select { |t| t.ready?(@completed_tasks) }
-        break if runnable.empty?
+        
+        break if runnable.empty? && @polling_tasks.empty? # Stop if no runnable tasks and no polling tasks
 
         runnable.each do |task|
-          task.execute
-          verify_task(task) if @verify && task.status == :done
-          # We mark it as completed even if it failed, so the loop can finish
-          @completed_tasks << task.id
+          task_result = task.execute # task.execute now returns a hash {status: ..., operation_id: ...}
+          
+          if task_result && task_result[:status] == "polling"
+            puts Rainbow("  🔵 Task #{task.id} is polling (Operation: #{task_result[:operation_id]})...").blue
+            task.status = :polling # Set task status to polling
+            task.operation_id = task_result[:operation_id] # Store operation_id
+            @polling_tasks[task.id] = task # Add task object to polling_tasks
+          else
+            if task.status == :done
+              verify_task(task) if @verify && task.status == :done
+              @completed_tasks << task.id
+            elsif task.status == :failed
+              @completed_tasks << task.id
+            end
+          end
         end
+
+        sleep 1 # Small delay to avoid busy-waiting
       end
     end
 
     def run_async
-      puts Rainbow("🚀 Running orchestration in ASYNC mode (Fibers)...").green
+      puts Rainbow("🏎️  Running orchestration in ASYNC mode (Fibers)...").green
       Async do |parent|
         task_fibers = {}
+        polling_fibers = {} # New: Fibers dedicated to polling tasks
 
-        # Loop until all tasks are scheduled
+        # Loop until all tasks are scheduled and completed
         loop do
+          # 1. Start/Resume polling for tasks that are in polling_tasks
+          @polling_tasks.each do |id, task|
+            unless polling_fibers.key?(id)
+              polling_fibers[id] = parent.async do
+                loop do
+                  puts Rainbow("  🔍 Polling task #{id}...").cyan
+                  result = task.check_status_block.call
+                  if result[:status] == "done"
+                    puts Rainbow("  ✅ Task #{id} completed polling!").green
+                    task.status = :done
+                    @completed_tasks << id
+                    @polling_tasks.delete(id)
+                    break # Exit polling loop for this task
+                  elsif result[:status] == "failed"
+                    puts Rainbow("  ❌ Task #{id} failed during polling: #{result[:message]}").red
+                    task.status = :failed
+                    @completed_tasks << id
+                    @polling_tasks.delete(id)
+                    break # Exit polling loop for this task
+                  end
+                  sleep 5 # Poll every 5 seconds
+                end
+              end
+            end
+          end
+          # Clean up finished polling fibers
+          polling_fibers.delete_if { |id, fiber| @completed_tasks.include?(id) }
+
+          # 2. Find new runnable tasks (excluding those already polling or completed)
           scheduled_ids = task_fibers.keys
-          runnable = @tasks.values.reject { |t| @completed_tasks.include?(t.id) || scheduled_ids.include?(t.id) }
+          runnable = @tasks.values.reject { |t| @completed_tasks.include?(t.id) || scheduled_ids.include?(t.id) || @polling_tasks.key?(t.id) }
                                    .select { |t| t.ready?(@completed_tasks) }
 
           runnable.each do |task|
             task_fibers[task.id] = parent.async do
               @semaphore.acquire do
-                task.execute
-                verify_task(task) if @verify && task.status == :done
+                task_result = task.execute
+                if task_result && task_result[:status] == "polling"
+                  puts Rainbow("  🔵 Task #{task.id} is polling (Operation: #{task_result[:operation_id]})...").blue
+                  task.operation_id = task_result[:operation_id]
+                  task.status = :polling # Set task status to polling
+                  @polling_tasks[task.id] = task # Add to polling tasks
+                elsif task.status == :done
+                  verify_task(task) if @verify && task.status == :done
+                  @completed_tasks << task.id
+                elsif task.status == :failed
+                  @completed_tasks << task.id
+                end
               end
-              # Mark as completed (even if failed) so dependents can be evaluated (they might fail too or skip)
-              @completed_tasks << task.id
             end
           end
 
-          break if @tasks.values.all? { |t| @completed_tasks.include?(t.id) }
+          # Clean up finished execution fibers (not polling ones)
+          task_fibers.delete_if { |id, fiber| @completed_tasks.include?(id) }
+          
+          # 3. Check termination condition
+          # All tasks are either completed or failed, and no tasks are currently executing or polling
+          all_tasks_finished = @tasks.values.all? { |t| @completed_tasks.include?(t.id) }
+          no_active_fibers = task_fibers.values.all?(&:finished?)
+          no_polling_fibers = polling_fibers.values.all?(&:finished?) # All polling is done
 
-          # Check for real deadlocks
-          if runnable.empty? && task_fibers.values.all?(&:finished?) && !@tasks.values.all? { |t| @completed_tasks.include?(t.id) }
-             puts Rainbow("⚠️  Orchestration Deadlock detected! Circular dependencies might exist.").red
-             break
+          break if all_tasks_finished && no_active_fibers && no_polling_fibers
+
+          # 4. Detect deadlocks (optional, but good for debugging)
+          if runnable.empty? && task_fibers.values.all?(&:finished?) && !all_tasks_finished
+            puts Rainbow("⚠️  Orchestration Deadlock detected! Circular dependencies might exist.").red
+            break
           end
 
-          sleep 0.1 
+          sleep 0.1 # Small delay to avoid busy-waiting
         end
       end
     end

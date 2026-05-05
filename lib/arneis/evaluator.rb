@@ -8,6 +8,10 @@ module Arneis
     end
 
     def check_json(content)
+      if Config.dryrun?
+        puts Rainbow("  🌵 [DRYRUN] Mocking JSON Eval...").yellow
+        return { success: true, message: "Mock JSON success", evaluated: true }
+      end
       puts Rainbow("  ⚖️  [EVAL] Checking JSON logic and consistency (Tier 1)...").cyan
       
       system_instruction = "You are a logic auditor for JSON artifacts. Analyze the provided JSON content for any logical inconsistencies, schema violations, or contradictions between descriptive fields. 
@@ -29,8 +33,12 @@ module Arneis
     end
 
     def check_multimodal(artifact_path, intent_prompt)
+      if Config.dryrun?
+        puts Rainbow("  🌵 [DRYRUN] Mocking Multimodal Eval...").yellow
+        return { success: true, message: "Mock Multimodal success", evaluated: true }
+      end
       puts Rainbow("  ⚖️  [EVAL] Verifying intent matching for #{File.basename(artifact_path)} (Tier 2)...").cyan
-      
+
       prompt = "You are a multimodal intent auditor. Compare the provided artifact (image or video) with the user's initial intent prompt.
       INTENT PROMPT: \"#{intent_prompt}\"
       
@@ -54,6 +62,10 @@ module Arneis
     end
 
     def evaluate_character_consistency(generated_image_path, character)
+      if Config.dryrun?
+        puts Rainbow("  🌵 [DRYRUN] Mocking Character Consistency Eval...").yellow
+        return { success: true, score: 9, message: "Mock Character consistency success", evaluated: true }
+      end
       puts Rainbow("  ⚖️  [EVAL] Checking character consistency for #{character.name}...").cyan
 
       # We send the generated image + a sample of character reference images
@@ -93,6 +105,9 @@ module Arneis
     end
 
     def detailed_probability_eval(generated_image_path, reference_image_path, character_name)
+      if Config.dryrun?
+        return { probability: 95, message: "Mock similarity success" }
+      end
       puts Rainbow("  ⚖️  [EVAL] Calculating similarity probability for #{character_name}...").cyan
       
       prompt = "You are a professional facial recognition and identity verification expert. 
@@ -125,6 +140,9 @@ module Arneis
     end
 
     def evaluate_video_text(video_path, expected_text)
+      if Config.dryrun?
+        return { success: true, score: 10, message: "Mock video text success", evaluated: true }
+      end
       puts "  👀 [EVAL] Verifying text in #{File.basename(video_path)}..."
 
       begin
@@ -144,6 +162,10 @@ module Arneis
     end
 
     def evaluate_audio_intelligibility(audio_path, expected_text)
+      if Config.dryrun?
+        puts Rainbow("  🌵 [DRYRUN] Mocking Audio Intelligibility Eval...").yellow
+        return { success: true, score: 9, similarity: 95, transcription: "Mock transcription", message: "Mock audio success", evaluated: true }
+      end
       puts Rainbow("  ⚖️  [EVAL] Checking audio intelligibility for #{File.basename(audio_path)}...").cyan
 
       prompt = "You are an audio quality auditor. Listen to the provided audio and transcribe it.
@@ -185,5 +207,6 @@ module Arneis
         {success: false, score: 0, message: "Eval failed: #{e.message}", evaluated: false}
       end
     end
+
   end
 end

@@ -4,6 +4,7 @@
 
 require "open3"
 require "fileutils"
+require "shellwords"
 
 module Arneis
   module Generator
@@ -30,22 +31,26 @@ module Arneis
           stdin.close
 
           t_err = Thread.new do
-            while line = stderr.gets
-              puts "    [VEO SCRIPT] #{line.strip}"
-            end
+            begin
+              while line = stderr.gets
+                puts "    [VEO SCRIPT] #{line.strip}"
+              end
+            rescue IOError; end
           end
 
           t_out = Thread.new do
-            while line = stdout.gets
-              if /^MEDIA:(.*)$/.match?(line)
-                success = true
+            begin
+              while line = stdout.gets
+                if /^MEDIA:(.*)$/.match?(line)
+                  success = true
+                end
               end
-            end
+            rescue IOError; end
           end
 
           t_err.join
           t_out.join
-          wait_thr.join
+          success = wait_thr.value.success? if success == false
         end
 
         if success && File.exist?(output_file)
@@ -57,6 +62,8 @@ module Arneis
       end
 
       def generate(prompt, output_file, timeout: 600, asset_id: nil, async: false)
+        return maybe_mock(output_file, :video, prompt) if dryrun?
+        
         receipt = AssetReceipt.new(asset_id: asset_id || "video_#{Time.now.to_i}", model: @model, prompt: prompt)
 
         # Throttling
@@ -75,9 +82,9 @@ module Arneis
         puts Rainbow("  🎥 [VEO] Starting real video generation via Python script (Async: #{async})...").magenta
 
         # Call script
-        escaped_prompt = prompt.gsub('"', '\"').gsub("`", '\`').gsub("$", '\$')
+        escaped_prompt = Shellwords.escape(prompt)
         async_flag = async ? "--async-only" : ""
-        cmd = "uv run #{Config.veo_script} \"#{escaped_prompt}\" -o #{output_file} #{async_flag}"
+        cmd = "uv run #{Config.veo_script} #{escaped_prompt} -o #{output_file} #{async_flag}"
 
         env = {
           "GOOGLE_CLOUD_PROJECT" => Config.google_cloud_project,
@@ -93,28 +100,30 @@ module Arneis
 
             # Print stderr to show progress
             t_err = Thread.new do
-              while line = stderr.gets
-                puts "    [VEO SCRIPT] #{line.strip}"
-              end
-            rescue IOError
-              # Stream closed
+              begin
+                while line = stderr.gets
+                  puts "    [VEO SCRIPT] #{line.strip}"
+                end
+              rescue IOError; end
             end
 
             # Script outputs MEDIA:path on success or OPERATION_ID:id
             t_out = Thread.new do
-              while line = stdout.gets
-                if line =~ /^MEDIA:(.*)$/
-                  media_path = $1.strip
-                  FileUtils.mkdir_p(File.dirname(output_file))
-                  FileUtils.mv(media_path, output_file)
-                  success = true
-                elsif line =~ /^OPERATION_ID:(.*)$/
-                  operation_id = $1.strip
-                  success = true
+              begin
+                while line = stdout.gets
+                  if line =~ /^MEDIA:(.*)$/
+                    media_path = $1.strip
+                    unless File.expand_path(media_path) == File.expand_path(output_file)
+                      FileUtils.mkdir_p(File.dirname(output_file))
+                      FileUtils.mv(media_path, output_file)
+                    end
+                    success = true
+                  elsif line =~ /^OPERATION_ID:(.*)$/
+                    operation_id = $1.strip
+                    success = true
+                  end
                 end
-              end
-            rescue IOError
-              # Stream closed
+              rescue IOError; end
             end
 
             t_err.join
@@ -136,7 +145,14 @@ module Arneis
           end
         rescue => e
           sanitized_msg = Config.sanitize(e.message)
-          puts Rainbow("  ⚠️ [VEO] Script failed: #{sanitized_msg}. Falling back to mock.").yellow
+          puts Rainbow("  ⚠️ [VEO] Script failed: #{sanitized_msg}").yellow
+
+          if Config.no_mock?
+            puts Rainbow("  🚫 Mocking disabled. Raising error.").red
+            raise e
+          end
+
+          puts Rainbow("  🤡 Falling back to mock.").yellow
           receipt.fail!(error_msg: sanitized_msg)
           receipt.save!(output_file)
           File.write("#{output_file}.mock", "MOCK_VEO_VIDEO_FOR: #{prompt}")

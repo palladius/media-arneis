@@ -15,6 +15,17 @@ module Arneis
 
       protected
 
+      def dryrun?
+        Config.dryrun?
+      end
+
+      def maybe_mock(output_file, type, prompt)
+        puts Rainbow("  🌵 [DRYRUN] Mocking #{type.to_s.upcase} for: #{prompt[0..50]}...").yellow
+        FileUtils.mkdir_p(File.dirname(output_file)) if output_file
+        File.write("#{output_file}.mock", "MOCK_#{type.to_s.upcase}_DATA: #{prompt}")
+        {status: "mocked", tokens: 0, cost: 0.0, time: 0}
+      end
+
       def after_creation(output_file, type)
         return unless output_file && File.exist?(output_file)
         Validator.validate_and_rename!(output_file, type)

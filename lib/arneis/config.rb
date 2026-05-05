@@ -44,7 +44,16 @@ module Arneis
       (ENV["GOOGLE_APPLICATION_CREDENTIALS"] || system("gcloud auth application-default print-access-token > /dev/null 2>&1")) ? "☁️ (Vertex)" : "🔑 (ApiKey)"
     end
 
+    class << self
+      attr_accessor :dryrun
+    end
+
+    def self.dryrun?
+      !!@dryrun
+    end
+
     def self.no_mock?
+      return false if dryrun?
       ENV["ARNEIS_NO_MOCK"] == "true" || ENV["ARNEIS_NO_MOCK"] == "1"
     end
 

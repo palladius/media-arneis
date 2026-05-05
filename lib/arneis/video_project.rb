@@ -70,10 +70,10 @@ module Arneis
 
     def process(async: true, verify: false, dryrun: false)
       if dryrun
-        puts Rainbow("🌵 [DRYRUN] Validation complete. Skipping orchestration...").yellow
-        return
+        puts Rainbow("🌵 [DRYRUN] Validation complete. Running orchestration with MOCKS...").yellow
+      else
+        update_project_status("in_progress")
       end
-      update_project_status("in_progress")
 
       state_file = File.join(@output_path, ".state.yaml")
       current_state = begin
@@ -107,17 +107,31 @@ module Arneis
 
         veo_output = File.join(@output_path, "video", "scene_#{scene["scene"]}", "video.mp4")
 
-        orchestrator.add_task(scene_id, outputs: { veo_output => :video }, intent_prompt: scene["description"]) do
+        # Define the check_status_block for this task
+        check_status_proc = lambda do
+          # Load the latest state to get the operation_id
+          latest_state_scene = YAML.load_file(state_file)["scenes"]&.find { |s| s["scene"] == scene["scene"] }
+          if latest_state_scene && latest_state_scene["operation_id"]
+            res = veo_generator.check_status(latest_state_scene["operation_id"], veo_output)
+            if res[:status] == "done"
+              validate_scene(scene, veo_output) # Validate after it's done polling
+            end
+            res
+          else
+            {status: "failed", message: "No operation_id found for polling"}
+          end
+        end
+
+        orchestrator.add_task(scene_id, outputs: { veo_output => :video }, intent_prompt: scene["description"], check_status_block: check_status_proc) do
           scene_dir = File.dirname(veo_output)
           FileUtils.mkdir_p(scene_dir)
 
+          # If we are resuming and already polling, the orchestrator's polling mechanism will handle it
+          # This block should only initiate new generations or re-try failed ones
           state_scene = YAML.load_file(state_file)["scenes"]&.find { |s| s["scene"] == scene["scene"] }
-          if state_scene && state_scene["status"] == "polling" && state_scene["operation_id"]
-            res = veo_generator.check_status(state_scene["operation_id"], veo_output)
-            if res[:status] == "done"
-              validate_scene(scene, veo_output)
-            end
-            next
+          if state_scene && state_scene["status"] == "polling"
+            # If already polling, simply return polling status to Orchestrator, it will then use check_status_proc
+            next {status: "polling", operation_id: state_scene["operation_id"]}
           end
 
           update_scene_status(scene["scene"], "in_progress")
@@ -130,10 +144,13 @@ module Arneis
 
           if res[:status] == "polling"
             update_scene_status(scene["scene"], "polling", nil, res[:operation_id])
+            res # Return polling status to Orchestrator
           elsif res[:status] == "done"
             validate_scene(scene, veo_output)
+            {status: "done"} # Return done status to Orchestrator
           else
             update_scene_status(scene["scene"], "failed", "Generation failed")
+            {status: "failed", message: "Generation failed"} # Return failed status
           end
         end
       end
@@ -143,11 +160,11 @@ module Arneis
       if @data["background_music"]
         music_output = File.join(@output_path, "audio", "background_music.wav")
         orchestrator.add_task(music_id, outputs: { music_output => :audio }, intent_prompt: @data["background_music"]["prompt"]) do
-          update_project_task_status("background_music", "in_progress")
+          update_task_status("background_music", "in_progress")
           FileUtils.mkdir_p(File.dirname(music_output))
 
           lyria_generator.generate(@data["background_music"]["prompt"], music_output, asset_id: "Project.music")
-          update_project_task_status("background_music", "done")
+          update_task_status("background_music", "done")
         end
         scene_task_ids << music_id
       end
@@ -165,32 +182,44 @@ module Arneis
         video_files = @scenes.map { |s| File.join(@output_path, "video", "scene_#{s["scene"]}", "video.mp4") }
         audio_file = File.join(@output_path, "audio", "background_music.wav")
 
-        system_instruction = "You are an ffmpeg expert. Generate the EXACT shell command to concatenate the provided video files and add the background music as a loop or trimmed to the total video length. Output ONLY the command, no preamble, no code blocks."
-        prompt = "Video files: #{video_files.join(", ")}\nAudio file: #{audio_file}\nOutput file: #{final_video_output}"
+        # Create a temporary file list for ffmpeg
+        list_file = File.join(@output_path, "input.txt")
+        File.open(list_file, "w") do |f|
+          video_files.each { |path| f.puts "file '#{File.expand_path(path)}'" }
+        end
+
+        system_instruction = "You are an ffmpeg expert. Generate the EXACT shell command to concatenate the video files listed in 'input.txt' and add the background music as a loop or trimmed to the total video length. Output ONLY the command, no preamble, no code blocks."
+        prompt = "Video files list: #{list_file}\nAudio file: #{audio_file}\nOutput file: #{final_video_output}"
 
         resp = gemini_generator.generate(prompt, system_instruction: system_instruction)
         ffmpeg_cmd = resp[:content].strip.gsub(/^`|`$/, "")
 
-        puts "  💻 Executing: #{ffmpeg_cmd}"
-        # We mock this for now since we might not have all real files in tests
-        if ENV["ARNEIS_NO_MOCK"] == "true"
-          system(ffmpeg_cmd)
-        else
-          puts Rainbow("  🤡 [MOCK] FFMPEG Montage mocked (ARNEIS_NO_MOCK is false)").yellow
+        if dryrun
+          puts Rainbow("  🌵 [DRYRUN] Mocking MONTAGE command execution.").yellow
           File.write("#{final_video_output}.mock", "MOCK_VIDEO_MONTAGE: #{ffmpeg_cmd}")
+        else
+          puts "  💻 Executing: #{ffmpeg_cmd}"
+          # We mock this for now since we might not have all real files in tests
+          if ENV["ARNEIS_NO_MOCK"] == "true"
+            system(ffmpeg_cmd)
+          else
+            puts Rainbow("  🤡 [MOCK] FFMPEG Montage mocked (ARNEIS_NO_MOCK is false)").yellow
+            File.write("#{final_video_output}.mock", "MOCK_VIDEO_MONTAGE: #{ffmpeg_cmd}")
+          end
         end
+        FileUtils.rm(list_file) if File.exist?(list_file) # Clean up
         update_task_status("montage", "done")
       end
 
       # 4. Marketing Task
       marketing_id = "marketing"
       orchestrator.add_task(marketing_id, dependencies: [montage_id]) do
-        update_project_task_status("marketing", "in_progress")
+        update_task_status("marketing", "in_progress")
         marketing_dir = File.join(@output_path, "marketing")
 
         context = "A promotional video project: #{@project_title}"
         marketing_generator.generate_all(@project_title, context, marketing_dir)
-        update_project_task_status("marketing", "done")
+        update_task_status("marketing", "done")
       end
 
       # 5. GIF Post-Production Task
@@ -204,7 +233,10 @@ module Arneis
       update_project_status("done")
     end
 
+    private
+
     def update_task_status(task_key, status)
+      task_key = task_key.to_s
       @mutex.synchronize do
         state_file = File.join(File.expand_path(@output_path), ".state.yaml")
         state = YAML.load_file(state_file)
@@ -214,13 +246,13 @@ module Arneis
       end
     end
 
-    def update_project_task_status(task_key, status)
-      @mutex.synchronize do
-        state_file = File.join(File.expand_path(@output_path), ".state.yaml")
-        state = YAML.load_file(state_file)
-        state[task_key] ||= {}
-        state[task_key]["status"] = status
-        File.write(state_file, state.to_yaml)
+    def validate_scene(scene, veo_output)
+      puts "  🛡️  Validating scene #{scene["scene"]} artifact..."
+      v_result = Validator.validate_and_rename!(veo_output, :video)
+      if v_result[:success]
+        update_scene_status(scene["scene"], "verified")
+      else
+        update_scene_status(scene["scene"], "failed", v_result[:message])
       end
     end
 
@@ -247,29 +279,9 @@ module Arneis
       end
     end
 
-    def media?
-      true
-    end
-
-    def primary_artifact_type
-      :video
-    end
-
     def primary_artifact
       output_filename = @data["output_filename"] || "final_video.mp4"
       File.join(@output_path, output_filename)
-    end
-
-    private
-
-    def validate_scene(scene, veo_output)
-      puts "  🛡️  Validating scene #{scene["scene"]} artifact..."
-      v_result = Validator.validate_and_rename!(veo_output, :video)
-      if v_result[:success]
-        update_scene_status(scene["scene"], "verified")
-      else
-        update_scene_status(scene["scene"], "failed", v_result[:message])
-      end
     end
   end
 end

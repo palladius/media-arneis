@@ -13,6 +13,8 @@ module Arneis
       end
 
       def generate(input_file, output_file, asset_id: nil)
+        return maybe_mock(output_file, :image, "GIF from #{input_file}") if dryrun?
+        
         puts Rainbow("  🎞️  [GIF] Generating high-quality GIF from #{File.basename(input_file)}...").magenta
         receipt = AssetReceipt.new(asset_id: asset_id || "gif_#{Time.now.to_i}", model: "ffmpeg", prompt: "GIF Conversion")
         start_time = Time.now

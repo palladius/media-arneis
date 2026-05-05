@@ -21,6 +21,11 @@ module Arneis
       end
 
       def generate(prompt, output_file = nil, system_instruction: nil, images: [], audio: [], timeout: 30, asset_id: nil)
+        if dryrun?
+          puts Rainbow("  🌵 [DRYRUN] Mocking GEMINI for prompt: #{prompt[0..50]}...").yellow
+          return {content: "Mock GEMINI response for: #{prompt}", tokens: 10, cost: 0.0, time: 0.1}
+        end
+        
         puts "  [GEMINI] Generating #{images.empty? && audio.empty? ? "text" : "multimodal response"} for prompt: '#{prompt[0..100]}#{prompt.length > 100 ? "..." : ""}'"
         receipt = AssetReceipt.new(asset_id: asset_id || "text_#{Time.now.to_i}", model: @model, prompt: prompt)
 
