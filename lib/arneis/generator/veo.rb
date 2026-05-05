@@ -4,6 +4,7 @@
 
 require "open3"
 require "fileutils"
+require "shellwords"
 
 module Arneis
   module Generator
@@ -30,22 +31,26 @@ module Arneis
           stdin.close
 
           t_err = Thread.new do
-            while line = stderr.gets
-              puts "    [VEO SCRIPT] #{line.strip}"
-            end
+            begin
+              while line = stderr.gets
+                puts "    [VEO SCRIPT] #{line.strip}"
+              end
+            rescue IOError; end
           end
 
           t_out = Thread.new do
-            while line = stdout.gets
-              if /^MEDIA:(.*)$/.match?(line)
-                success = true
+            begin
+              while line = stdout.gets
+                if /^MEDIA:(.*)$/.match?(line)
+                  success = true
+                end
               end
-            end
+            rescue IOError; end
           end
 
           t_err.join
           t_out.join
-          wait_thr.join
+          success = wait_thr.value.success? if success == false
         end
 
         if success && File.exist?(output_file)
@@ -95,28 +100,30 @@ module Arneis
 
             # Print stderr to show progress
             t_err = Thread.new do
-              while line = stderr.gets
-                puts "    [VEO SCRIPT] #{line.strip}"
-              end
-            rescue IOError
-              # Stream closed
+              begin
+                while line = stderr.gets
+                  puts "    [VEO SCRIPT] #{line.strip}"
+                end
+              rescue IOError; end
             end
 
             # Script outputs MEDIA:path on success or OPERATION_ID:id
             t_out = Thread.new do
-              while line = stdout.gets
-                if line =~ /^MEDIA:(.*)$/
-                  media_path = $1.strip
-                  FileUtils.mkdir_p(File.dirname(output_file))
-                  FileUtils.mv(media_path, output_file)
-                  success = true
-                elsif line =~ /^OPERATION_ID:(.*)$/
-                  operation_id = $1.strip
-                  success = true
+              begin
+                while line = stdout.gets
+                  if line =~ /^MEDIA:(.*)$/
+                    media_path = $1.strip
+                    unless File.expand_path(media_path) == File.expand_path(output_file)
+                      FileUtils.mkdir_p(File.dirname(output_file))
+                      FileUtils.mv(media_path, output_file)
+                    end
+                    success = true
+                  elsif line =~ /^OPERATION_ID:(.*)$/
+                    operation_id = $1.strip
+                    success = true
+                  end
                 end
-              end
-            rescue IOError
-              # Stream closed
+              rescue IOError; end
             end
 
             t_err.join
