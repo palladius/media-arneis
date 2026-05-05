@@ -3,6 +3,7 @@
 
 require "open3"
 require "fileutils"
+require "shellwords"
 
 module Arneis
   module Generator
@@ -19,9 +20,10 @@ module Arneis
         start_time = Time.now
 
         # Call Imagen script (uv run)
-        escaped_prompt = prompt.gsub('"', '\"').gsub('`', '\`').gsub('$', '\$')
-        image_flag = reference_images ? "-i \"#{reference_images}\"" : ""
-        cmd = "uv run util/generate_image.py -p \"#{escaped_prompt}\" -o #{output_file} --aspect-ratio \"#{aspect_ratio}\" #{image_flag} -m #{@model}"
+        cmd_args = ["uv", "run", "util/generate_image.py", "-p", prompt, "-o", output_file, "--aspect-ratio", aspect_ratio, "-m", @model]
+        if reference_images&.any?
+          cmd_args.concat(["-i", *reference_images])
+        end
 
         env = {
           "GOOGLE_CLOUD_PROJECT" => Config.google_cloud_project,
@@ -31,7 +33,7 @@ module Arneis
 
         begin
           success = false
-          Open3.popen3(env, cmd) do |stdin, stdout, stderr, wait_thr|
+          Open3.popen3(env, *cmd_args) do |stdin, stdout, stderr, wait_thr|
             stdin.close
 
             # Print stderr to show progress

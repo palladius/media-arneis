@@ -23,13 +23,13 @@ RSpec.describe Arneis::Cli do
     page1_dir = File.join(output_dir, "pages/page_1")
     FileUtils.mkdir_p(page1_dir)
     File.write(File.join(page1_dir, "illustration.png"), "image 1")
-    File.write(File.join(page1_dir, "illustration.png.asset.json"), { "eval" => { "score" => 4 } }.to_json)
+    File.write(File.join(page1_dir, "illustration.png.asset.json"), { "eval_dummy" => { "score" => 4 } }.to_json)
     
     # Page 2: Score 9 (Good)
     page2_dir = File.join(output_dir, "pages/page_2")
     FileUtils.mkdir_p(page2_dir)
     File.write(File.join(page2_dir, "illustration.png"), "image 2")
-    File.write(File.join(page2_dir, "illustration.png.asset.json"), { "eval" => { "score" => 9 } }.to_json)
+    File.write(File.join(page2_dir, "illustration.png.asset.json"), { "eval_dummy" => { "score" => 9 } }.to_json)
   end
 
   after do

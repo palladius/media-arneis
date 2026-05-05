@@ -225,15 +225,27 @@ module Arneis
         puts "  #{status_emoji(m["status"])} Montage : #{m["status"].ljust(15)}"
       end
 
-      # Suggest redo if scores are low
-      low_scores = []
-      items.each do |item|
-        id = state["scenes"] ? "scene_#{item["scene"]}" : "page_#{item["page"]}"
-        # We'd need to find the artifact and check asset json here, but let's assume we show it if status is done/verified
+      has_low_scores = items.any? do |item|
+        num = state["scenes"] ? item["scene"] : item["page"]
+        prefix = state["scenes"] ? "video/scene_#{num}/video.mp4" : "pages/page_#{num}/illustration.png"
+        asset_json = File.join(folder_path, "#{prefix}.asset.json")
+
+        if File.exist?(asset_json)
+          asset_data = JSON.parse(File.read(asset_json))
+          char_evals = asset_data.keys.select { |k| k.start_with?("eval_") }
+          min_score = char_evals.map { |k| asset_data.dig(k, "score") }.compact.min
+          min_score && min_score <= 6
+        else
+          false
+        end
       end
-      
+
       puts ""
-      puts "💡 Hint: Use 'arnectl redo' to reset tasks with low evaluation scores."
+      if has_low_scores
+        puts "💡 Hint: Use 'arnectl redo --threshold 6' to reset tasks with low evaluation scores."
+      else
+        puts "💡 Hint: Use 'arnectl redo' to reset tasks with low evaluation scores."
+      end
     end
 
     desc "resume [FOLDER_PATH]", "Resume an interrupted project"

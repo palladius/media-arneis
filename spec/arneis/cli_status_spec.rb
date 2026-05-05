@@ -22,7 +22,7 @@ RSpec.describe Arneis::Cli do
     asset_json = File.join(output_dir, "pages/page_1/illustration.png.asset.json")
     FileUtils.mkdir_p(File.dirname(asset_json))
     asset_data = {
-      "eval" => { "success" => false, "score" => 4, "message" => "Bad" }
+      "eval_dummy" => { "success" => false, "score" => 4, "message" => "Bad" }
     }
     File.write(asset_json, asset_data.to_json)
   end
