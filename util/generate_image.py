@@ -25,7 +25,7 @@ def main():
     parser = argparse.ArgumentParser(description="Generate high-fidelity images with character consistency.")
     parser.add_argument("-p", "--prompt", type=str, required=True, help="The text prompt for generation.")
     parser.add_argument("-o", "--output", type=str, required=True, help="Output file path.")
-    parser.add_argument("-i", "--images", type=str, help="Comma-separated paths to reference images for character consistency.")
+    parser.add_argument("-i", "--images", nargs='*', help="Comma-separated paths to reference images for character consistency.")
     parser.add_argument("-a", "--aspect-ratio", type=str, default="1:1", help="Aspect ratio (1:1, 4:3, 3:4, 16:9, 9:16).")
     default_model = os.environ.get("ARNEIS_IMAGEN_MODEL", "gemini-3.1-flash-image-preview")
     parser.add_argument("-m", "--model", type=str, default=default_model, help="Model ID to use.")
@@ -46,8 +46,7 @@ def main():
 
     # Add images as parts of the prompt
     if args.images:
-        image_paths = args.images.split(',')
-        for img_path in image_paths:
+        for img_path in args.images:
             img_path = img_path.strip()
             if os.path.exists(img_path):
                 print(f"👤 Adding reference image for CC: {img_path}", file=sys.stderr)

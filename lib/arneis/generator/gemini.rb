@@ -16,7 +16,7 @@ module Arneis
             region: Config.google_cloud_region,
             version: "v1"
           },
-          options: {model: @model, server_sent_events: true}
+          options: {model: @model, server_sent_events: false}
         )
       end
 
