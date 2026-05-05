@@ -2,9 +2,8 @@
 
 ## Core Language & Runtime
 - **Language:** **Ruby** (preferred for its DRY principles and developer happiness).
-- **Concurrency:** **Ruby Fibers** for lightweight, asynchronous media generation orchestration.
-
-## AI & Machine Learning Integration
+- **Concurrency:** **Ruby Fibers** for lightweight, asynchronous media generation orchestration with active polling for long-running tasks.
+- **AI & Machine Learning Integration**
 - **LLM Interaction:** **`rubyllm`** gem (or similar) for interacting with Google Gemini.
 - **Media Models:**
   - **Gemini 1.5 Pro/Flash:** For text generation and media understanding (feedback loops).
