@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.8] - 2026-05-05
+
+### Added
+- 🌱 feat: add visual feedback (with seedling emoji!) when environment variables are detected in `Config.load!`.
+- 🏷️ feat: support namespaced environment variables `ARNEIS_OPEN`, `ARNEIS_EVAL` and their `_ENABLED` variants as preferred alternatives to generic `OPEN`/`EVAL`.
+- 📝 docs: update `.env.dist` with namespaced environment variables.
+
+## [0.1.7] - 2026-05-04
+
+### Added
+- 📂 feat: support `ARNEIS_FOLDER` environment variable for defaulting the media folder in CLI commands.
+- 🔧 feat: improved project resumption logic with better handling of KidsStory pages.
+
 ## [0.1.6] - 2026-05-01
 
 ### Added

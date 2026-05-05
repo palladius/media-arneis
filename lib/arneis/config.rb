@@ -5,7 +5,17 @@ require "dotenv"
 module Arneis
   class Config
     def self.load!
+      return if @loaded
       Dotenv.load(".env")
+      
+      detections = []
+      detections << "ARNEIS_OPEN_ENABLED/OPEN detected: --open is enabled for all calls" if ENV["ARNEIS_OPEN_ENABLED"] == "true" || ENV["ARNEIS_OPEN"] == "true" || ENV["OPEN"] == "true"
+      detections << "ARNEIS_EVAL_ENABLED/EVAL detected: --eval is enabled for all calls" if ENV["ARNEIS_EVAL_ENABLED"] == "true" || ENV["ARNEIS_EVAL"] == "true" || ENV["EVAL"] == "true"
+      detections << "ARNEIS_NO_MOCK detected: --no-mock is enabled (REAL generation)" if ENV["ARNEIS_NO_MOCK"] == "true" || ENV["ARNEIS_NO_MOCK"] == "1"
+      detections << "ARNEIS_FOLDER detected: defaulting to '#{ENV["ARNEIS_FOLDER"]}'" if ENV["ARNEIS_FOLDER"]
+
+      detections.each { |msg| puts Rainbow("🌱 #{msg}").yellow }
+      @loaded = true
     end
 
     def self.gemini_api_key
@@ -60,7 +70,7 @@ module Arneis
     def self.eval_enabled?(flags = {})
       return flags[:eval] unless flags[:eval].nil?
 
-      env_val = ENV["ARNEIS_EVAL_ENABLED"] || ENV["EVAL"]
+      env_val = ENV["ARNEIS_EVAL_ENABLED"] || ENV["ARNEIS_EVAL"] || ENV["EVAL"]
       return env_val == "true" unless env_val.nil?
 
       true # Default
@@ -69,7 +79,7 @@ module Arneis
     def self.open_enabled?(flags = {})
       return flags[:open] unless flags[:open].nil?
 
-      env_val = ENV["ARNEIS_OPEN_ENABLED"] || ENV["OPEN"]
+      env_val = ENV["ARNEIS_OPEN_ENABLED"] || ENV["ARNEIS_OPEN"] || ENV["OPEN"]
       return env_val == "true" unless env_val.nil?
 
       true # Default
