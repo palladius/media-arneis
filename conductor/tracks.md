@@ -64,3 +64,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [ ] **Track: Implement Evaluation Feedback Loop for retrying failed generations**
 *Link: [./tracks/eval_feedback_loop_20260504/](./tracks/eval_feedback_loop_20260504/)*
 
+
+---
+
+- [ ] **Track: Deterministic Output Folders & PID Locking Mechanism**
+*Link: [./tracks/deterministic_folders_20260504/](./tracks/deterministic_folders_20260504/)*
