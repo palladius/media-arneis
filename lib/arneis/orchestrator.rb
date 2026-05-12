@@ -172,54 +172,60 @@ module Arneis
     def verify_task(task)
       puts Rainbow("  🛡️  [VERIFY] Verifying task #{task.id}...").cyan
       
-      # 1. Basic Asset Check
-      v_result = Validator.verify_assets(task)
-      task.verification_results << v_result.merge(type: "asset_integrity")
-      unless v_result[:success]
-        task.fail_verification(v_result[:message])
-        save_verification_metadata(task)
-        return
-      end
-
-      # Skip LLM evaluation if disabled
-      unless @eval_enabled
-        puts Rainbow("  ⏭️  [EVAL] Automated evaluation disabled (via flag or ENV)").yellow
-        save_verification_metadata(task)
-        return
-      end
-
-      evaluator = Evaluator.new
-      
-      # 2. JSON/Logic Check (Tier 1)
-      task.outputs.each do |path, type|
-        if type == :json && File.exist?(path)
-          j_result = evaluator.check_json(File.read(path))
-          task.verification_results << j_result.merge(type: "json_logic", file: path)
-          unless j_result[:success]
-            task.fail_verification("JSON Logic Error: #{j_result[:message]}")
-            save_verification_metadata(task)
-            return
-          end
+      begin
+        # 1. Basic Asset Check
+        v_result = Validator.verify_assets(task)
+        task.verification_results << v_result.merge(type: "asset_integrity")
+        unless v_result[:success]
+          task.fail_verification(v_result[:message])
+          save_verification_metadata(task)
+          return
         end
-      end
 
-      # 3. Multimodal Intent Check (Tier 2)
-      if task.intent_prompt
+        # Skip LLM evaluation if disabled
+        unless @eval_enabled
+          puts Rainbow("  ⏭️  [EVAL] Automated evaluation disabled (via flag or ENV)").yellow
+          save_verification_metadata(task)
+          return
+        end
+
+        evaluator = Evaluator.new
+        
+        # 2. JSON/Logic Check (Tier 1)
         task.outputs.each do |path, type|
-          if [:image, :video].include?(type) && File.exist?(path)
-            m_result = evaluator.check_multimodal(path, task.intent_prompt)
-            task.verification_results << m_result.merge(type: "multimodal_intent", file: path)
-            unless m_result[:success]
-              task.fail_verification("Intent Mismatch: #{m_result[:message]}")
+          if type == :json && File.exist?(path)
+            j_result = evaluator.check_json(File.read(path))
+            task.verification_results << j_result.merge(type: "json_logic", file: path)
+            unless j_result[:success]
+              task.fail_verification("JSON Logic Error: #{j_result[:message]}")
               save_verification_metadata(task)
               return
             end
           end
         end
-      end
 
-      puts Rainbow("  ✅ Task #{task.id} verified successfully!").green
-      save_verification_metadata(task)
+        # 3. Multimodal Intent Check (Tier 2)
+        if task.intent_prompt
+          task.outputs.each do |path, type|
+            if [:image, :video].include?(type) && File.exist?(path)
+              m_result = evaluator.check_multimodal(path, task.intent_prompt)
+              task.verification_results << m_result.merge(type: "multimodal_intent", file: path)
+              unless m_result[:success]
+                task.fail_verification("Intent Mismatch: #{m_result[:message]}")
+                save_verification_metadata(task)
+                return
+              end
+            end
+          end
+        end
+
+        puts Rainbow("  ✅ Task #{task.id} verified successfully!").green
+        save_verification_metadata(task)
+      rescue => e
+        puts Rainbow("  ❌ [VERIFY] Internal Error: #{e.message}").red
+        puts e.backtrace.first(5)
+        raise e
+      end
     end
 
     def save_verification_metadata(task)

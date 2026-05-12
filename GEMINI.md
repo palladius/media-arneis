@@ -52,6 +52,8 @@ Use Conductor extension to manage the BDD and SW dev
 ## Ruby
 
 * Use async. Read these docs from Carmine Paolino: https://rubyllm.com/async/ and https://paolino.me/async-ruby-is-the-future/
+* **IMPORTANT**: Use Ruby 3.2.x (e.g., 3.2.11) via `rbenv`. Higher versions (like 4.0.x) are currently incompatible with the `Gemfile` constraints.
+* Always use `bundle exec` when running scripts to ensure the correct environment.
 
 
 ## Testing

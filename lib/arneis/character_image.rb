@@ -93,8 +93,8 @@ module Arneis
         enhanced_prompt = enhancement[:content]
         File.write(File.join(@output_path, "prompt.txt"), enhanced_prompt)
 
-        # Collect all reference images for consistency
-        all_refs = @characters.map(&:consistency_images).flatten.uniq
+        # Collect reference images, but cap them to avoid safety filter triggers or context bloat
+        all_refs = @characters.map { |c| c.consistency_images.sample(3) }.flatten.uniq
 
         res = imagen_generator.generate(enhanced_prompt, image_output, asset_id: "CharacterImage.image", reference_images: all_refs, aspect_ratio: @aspect_ratio)
 
