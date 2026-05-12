@@ -1,0 +1,10 @@
+apiVersion: media-arneis.palladius.it/v1
+kind: CharacterImage
+metadata:
+  name: ale-seby-magical
+  template: CharacterImage
+spec:
+  project_title: "Ale and Seby in a Magical Pokemon and Hot Wheels World"
+  characters: ["alessandro", "sebastian"]
+  prompt: "Alessandro (young boy with brown hair and green eyes) and his younger brother Sebastian (young boy with light-brown hair and blue-grey eyes) are happily playing together with many colorful toys in a magical, glowing world with floating islands, giant mushrooms, and sparkling magical dust. The style is cinematic and photorealistic."
+  aspect_ratio: "16:9"
