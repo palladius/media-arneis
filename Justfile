@@ -89,5 +89,9 @@ ale-seby-cc:
 ale-seby-super-ninja-cc:
         just arnectl apply data/projects/ale_seby_super_ninja.yaml --open
 
+# Generate a CharacterImage for Ale & Seby with a custom prompt (variadic)
+ale-seby *prompt:
+        bundle exec bin/arnectl generate CharacterImage -c alessandro,sebastian --open -p "{{prompt}}"
+
 character-consistency-with-2:
         just arnectl generate CharacterImage -c riccardo,sebastian --aspect_ratio 4:3 --open -p "Riccardo is lifting his foot and Sebastian is holding his nose saying 'OMG that stinks!'"

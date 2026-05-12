@@ -24,7 +24,7 @@ module Arneis
       @status = :in_progress
       begin
         result = @block.call if @block
-        if result && result[:status] == "polling"
+        if result.is_a?(Hash) && result[:status] == "polling"
           @status = :polling
           return result
         else
