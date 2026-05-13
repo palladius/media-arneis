@@ -65,7 +65,7 @@ module Arneis
     end
 
     def all_reference_images
-      consistency_images.join(",")
+      consistency_images
     end
 
     def consistency_images

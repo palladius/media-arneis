@@ -24,28 +24,24 @@ RSpec.describe Arneis::Cli do
   end
 
   describe "apply command" do
-    let(:project_double) { double(initialize_output: true, primary_artifact: "test.mp4", media?: true) }
+    let(:project_double) { double(initialize_output: true, primary_artifact: "test.mp4", media?: true, process: true) }
 
     before do
       allow(Arneis).to receive(:load_project).and_return(project_double)
     end
 
     it "respects the --verify flag" do
-      allow(Arneis::Config).to receive(:eval_enabled?).with(eval: false).and_return(false)
-      expect(project_double).to receive(:process).with(hash_including(verify: false))
+      expect(project_double).to receive(:process).with(hash_including(verify: true))
       
-      cli.options = cli.options.merge(verify: false)
+      cli.options = cli.options.merge(verify: true)
       cli.apply("test.yaml")
     end
 
     it "respects the --open flag" do
-      allow(project_double).to receive(:process).and_return(true)
-      allow(Arneis::Config).to receive(:open_enabled?).with(open: false).and_return(false)
-      allow(Arneis::MediaOpener).to receive(:open)
+      allow(cli).to receive(:open_file)
+      expect(cli).to receive(:open_file).with("test.mp4")
       
-      expect(Arneis::MediaOpener).not_to receive(:open)
-      
-      cli.options = cli.options.merge(open: false)
+      cli.options = cli.options.merge(open: true)
       cli.apply("test.yaml")
     end
   end

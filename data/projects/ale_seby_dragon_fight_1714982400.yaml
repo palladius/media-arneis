@@ -1,0 +1,10 @@
+apiVersion: media-arneis.palladius.it/v1
+kind: CharacterImage
+metadata:
+  name: ale-seby-dragon-fight-1714982400
+  template: CharacterImage
+spec:
+  project_title: "Ale and Seby Dragon Fight"
+  characters: ["alessandro", "sebastian"]
+  prompt: "A cinematic, epic fantasy scene in a medieval mountain pass. Alessandro (boy with brown hair) and Sebastian (younger boy with light-brown hair) are bravely confronting a massive, magnificent red dragon. Alessandro holds a glowing magical staff. Sebastian looks on with wide-eyed courage. CRITICAL: Both characters' faces MUST be clearly visible, recognizable, and highly resembling the reference photos. No masks or face coverings. Style: PHOTOREALISTIC, CINEMATIC, and highly detailed."
+  aspect_ratio: "16:9"

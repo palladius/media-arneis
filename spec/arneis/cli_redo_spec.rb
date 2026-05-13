@@ -38,17 +38,15 @@ RSpec.describe Arneis::Cli do
 
   describe "#redo" do
     it "invalidates artifacts below the threshold" do
-      # Use symbol keys for Thor options mock
       allow(cli).to receive(:options).and_return({ threshold: 6 })
+      allow(cli).to receive(:invoke).with(:resume, [output_dir])
       cli.redo(output_dir)
       
-      # Page 1 should be pending and file moved to .trash
       state = YAML.load_file(state_file)
       expect(state["pages"].find { |p| p["page"] == 1 }["status"]).to eq("pending")
       expect(state["pages"].find { |p| p["page"] == 2 }["status"]).to eq("done")
       
       expect(File.exist?(File.join(output_dir, "pages/page_1/illustration.png"))).to be false
-      # Check for trash. The directory name contains a timestamp, so we use glob.
       expect(Dir.glob(File.join(output_dir, ".trash/**/illustration.png"))).not_to be_empty
     end
   end
