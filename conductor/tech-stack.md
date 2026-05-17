@@ -26,7 +26,7 @@
 ## Testing & Quality Assurance
 - **Framework:** **RSpec** or **Cucumber** for BDD-style testing.
 - **Static Analysis:** Custom YAML parsers to validate Classes and Objects in sub-second time.
-- **Evals:** Automated evaluation loops using Gemini 1.5 Flash.
+- **Tiered Evals:** Automated evaluation loops using Gemini 2.5 Flash (JSON) and Gemini 3 Pro (Multimodal Intent).
 
 ## Infrastructure (Future/V2)
 - **Web Interface:** **Ruby on Rails** or **Sinatra** for the real-time creation dashboard.
