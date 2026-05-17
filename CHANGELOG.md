@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.9] - 2026-05-17
+
+### Fixed
+- 🎬 fix: enforce `-shortest` and `-c:v copy` in LLM-generated `ffmpeg` montage commands to prevent infinite loop regressions and huge corrupted files.
+
+### Changed
+- 📦 chore: archive `e2e_eval_harness_20260430` conductor track as it is now complete and verified.
+
 ## [0.1.8] - 2026-05-05
 
 ### Added

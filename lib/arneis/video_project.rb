@@ -188,7 +188,7 @@ module Arneis
           video_files.each { |path| f.puts "file '#{File.expand_path(path)}'" }
         end
 
-        system_instruction = "You are an ffmpeg expert. Generate the EXACT shell command to concatenate the video files listed in 'input.txt' and add the background music as a loop or trimmed to the total video length. Output ONLY the command, no preamble, no code blocks."
+        system_instruction = "You are an ffmpeg expert. Generate the EXACT shell command to concatenate the video files listed in 'input.txt' and add the background music. You MUST include the '-shortest' flag to ensure the output ends when the video ends. Use '-c:v copy' to avoid re-encoding. Output ONLY the command, no preamble, no code blocks."
         prompt = "Video files list: #{list_file}\nAudio file: #{audio_file}\nOutput file: #{final_video_output}"
 
         resp = gemini_generator.generate(prompt, system_instruction: system_instruction)
