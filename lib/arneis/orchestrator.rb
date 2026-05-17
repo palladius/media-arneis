@@ -21,6 +21,7 @@ module Arneis
       @completed_tasks = Array(pre_completed).map(&:to_sym)
       # Limit concurrent AI operations to avoid rate limits
       @semaphore = Async::Semaphore.new(Arneis::Config.max_concurrent_tasks || 3)
+      @mutex = Thread::Mutex.new
     end
 
     def add_task(id, dependencies: [], outputs: {}, intent_prompt: nil, check_status_block: nil, &block)
@@ -189,12 +190,12 @@ module Arneis
           return
         end
 
-        evaluator = Evaluator.new
+        @evaluator ||= Evaluator.new
         
         # 2. JSON/Logic Check (Tier 1)
         task.outputs.each do |path, type|
           if type == :json && File.exist?(path)
-            j_result = evaluator.check_json(File.read(path))
+            j_result = @evaluator.check_json(File.read(path))
             task.verification_results << j_result.merge(type: "json_logic", file: path)
             unless j_result[:success]
               task.fail_verification("JSON Logic Error: #{j_result[:message]}")
@@ -208,7 +209,7 @@ module Arneis
         if task.intent_prompt
           task.outputs.each do |path, type|
             if [:image, :video].include?(type) && File.exist?(path)
-              m_result = evaluator.check_multimodal(path, task.intent_prompt)
+              m_result = @evaluator.check_multimodal(path, task.intent_prompt)
               task.verification_results << m_result.merge(type: "multimodal_intent", file: path)
               unless m_result[:success]
                 task.fail_verification("Intent Mismatch: #{m_result[:message]}")
@@ -229,16 +230,18 @@ module Arneis
     end
 
     def save_verification_metadata(task)
-      task.outputs.each do |path, _type|
-        asset_json = "#{path}.asset.json"
-        data = if File.exist?(asset_json)
-                 JSON.parse(File.read(asset_json))
-               else
-                 { asset_id: task.id.to_s, status: task.status.to_s }
-               end
-        
-        data["verification"] = task.verification_results
-        File.write(asset_json, JSON.pretty_generate(data))
+      @mutex.synchronize do
+        task.outputs.each do |path, _type|
+          asset_json = "#{path}.asset.json"
+          data = if File.exist?(asset_json)
+                   JSON.parse(File.read(asset_json))
+                 else
+                   { asset_id: task.id.to_s, status: task.status.to_s }
+                 end
+          
+          data["verification"] = task.verification_results
+          File.write(asset_json, JSON.pretty_generate(data))
+        end
       end
     end
   end
