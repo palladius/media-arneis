@@ -17,7 +17,7 @@ To provide a deterministic, testable, and efficient framework for asynchronous m
 ## Key Features
 - **Template-Driven Creation:** Use prebaked YAML templates for "Kids Stories", "Video Projects", and "Comic Strips".
 - **Asynchronous Orchestration:** Parallel execution of media generation tasks (Text, Image, Audio, Video) with dependency management.
-- **Multimodal E2E Verification:** Optional `--verify` flag to trigger automated JSON schema validation and vision-based intent matching for generated artifacts.
+- **Multimodal E2E Verification & Evaluation:** Optional `--verify` and `--eval`/`--no-eval` flags to trigger automated JSON schema validation, vision-based intent matching, and quality grading for generated artifacts.
 - **Mock Abolition:** Support for "fail-fast" execution via `ARNEIS_NO_MOCK=true`, ensuring only real, high-fidelity artifacts are produced.
 - **`kubectl`-like Interface:** Familiar command-line interactions (e.g., `apply`, `status`, `feedback`, `stats`).
 - **Feedback Loop:** Interactive refinement of generated parts without destructive edits (archiving to `.trash`).
