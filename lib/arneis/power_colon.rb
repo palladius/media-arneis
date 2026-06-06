@@ -123,9 +123,13 @@ module Arneis
               puts Rainbow("  🤡 [MOCK] Copying cute placeholder image for slide #{idx + 1}...").yellow
               FileUtils.mkdir_p(File.dirname(image_output))
               
-              mock_src = (aspect_ratio == "3:4" || aspect_ratio == "4:3") ? 
-                           "assets/power-colon/images/mock/coming_soon_3x4.png" : 
+              mock_src = if aspect_ratio == "3:4"
+                           "assets/power-colon/images/mock/coming_soon_3x4.png"
+                         elsif aspect_ratio == "4:3"
+                           "assets/power-colon/images/mock/coming_soon_4x3.png"
+                         else
                            "assets/power-colon/images/mock/coming_soon_1x1.png"
+                         end
 
               if File.exist?(mock_src)
                 FileUtils.cp(mock_src, image_output)
