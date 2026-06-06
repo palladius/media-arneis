@@ -72,10 +72,10 @@ The template style itself governs the layout structure, rendering logic, and def
 ---
 
 ## 🎯 Acceptance Criteria
-- [ ] Implement `Arneis::Schema::PowerColonContract` in [schema.rb](file:///home/riccardo/git/media-arneis/lib/arneis/schema.rb) to validate the `PowerColon` YAML schema.
+- [ ] Implement `Arneis::Schema::PowerColonContract` in [schema.rb](file:///home/riccardo/git/media-arneis/lib/arneis/schema.rb) to validate the `PowerColon` YAML/JSON schema deterministically (verifying slide files existence, allowed layout styles, and valid aspect ratio structures).
 - [ ] Create parser and compiler class `Arneis::PowerColon` matching the layout template pattern.
 - [ ] Integrate into `arnectl apply` (via [orchestrator.rb](file:///home/riccardo/git/media-arneis/lib/arneis/orchestrator.rb) and [cli.rb](file:///home/riccardo/git/media-arneis/lib/arneis/cli.rb)) to handle `kind: PowerColon`.
 - [ ] Support `--dryrun` flag to output proposed actions/calls without hitting live APIs.
 - [ ] Export working HTML/CSS presentation structure to `out/power_colon/<project_name>/`.
 - [ ] Support `arnectl generate PowerColon --topic "<topic>"` to draft a complete presentation structure (YAML + Markdown files) under `data/presentations/`.
-- [ ] Unit tests verify correct structure parsing and page Markdown mapping.
+- [ ] Unit tests verify correct structure parsing, page Markdown mapping, and deterministic schema validation failures on incorrect inputs.
