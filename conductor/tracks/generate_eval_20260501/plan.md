@@ -1,10 +1,10 @@
 # Implementation Plan: `arnectl generate` with Evaluation Support
 
-## Phase 1: CLI Options & Basic Integration
+## Phase 1: CLI Options & Basic Integration [checkpoint: 1f4a2c4]
 - [x] Task: Add `--eval` and `--no-eval` flags to `arnectl generate` in `lib/arneis/cli.rb`.
 - [x] Task: Update `generate` command to pass the `verify` option to the project processor.
-- [ ] Task: Write unit tests to verify that flags are correctly parsed and passed.
-- [ ] Task: Conductor - User Manual Verification 'CLI Options & Basic Integration' (Protocol in workflow.md)
+- [x] Task: Write unit tests to verify that flags are correctly parsed and passed.
+- [x] Task: Conductor - User Manual Verification 'CLI Options & Basic Integration' (Protocol in workflow.md)
 
 ## Phase 2: Evaluation Orchestration
 - [x] Task: Integrate evaluation tasks into the `process` method of `CharacterImage`.
