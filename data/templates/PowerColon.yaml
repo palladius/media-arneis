@@ -1,0 +1,7 @@
+apiVersion: media-arneis.palladius.it/v1
+kind: PowerColon
+metadata:
+  name: PowerColon
+spec:
+  presentation_title: "A New Presentation"
+  slides: []
