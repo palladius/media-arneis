@@ -43,12 +43,14 @@ It integrates seamlessly with the existing `media-arneis` structure, processed v
 ### 4. AI-Driven Image Generation (Nano Banana)
 - When a slide style requires an image (e.g., `left_image`), the generator MUST automatically prompt **Nano Banana** to produce a contextually relevant image.
 - Prompt construction MUST combine the slide markdown text and character profile (if a `character_id` is supplied) to ensure consistency.
+- **API Throttling**: The generation tasks must use the `Arneis::Orchestrator`'s built-in semaphore (bounded by `Arneis::Config.max_concurrent_tasks`) to limit concurrent API calls and avoid rate-limiting errors or hammering the Nanobanana API.
 
 ### 5. Build & CLI Integration (`arnectl apply`)
 - Integrates directly into the existing `arnectl apply <yaml>` orchestration.
 - Output files must be saved under a dedicated subfolder `out/power_colon/<project_name>/`.
-- Must support automated building and re-entrant generation:
-  - Re-entrant compilation: Skip already generated assets if content/prompts have not changed.
+- **Parallel & Re-entrant Generation**:
+  - Image generation and compilation tasks MUST run in parallel using fiber-based concurrency to achieve fast deck creation (under a minute).
+  - Re-entrant compilation: Check if slide markdown or prompt has changed. If the target image already exists and prompt inputs are identical, skip generation to save time and API quota.
   - `--dryrun`: Enable checking what operations and API calls are required without triggering live calls.
 
 ### 6. Export Options
