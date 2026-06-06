@@ -71,6 +71,70 @@ RSpec.describe Arneis::Schema do
       result = described_class.validate_template(file.path)
       expect(result[:success]).to be true
     end
+
+    it "passes for a valid PowerColon" do
+      valid_power_colon = {
+        "apiVersion" => "media-arneis.palladius.it/v1",
+        "kind" => "PowerColon",
+        "metadata" => {"name" => "test-presentation"},
+        "spec" => {
+          "presentation_title" => "Openclaw vs Hermes",
+          "slides" => [
+            {
+              "file" => "data/presentations/slides/slide01.md",
+              "style" => "title_slide"
+            },
+            {
+              "file" => "data/presentations/slides/slide05.md",
+              "style" => "left_image",
+              "image" => {
+                "filename" => "slide05.png",
+                "aspect_ratio" => "4:3",
+                "prompt" => "A mechanical lobster vs a messenger god"
+              }
+            }
+          ]
+        }
+      }
+      
+      # Mock slide files existence for validation
+      allow(File).to receive(:exist?).with("data/presentations/slides/slide01.md").and_return(true)
+      allow(File).to receive(:exist?).with("data/presentations/slides/slide05.md").and_return(true)
+
+      file = Tempfile.new(["presentation", ".yaml"])
+      file.write(valid_power_colon.to_yaml)
+      file.close
+
+      result = described_class.validate_template(file.path)
+      expect(result[:success]).to be true
+    end
+
+    it "fails for a PowerColon with invalid style" do
+      invalid_power_colon = {
+        "apiVersion" => "media-arneis.palladius.it/v1",
+        "kind" => "PowerColon",
+        "metadata" => {"name" => "test-presentation"},
+        "spec" => {
+          "presentation_title" => "Openclaw vs Hermes",
+          "slides" => [
+            {
+              "file" => "data/presentations/slides/slide01.md",
+              "style" => "invalid_style"
+            }
+          ]
+        }
+      }
+
+      allow(File).to receive(:exist?).with("data/presentations/slides/slide01.md").and_return(true)
+
+      file = Tempfile.new(["presentation", ".yaml"])
+      file.write(invalid_power_colon.to_yaml)
+      file.close
+
+      result = described_class.validate_template(file.path)
+      expect(result[:success]).to be false
+      expect(result[:message]).to include("style")
+    end
   end
 end
 

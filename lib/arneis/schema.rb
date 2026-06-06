@@ -74,6 +74,41 @@ module Arneis
       end
     end
 
+    # Specific schema for PowerColon
+    class PowerColonContract < BaseContract
+      params(BaseContract.schema) do
+        required(:spec).hash do
+          required(:presentation_title).filled(:string)
+          required(:slides).array(:hash) do
+            required(:file).filled(:string)
+            required(:style).filled(:string, included_in?: ["title_slide", "chapter", "default", "left_image"])
+            optional(:image).hash do
+              optional(:filename).filled(:string)
+              optional(:aspect_ratio).filled(:string, format?: /^\d+:\d+$/)
+              optional(:prompt).filled(:string)
+            end
+          end
+        end
+      end
+
+      rule(:kind) do
+        unless value == "PowerColon"
+          key.failure("must be PowerColon")
+        end
+      end
+
+      rule(:spec) do
+        if value && value[:slides].is_a?(Array)
+          value[:slides].each_with_index do |slide, idx|
+            file_path = slide[:file]
+            if file_path && !File.exist?(file_path)
+              key([:spec, :slides, idx, :file]).failure("file does not exist: #{file_path}")
+            end
+          end
+        end
+      end
+    end
+
     def self.validate_template(yaml_path)
       data = YAML.load_file(yaml_path)
       # For now, identify contract by kind
@@ -97,6 +132,7 @@ module Arneis
       case kind
       when "VideoProject" then VideoProjectContract
       when "KidsStory" then KidsStoryContract
+      when "PowerColon" then PowerColonContract
       end
     end
 
