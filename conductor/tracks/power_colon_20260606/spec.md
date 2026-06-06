@@ -28,8 +28,7 @@ It integrates seamlessly with the existing `media-arneis` structure, processed v
   - `style`: The layout template name (e.g., `title_slide`, `chapter`, `default`, `left_image`).
   - `image`: (Optional) Hash specifying visual details:
     - `filename`: Explicit target image name (e.g., `slide05_illustration.png` or `image05.png`). If omitted, defaults to a standardized name derived from the slide file (e.g. `slide05.png`).
-    - `aspect_ratio`: The aspect ratio (e.g. `1:1`, `4:3`, `16:9`). Defaults to `1:1`.
-    - `placement`: Where the image is rendered relative to the content (e.g. `left`, `right`, `background`). Defaults to `left` (or matching the style default).
+    - `aspect_ratio`: The aspect ratio (e.g. `1:1`, `4:3`, `16:9`, `3:4`). Defaults to the template style's default aspect ratio.
     - `prompt`: (Optional) Custom text prompt to override or enhance the automatically generated prompt for the illustration.
 
 ### 2. Slide Content (Markdown)
@@ -40,10 +39,11 @@ It integrates seamlessly with the existing `media-arneis` structure, processed v
   - Inline images or custom tags specify target assets.
 
 ### 3. Predefined Slide Templates (Styles)
-- **`title_slide`**: Main presentation title and author metadata layout.
-- **`chapter`**: Visual slide with clean typography to introduce sections.
-- **`default`**: A classic title and bullet list format.
-- **`left_image`**: Split-screen layout featuring a vertical image on the left (2/3 width) and title/bullets on the right.
+The template style itself governs the layout structure, rendering logic, and default aspect ratio:
+- **`title_slide`**: Main presentation title and author metadata layout. No default image.
+- **`chapter`**: Visual slide with clean typography to introduce sections. No default image.
+- **`default`**: A classic title and bullet list format. No default image.
+- **`left_image`**: Split-screen layout featuring an image on the left and title/bullets on the right. Defaults to an aspect ratio of `3:4` (vertical layout, matching the left column width).
 
 ### 4. AI-Driven Image Generation (Nano Banana)
 - When a slide style requires an image (e.g., `left_image`), the generator MUST automatically prompt **Nano Banana** to produce a contextually relevant image.
