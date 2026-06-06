@@ -55,6 +55,13 @@ It integrates seamlessly with the existing `media-arneis` structure, processed v
 - **v0.1**: HTML/CSS Slideshow (Reveal.js or Marp style single page).
 - **v1.0**: Extend to PDF, Google Slides, and PowerPoint (`.pptx`).
 
+### 7. Ideation / Drafting Phase (Topic-to-Presentation)
+- Support drafting a complete presentation from a high-level topic (e.g. `"Openclaw vs Hermes"`).
+- A CLI command (e.g. `arnectl generate PowerColon --topic "Topic Name"`) will use Gemini to:
+  1. Generate the presentation YAML file.
+  2. Create separate Markdown files for each slide under `data/presentations/slides/`.
+- This allows a user to write their high-level presentation idea, get structured draft files, modify them, and compile them with `arnectl apply`.
+
 ---
 
 ## 🎯 Acceptance Criteria
@@ -63,4 +70,5 @@ It integrates seamlessly with the existing `media-arneis` structure, processed v
 - [ ] Integrate into `arnectl apply` (via [orchestrator.rb](file:///home/riccardo/git/media-arneis/lib/arneis/orchestrator.rb) and [cli.rb](file:///home/riccardo/git/media-arneis/lib/arneis/cli.rb)) to handle `kind: PowerColon`.
 - [ ] Support `--dryrun` flag to output proposed actions/calls without hitting live APIs.
 - [ ] Export working HTML/CSS presentation structure to `out/power_colon/<project_name>/`.
+- [ ] Support `arnectl generate PowerColon --topic "<topic>"` to draft a complete presentation structure (YAML + Markdown files) under `data/presentations/`.
 - [ ] Unit tests verify correct structure parsing and page Markdown mapping.

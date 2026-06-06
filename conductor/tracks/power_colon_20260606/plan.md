@@ -9,7 +9,8 @@
 ## Phase 2: Orchestration & CLI Integration [checkpoint: ]
 - [ ] Task: Integrate `PowerColon` into `Arneis::Orchestrator` apply loop
 - [ ] Task: Add dry-run support to only print proposed actions/API calls
-- [ ] Task: Write tests for cli integration with `--dryrun`
+- [ ] Task: Implement presentation drafting/ideation command `arnectl generate PowerColon --topic "<topic>"` using Gemini
+- [ ] Task: Write tests for cli integration, dry-run, and topic-based generation
 - [ ] Task: Conductor - User Manual Verification 'Orchestration & CLI Integration' (Protocol in workflow.md)
 
 ## Phase 3: Slide Generators & Export Formats [checkpoint: ]
