@@ -16,3 +16,4 @@
 .gemini/settings.json
 /worktree/
 .gemini/
+.DS_Store
