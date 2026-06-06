@@ -100,6 +100,7 @@ RSpec.describe Arneis::PowerColon do
       project.process(async: false)
 
       expect(File.exist?(File.join(output_dir, "presentation.html"))).to be true
+      expect(File.exist?(File.join(output_dir, "slides_export.json"))).to be true
       state = YAML.load_file(File.join(output_dir, ".state.yaml"))
       expect(state["status"]).to eq("done")
       expect(project.primary_artifact).to eq(File.join(output_dir, "presentation.html"))

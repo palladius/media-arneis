@@ -155,10 +155,15 @@ module Arneis
       orchestrator.add_task(assembly_id, dependencies: slide_task_ids, outputs: { File.join(@output_path, "presentation.html") => :text }) do
         puts Rainbow("📖 Assembling final HTML presentation...").magenta
         generate_html_presentation
+        generate_export_metadata
       end
 
       orchestrator.run
       update_status("done")
+    end
+
+    def primary_artifact
+      File.join(@output_path, "presentation.html")
     end
 
     private
@@ -229,6 +234,44 @@ module Arneis
 
       File.write(html_file, template)
       puts Rainbow("✅ Compiled HTML presentation saved to #{html_file}").green
+    end
+
+    def generate_export_metadata
+      export_file = File.join(@output_path, "slides_export.json")
+      slides_export = @slides.map.with_index do |slide, idx|
+        slide_title = "Slide #{idx + 1}"
+        slide_content = ""
+        
+        if File.exist?(slide["file"])
+          markdown_content = File.read(slide["file"])
+          if match = markdown_content.match(/^#\s+(.*)$/)
+            slide_title = match[1]
+          end
+          slide_content = markdown_content.gsub(/^#\s+.*$/, "").strip
+        end
+
+        image_config = slide["image"] || {}
+        target_filename = image_config["filename"] || "slide_#{sprintf('%02d', idx + 1)}_illustration.png"
+        image_path = File.join("assets", target_filename) if slide["style"] == "left_image" || slide["image"]
+
+        {
+          "index" => idx + 1,
+          "title" => slide_title,
+          "style" => slide["style"],
+          "content" => slide_content,
+          "image_path" => image_path,
+          "image_aspect_ratio" => image_config["aspect_ratio"]
+        }
+      end
+
+      data = {
+        "presentation_title" => @presentation_title,
+        "export_timestamp" => Time.now.iso8601,
+        "slides" => slides_export
+      }
+
+      File.write(export_file, JSON.pretty_generate(data))
+      puts Rainbow("✅ Exported presentation metadata to #{export_file}").green
     end
 
     def update_slide_status(slide_idx, status, error_msg = nil)
