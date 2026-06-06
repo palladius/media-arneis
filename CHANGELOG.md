@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2026-06-07
+
+### Added
+- 🧠 feat: Implement `--retry <run_id>` option in `arnectl generate` to retry failed generations using evaluation feedback and previous run images as multimodal context.
+- 📂 feat: Capture original CLI command execution dynamically in project state configuration metadata.
+- 🛡️ feat: Update orchestrator verification logic to display user-friendly retry hints on evaluation failure.
+- 🧪 test: Added unit tests for CLI retry options, FeedbackLoader parsing, and Orchestrator retry suggestions.
+
 ## [0.2.2] - 2026-06-06
 
 ### Added

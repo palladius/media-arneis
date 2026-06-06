@@ -62,25 +62,23 @@ module Arneis
 
         # 2. Find new runnable tasks (excluding those already polling)
         runnable = @tasks.values.reject { |t| @completed_tasks.include?(t.id) || @polling_tasks.key?(t.id) }
-                                 .select { |t| t.ready?(@completed_tasks) }
-        
+          .select { |t| t.ready?(@completed_tasks) }
+
         break if runnable.empty? && @polling_tasks.empty? # Stop if no runnable tasks and no polling tasks
 
         runnable.each do |task|
           task_result = task.execute # task.execute now returns a hash {status: ..., operation_id: ...}
-          
+
           if task_result && task_result[:status] == "polling"
             puts Rainbow("  🔵 Task #{task.id} is polling (Operation: #{task_result[:operation_id]})...").blue
             task.status = :polling # Set task status to polling
             task.operation_id = task_result[:operation_id] # Store operation_id
             @polling_tasks[task.id] = task # Add task object to polling_tasks
-          else
-            if task.status == :done
-              verify_task(task) if @verify && task.status == :done
-              @completed_tasks << task.id
-            elsif task.status == :failed
-              @completed_tasks << task.id
-            end
+          elsif task.status == :done
+            verify_task(task) if @verify && task.status == :done
+            @completed_tasks << task.id
+          elsif task.status == :failed
+            @completed_tasks << task.id
           end
         end
 
@@ -127,7 +125,7 @@ module Arneis
           # 2. Find new runnable tasks (excluding those already polling or completed)
           scheduled_ids = task_fibers.keys
           runnable = @tasks.values.reject { |t| @completed_tasks.include?(t.id) || scheduled_ids.include?(t.id) || @polling_tasks.key?(t.id) }
-                                   .select { |t| t.ready?(@completed_tasks) }
+            .select { |t| t.ready?(@completed_tasks) }
 
           runnable.each do |task|
             task_fibers[task.id] = parent.async do
@@ -150,7 +148,7 @@ module Arneis
 
           # Clean up finished execution fibers (not polling ones)
           task_fibers.delete_if { |id, fiber| @completed_tasks.include?(id) }
-          
+
           # 3. Check termination condition
           # All tasks are either completed or failed, and no tasks are currently executing or polling
           all_tasks_finished = @tasks.values.all? { |t| @completed_tasks.include?(t.id) }
@@ -172,7 +170,7 @@ module Arneis
 
     def verify_task(task)
       puts Rainbow("  🛡️  [VERIFY] Verifying task #{task.id}...").cyan
-      
+
       begin
         # 1. Basic Asset Check
         v_result = Validator.verify_assets(task)
@@ -180,6 +178,7 @@ module Arneis
         unless v_result[:success]
           task.fail_verification(v_result[:message])
           save_verification_metadata(task)
+          print_retry_hint(task)
           return
         end
 
@@ -191,7 +190,7 @@ module Arneis
         end
 
         @evaluator ||= Evaluator.new
-        
+
         # 2. JSON/Logic Check (Tier 1)
         task.outputs.each do |path, type|
           if type == :json && File.exist?(path)
@@ -200,6 +199,7 @@ module Arneis
             unless j_result[:success]
               task.fail_verification("JSON Logic Error: #{j_result[:message]}")
               save_verification_metadata(task)
+              print_retry_hint(task)
               return
             end
           end
@@ -214,6 +214,7 @@ module Arneis
               unless m_result[:success]
                 task.fail_verification("Intent Mismatch: #{m_result[:message]}")
                 save_verification_metadata(task)
+                print_retry_hint(task)
                 return
               end
             end
@@ -229,16 +230,46 @@ module Arneis
       end
     end
 
+    def print_retry_hint(task)
+      first_output = task.outputs.keys.first
+      return unless first_output
+
+      parts = first_output.split("/")
+      out_idx = parts.index("out")
+      run_id = if out_idx && parts[out_idx + 1]
+        parts[out_idx + 1]
+      else
+        parts.first
+      end
+
+      run_dir = out_idx ? File.join("out", run_id) : run_id
+      if Dir.exist?(run_dir)
+        yamls = Dir.glob(File.join(run_dir, "*.yaml")).reject { |f| File.basename(f) == ".state.yaml" }
+        kind = nil
+        unless yamls.empty?
+          begin
+            spec_data = YAML.load_file(yamls.first)
+            kind = spec_data["kind"]
+          rescue
+          end
+        end
+        kind ||= "CharacterImage"
+
+        puts Rainbow("\nTo retry with eval feedback, run:").yellow +
+          Rainbow(" arnectl generate #{kind} --retry #{run_id}").cyan
+      end
+    end
+
     def save_verification_metadata(task)
       @mutex.synchronize do
         task.outputs.each do |path, _type|
           asset_json = "#{path}.asset.json"
           data = if File.exist?(asset_json)
-                   JSON.parse(File.read(asset_json))
-                 else
-                   { asset_id: task.id.to_s, status: task.status.to_s }
-                 end
-          
+            JSON.parse(File.read(asset_json))
+          else
+            {asset_id: task.id.to_s, status: task.status.to_s}
+          end
+
           data["verification"] = task.verification_results
           File.write(asset_json, JSON.pretty_generate(data))
         end

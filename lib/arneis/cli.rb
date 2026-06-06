@@ -41,14 +41,14 @@ module Arneis
         return
       end
       puts Rainbow("🎨 Applying #{yaml_path}...").green
-      
+
       Config.dryrun = options[:dryrun]
       output_path = options[:media_folder] || options[:output] || "out/#{Time.now.strftime("%Y%m%d_%H%M%S")}_#{File.basename(yaml_path, ".*")}"
       if options[:force_clean] && Dir.exist?(output_path)
         puts Rainbow("  🔥 Deleting existing output directory due to --force flag: #{output_path}").yellow
         FileUtils.rm_rf(output_path)
       end
-      
+
       project = Arneis.load_project(yaml_path)
       project.initialize_output(output_path)
       puts Rainbow("🚀 Project initialized at #{output_path}").blue
@@ -78,18 +78,49 @@ module Arneis
     def generate(kind)
       puts Rainbow("🚀 Generating #{kind} ad-hoc...").green
 
-      eval_flag = options[:eval].nil? ? true : !!options[:eval]
+      eval_flag = options[:eval].nil? || !!options[:eval]
       verify_flag = eval_flag ? true : (options[:verify] || false)
       self.options = options.merge(verify: verify_flag, eval: eval_flag)
+
+      if options[:retry]
+        run_id = options[:retry]
+        folder_path = run_id
+        unless Dir.exist?(folder_path)
+          folder_path = File.join("out", run_id)
+        end
+        unless Dir.exist?(folder_path)
+          raise "Run directory not found: #{run_id}"
+        end
+
+        feedback = FeedbackLoader.load(folder_path)
+        yamls = Dir.glob(File.join(folder_path, "*.yaml")).reject { |f| File.basename(f) == ".state.yaml" }
+        if yamls.empty?
+          raise "No specification YAML found in run directory: #{folder_path}"
+        end
+        original_spec_path = yamls.first
+        spec_data = YAML.load_file(original_spec_path)
+
+        spec_data["spec"] ||= {}
+        spec_data["spec"]["feedback"] = feedback.transform_keys(&:to_s)
+
+        temp_yaml = "tmp_retry_#{Time.now.to_i}.yaml"
+        File.write(temp_yaml, spec_data.to_yaml)
+        begin
+          apply(temp_yaml)
+        ensure
+          FileUtils.rm(temp_yaml) if File.exist?(temp_yaml)
+        end
+        return
+      end
 
       if kind == "PowerColon" && options[:topic]
         # 1. Ideation / Drafting Phase
         topic = options[:topic]
         num_slides = options[:slides] || 5
         is_fun = options[:fun]
-        
+
         puts Rainbow("🧠 [GEMINI] Ideating slide deck on: '#{topic}' (#{num_slides} slides, fun: #{is_fun})...").magenta
-        
+
         gemini = Generator::Gemini.new
         prompt = <<-PROMPT
         You are an expert presentation designer. Create a slide deck outline on the topic: "#{topic}" with exactly #{num_slides} slides.
@@ -122,10 +153,10 @@ module Arneis
           ]
         }
         PROMPT
-        
+
         resp = gemini.generate(prompt)
         # Parse JSON
-        clean_content = resp[:content].gsub(/```json/, "").gsub(/```/, "").strip
+        clean_content = resp[:content].gsub("```json", "").gsub("```", "").strip
         begin
           idea = JSON.parse(clean_content)
         rescue => e
@@ -138,23 +169,23 @@ module Arneis
         topic_slug = topic.downcase.gsub(/[^a-z0-9]+/, "_").gsub(/(^_+|_+$)/, "")
         slides_dir = "data/presentations/slides/#{topic_slug}"
         FileUtils.mkdir_p(slides_dir)
-        
+
         yaml_slides = []
         idea["slides"].each_with_index do |slide, idx|
-          slide_file_name = "slide_#{sprintf('%02d', idx + 1)}.md"
+          slide_file_name = "slide_#{sprintf("%02d", idx + 1)}.md"
           slide_file_path = File.join(slides_dir, slide_file_name)
-          
+
           # Write slide markdown
-          markdown = "# #{slide['title']}\n#{slide['content']}"
+          markdown = "# #{slide["title"]}\n#{slide["content"]}"
           File.write(slide_file_path, markdown)
-          
+
           slide_entry = {
             "file" => slide_file_path,
             "style" => slide["style"]
           }
           if slide["image"]
             slide_entry["image"] = {
-              "filename" => "slide_#{sprintf('%02d', idx + 1)}_illustration.png",
+              "filename" => "slide_#{sprintf("%02d", idx + 1)}_illustration.png",
               "aspect_ratio" => slide["image"]["aspect_ratio"] || "3:4",
               "prompt" => slide["image"]["prompt"]
             }
@@ -174,21 +205,21 @@ module Arneis
             "slides" => yaml_slides
           }
         }
-        
+
         yaml_path = "data/presentations/#{topic_slug}.yaml"
         FileUtils.mkdir_p("data/presentations")
         File.write(yaml_path, yaml_data.to_yaml)
-        
+
         puts Rainbow("✨ Ideated slides drafted!").green
         puts "  - YAML config: #{yaml_path}"
         puts "  - Slide files in: #{slides_dir}/"
         puts "\nPress enter to compile this presentation (or Ctrl+C to cancel and edit draft first):"
-        
+
         # In test / non-interactive mode, we proceed automatically
         unless ENV["RSPEC_RUNNING"]
           $stdin.gets
         end
-        
+
         apply(yaml_path)
         return
       end
@@ -198,7 +229,7 @@ module Arneis
       data = {
         "apiVersion" => "media-arneis.palladius.it/v1",
         "kind" => kind,
-        "metadata" => { "name" => "adhoc-gen", "template" => kind },
+        "metadata" => {"name" => "adhoc-gen", "template" => kind},
         "spec" => {
           "project_title" => options[:title] || "Ad-hoc #{kind}",
           "characters" => (options[:characters] || "").split(","),
@@ -358,7 +389,7 @@ module Arneis
         puts "💡 Hint: Use 'arnectl redo' to reset tasks with low evaluation scores."
       end
     end
-    
+
     desc "resume [FOLDER_PATH]", "Resume a media project from its state file"
     method_option :force, type: :boolean, aliases: "-f", desc: "Force retry of failed or mocked tasks"
     def resume(folder_path = nil)
@@ -388,15 +419,13 @@ module Arneis
           if state["slides"]
             has_image = item["style"] == "left_image" || item["image"]
             if has_image
-              target_filename = item.dig("image", "filename") || "slide_#{sprintf('%02d', idx + 1)}_illustration.png"
+              target_filename = item.dig("image", "filename") || "slide_#{sprintf("%02d", idx + 1)}_illustration.png"
               artifact_file = File.join(folder_path, "assets", target_filename)
               if %w[failed done_with_warnings in_progress].include?(item["status"]) || !File.exist?(artifact_file) || File.exist?("#{artifact_file}.mock")
                 item["status"] = "pending"
               end
-            else
-              if %w[failed done_with_warnings in_progress].include?(item["status"])
-                item["status"] = "pending"
-              end
+            elsif %w[failed done_with_warnings in_progress].include?(item["status"])
+              item["status"] = "pending"
             end
           else
             num = item["scene"] || item["page"]
@@ -460,7 +489,7 @@ module Arneis
       state_file = File.join(folder_path, ".state.yaml")
       state = YAML.load_file(state_file)
       items = state["scenes"] || state["pages"] || []
-      
+
       reset_count = 0
 
       items.each do |item|
@@ -476,10 +505,10 @@ module Arneis
           score = char_evals.map { |k| asset_data.dig(k, "score") }.compact.min || 10
           if score <= options[:threshold]
             puts Rainbow("  🎯 Resetting Task #{num} (Score: #{score})").yellow
-            
+
             trash_dir = File.join(folder_path, ".trash", "redo_#{Time.now.strftime("%Y%m%d_%H%M%S")}")
             FileUtils.mkdir_p(trash_dir)
-            
+
             [artifact_file, asset_json, "#{artifact_file}.mock"].each do |f|
               if File.exist?(f)
                 FileUtils.mv(f, File.join(trash_dir, File.basename(f)))

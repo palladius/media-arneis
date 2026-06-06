@@ -37,4 +37,30 @@ RSpec.describe Arneis::Orchestrator do
 
     expect(completed).to include(:task_a, :task_b)
   end
+
+  describe "verification failures and retry hints" do
+    let(:orchestrator) { described_class.new(verify: true) }
+
+    it "prints a retry hint pointing to the run folder and kind when verification fails" do
+      orchestrator.add_task(:test_task, outputs: {"out/run_456/image.png" => :image}) do
+        # Do nothing, just succeed execution so verification gets triggered
+      end
+
+      allow(Arneis::Validator).to receive(:verify_assets).and_return({success: false, message: "Missing image"})
+
+      allow(Dir).to receive(:exist?).with("out/run_456").and_return(true)
+      allow(Dir).to receive(:glob).with("out/run_456/*.yaml").and_return(["out/run_456/spec.yaml"])
+
+      mock_spec = {
+        "kind" => "KidsStory"
+      }
+      allow(YAML).to receive(:load_file).with("out/run_456/spec.yaml").and_return(mock_spec)
+      allow(File).to receive(:write) # prevent actually writing asset.json
+
+      expect { orchestrator.run }.to output(
+        a_string_including("To retry with eval feedback, run:")
+        .and(a_string_including("arnectl generate KidsStory --retry run_456"))
+      ).to_stdout
+    end
+  end
 end

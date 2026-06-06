@@ -51,7 +51,8 @@ module Arneis
       # Create initial state file
       state_file = File.join(output_path, ".state.yaml")
       state = {
-        "project_title" => @project_title,
+        "original_command" => "arnectl " + ARGV.join(" "),
+        "prompt" => @prompt,
         "status" => "initialized",
         "characters" => @character_ids,
         "image" => {"status" => "pending", "prompt" => @prompt}
@@ -89,7 +90,22 @@ module Arneis
         PROMPT
 
         prompt_to_enhance = "SCENARIO: #{@prompt}\n\nCHARACTER DEFINITIONS:\n#{char_contexts}"
-        enhancement = gemini_generator.generate(prompt_to_enhance, system_instruction: system_instruction)
+        feedback_images = []
+
+        if @data["feedback"]
+          fb = @data["feedback"]
+          prompt_to_enhance += "\n\n=== RETRY FEEDBACK ==="
+          prompt_to_enhance += "\nOriginal Command: #{fb["original_command"]}" if fb["original_command"]
+          if fb["eval_errors"] && !fb["eval_errors"].empty?
+            prompt_to_enhance += "\nEvaluation Errors/Issues from previous attempt:\n- " + fb["eval_errors"].join("\n- ")
+          end
+          prompt_to_enhance += "\nTake the previous image and these errors into account to modify the description and correct the errors."
+          if fb["previous_image"] && File.exist?(fb["previous_image"])
+            feedback_images << fb["previous_image"]
+          end
+        end
+
+        enhancement = gemini_generator.generate(prompt_to_enhance, system_instruction: system_instruction, images: feedback_images)
         enhanced_prompt = enhancement[:content]
         File.write(File.join(@output_path, "prompt.txt"), enhanced_prompt)
 

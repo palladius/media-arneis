@@ -1,0 +1,10 @@
+apiVersion: media-arneis.palladius.it/v1
+kind: CharacterImage
+metadata:
+  name: ale-seby-1780293296
+  template: CharacterImage
+spec:
+  project_title: "Ale and Seby full of presents and Hot Wheels buildings"
+  characters: ["alessandro", "sebastian"]
+  prompt: "An epic, highly detailed, chaotic and colorful bedroom filled to the brim with colorful gift boxes, wrapped presents, and huge, elaborate Hot Wheels tracks, looping orange tracks, and giant Hot Wheels buildings (such as garages, city structures, and service stations, and big toy playsets - NOT toy cars, but the massive building sets). Two kids, Alessandro (Ale) and Sebastian (Seby), are sitting happily in the middle of this festive chaos, surrounded by and holding gifts. The style is PHOTOREALISTIC, CINEMATIC, and highly detailed. The characters' faces MUST be clearly visible, recognizable, and highly resembling the reference photos. The characters must NOT have their faces covered or masked."
+  aspect_ratio: "16:9"

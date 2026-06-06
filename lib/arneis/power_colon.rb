@@ -64,6 +64,7 @@ module Arneis
       # Create initial state file
       state_file = File.join(output_path, ".state.yaml")
       state = {
+        "original_command" => "arnectl " + ARGV.join(" "),
         "presentation_title" => @presentation_title,
         "status" => "initialized",
         "slides" => @slides.map { |s| s.merge("status" => "pending") }
