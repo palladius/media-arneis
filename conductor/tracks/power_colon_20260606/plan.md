@@ -1,7 +1,7 @@
 # Implementation Plan: Power:Colon - A Presentation Maker
 
 ## Phase 1: Schema & Core Domain [checkpoint: ]
-- [ ] Task: Define and implement `Arneis::Schema::PowerColonContract` for YAML validation
+- [x] Task: Define and implement `Arneis::Schema::PowerColonContract` for YAML validation [x] fe4d7bf
 - [ ] Task: Create `Arneis::PowerColon` domain model for parsing YAML and Markdown slides
 - [ ] Task: Implement unit tests verifying contract validation and parsing
 - [ ] Task: Conductor - User Manual Verification 'Schema & Core Domain' (Protocol in workflow.md)
