@@ -15,11 +15,11 @@
 - [x] Task: Conductor - User Manual Verification 'Evaluation Orchestration' (Protocol in workflow.md)
 
 
-## Phase 3: Fail-Fast & Persistence
+## Phase 3: Fail-Fast & Persistence [checkpoint: 50abc50]
 - [x] Task: Implement a check in `Arneis::Cli` to exit non-zero if any evaluation fails or has a low score.
 - [x] Task: Ensure evaluation results are correctly saved in `.asset.json` files for ad-hoc generations.
 - [x] Task: Update `status` command to highlight failed evaluations for ad-hoc projects.
 - [x] Task: Write E2E tests for the full `generate --eval` flow.
-- [ ] Task: Conductor - User Manual Verification 'Fail-Fast & Persistence' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Fail-Fast & Persistence' (Protocol in workflow.md)
 
 
