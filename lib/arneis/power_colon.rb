@@ -71,7 +71,7 @@ module Arneis
       File.write(state_file, state.to_yaml)
     end
 
-    def process(async: true, verify: false, dryrun: false)
+    def process(async: true, verify: false, dryrun: false, eval: true)
       if dryrun
         puts Rainbow("🌵 [DRYRUN] Validation complete. Running orchestration with MOCKS...").yellow
       else
@@ -92,7 +92,7 @@ module Arneis
         end
       end
 
-      orchestrator = Orchestrator.new(async: async, pre_completed: pre_completed, verify: verify)
+      orchestrator = Orchestrator.new(async: async, pre_completed: pre_completed, verify: verify, eval: eval)
       imagen_generator = Generator::Imagen.new
       slide_task_ids = []
 

@@ -59,14 +59,14 @@ module Arneis
       File.write(state_file, state.to_yaml)
     end
 
-    def process(async: true, verify: false, dryrun: false)
+    def process(async: true, verify: false, dryrun: false, eval: true)
       if dryrun
         puts Rainbow("🌵 [DRYRUN] Validation complete. Skipping orchestration...").yellow
         return
       end
       update_status("in_progress")
 
-      orchestrator = Orchestrator.new(async: async, verify: verify)
+      orchestrator = Orchestrator.new(async: async, verify: verify, eval: eval)
       gemini_generator = Generator::Gemini.new
       imagen_generator = Generator::Imagen.new
 

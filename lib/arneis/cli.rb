@@ -14,6 +14,7 @@ module Arneis
   class Cli < Thor
     class_option :async, type: :boolean, default: true, desc: "Run media generation asynchronously using Fibers"
     class_option :media_folder, type: :string, aliases: "-f", desc: "Explicitly set the media folder"
+    class_option :eval, type: :boolean, default: true, desc: "Enable evaluations"
 
     def initialize(*args)
       super
@@ -53,7 +54,8 @@ module Arneis
       puts Rainbow("🚀 Project initialized at #{output_path}").blue
 
       puts Rainbow("⚙️ Starting orchestration...").magenta
-      project.process(async: options[:async], verify: options[:verify], dryrun: options[:dryrun])
+      eval_flag = Config.eval_enabled?(options)
+      project.process(async: options[:async], verify: options[:verify], dryrun: options[:dryrun], eval: eval_flag)
       puts Rainbow("✅ Generation complete!").green
 
       if options[:open] && !options[:dryrun]
@@ -75,6 +77,10 @@ module Arneis
     method_option :fun, type: :boolean, default: false, desc: "Make PowerColon presentation fun"
     def generate(kind)
       puts Rainbow("🚀 Generating #{kind} ad-hoc...").green
+
+      eval_flag = options[:eval].nil? ? true : !!options[:eval]
+      verify_flag = eval_flag ? true : (options[:verify] || false)
+      self.options = options.merge(verify: verify_flag, eval: eval_flag)
 
       if kind == "PowerColon" && options[:topic]
         # 1. Ideation / Drafting Phase
