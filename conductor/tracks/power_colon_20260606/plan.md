@@ -13,9 +13,9 @@
 - [x] Task: Write tests for cli integration, dry-run, and topic-based generation [x] 69d02dc
 - [x] Task: Conductor - User Manual Verification 'Orchestration & CLI Integration' (Protocol in workflow.md) [x] 69d02dc
 
-## Phase 3: Slide Generators & Export Formats [checkpoint: ]
-- [ ] Task: Implement HTML/CSS slideshow generator using Marp/Reveal.js layout patterns
-- [ ] Task: Integrate Nano Banana for generating context-aware slide illustrations
-- [ ] Task: Add basic PowerPoint/Google Slides metadata export
-- [ ] Task: E2E and unit tests for presentation compilation
-- [ ] Task: Conductor - User Manual Verification 'Slide Generators & Export Formats' (Protocol in workflow.md)
+## Phase 3: Slide Generators & Export Formats [checkpoint: 222061b]
+- [x] Task: Implement HTML/CSS slideshow generator using Marp/Reveal.js layout patterns [x] 222061b
+- [x] Task: Integrate Nano Banana for generating context-aware slide illustrations [x] 222061b
+- [x] Task: Add basic PowerPoint/Google Slides metadata export [x] 222061b
+- [x] Task: E2E and unit tests for presentation compilation [x] 222061b
+- [x] Task: Conductor - User Manual Verification 'Slide Generators & Export Formats' (Protocol in workflow.md) [x] 222061b
