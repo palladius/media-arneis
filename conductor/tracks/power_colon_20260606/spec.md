@@ -26,6 +26,10 @@ It integrates seamlessly with the existing `media-arneis` structure, processed v
 - Slide entries MUST define:
   - `file`: Path to the Markdown file containing the slide content (stored under `data/presentations/slides/`).
   - `style`: The layout template name (e.g., `title_slide`, `chapter`, `default`, `left_image`).
+  - `image`: (Optional) Hash specifying visual details:
+    - `filename`: Explicit target image name (e.g., `slide05_illustration.png` or `image05.png`). If omitted, defaults to a standardized name derived from the slide file (e.g. `slide05.png`).
+    - `aspect_ratio`: The aspect ratio (e.g. `1:1`, `4:3`, `16:9`). Defaults to `1:1`.
+    - `placement`: Where the image is rendered relative to the content (e.g. `left`, `right`, `background`). Defaults to `left` (or matching the style default).
 
 ### 2. Slide Content (Markdown)
 - Slide content MUST live in plain Markdown files referenced by the YAML, placed under `data/presentations/slides/`.
