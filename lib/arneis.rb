@@ -1,7 +1,7 @@
 # Arneis (Media Harness) - Core module.
 
 module Arneis
-  VERSION = "0.1.8"
+  VERSION = "0.2.0"
 
   def self.load_project(yaml_path)
     data = YAML.load_file(yaml_path)
@@ -29,6 +29,7 @@ require_relative "arneis/orchestrator"
 require_relative "arneis/character"
 require_relative "arneis/video_project"
 require_relative "arneis/kids_story"
+require_relative "arneis/power_colon"
 require_relative "arneis/visualizer"
 require_relative "arneis/generator/base"
 require_relative "arneis/generator/gemini"

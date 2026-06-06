@@ -1,0 +1,15 @@
+apiVersion: media-arneis.palladius.it/v1
+kind: PowerColon
+metadata:
+  name: mock-presentation
+  template: PowerColon
+spec:
+  presentation_title: "Openclaw vs Hermes"
+  slides:
+    - file: "data/presentations/slides/mock/slide01.md"
+      style: "title_slide"
+    - file: "data/presentations/slides/mock/slide02.md"
+      style: "left_image"
+      image:
+        aspect_ratio: "3:4"
+        prompt: "A mechanical lobster (Openclaw) standing next to a winged messenger god (Hermes)"
