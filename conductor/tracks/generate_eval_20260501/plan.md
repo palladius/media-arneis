@@ -6,13 +6,13 @@
 - [x] Task: Write unit tests to verify that flags are correctly parsed and passed.
 - [x] Task: Conductor - User Manual Verification 'CLI Options & Basic Integration' (Protocol in workflow.md)
 
-## Phase 2: Evaluation Orchestration
+## Phase 2: Evaluation Orchestration [checkpoint: 2a51bc7]
 - [x] Task: Integrate evaluation tasks into the `process` method of `CharacterImage`.
 - [x] Task: Implement "Prompt Matching" evaluation in `Arneis::Evaluator`.
 - [x] Task: Implement "Text Quality" evaluation in `Arneis::Evaluator`.
 - [x] Task: Ensure evaluation tasks depend on the generation task finishing first.
 - [x] Task: Write unit tests for the updated orchestration logic.
-- [ ] Task: Conductor - User Manual Verification 'Evaluation Orchestration' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Evaluation Orchestration' (Protocol in workflow.md)
 
 
 ## Phase 3: Fail-Fast & Persistence
