@@ -46,6 +46,11 @@ module Arneis
       @metadata = full_data["metadata"]
       @presentation_title = @data["presentation_title"]
       @slides = @data["slides"]
+      
+      if @slides.nil? || @slides.empty?
+        ideate_slides!
+      end
+      
       @mutex = Thread::Mutex.new
     end
 
@@ -108,7 +113,15 @@ module Arneis
         image_output = File.join(@output_path, "assets", target_filename)
 
         outputs = has_image ? { image_output => :image } : {}
-        intent_prompt = image_config["prompt"] || slide["file"]
+        slide_title = slide["title"] || "Slide #{idx + 1}"
+        if slide["file"] && File.exist?(slide["file"])
+          markdown_content = File.read(slide["file"])
+          if match = markdown_content.match(/^#\s+(.*)$/)
+            slide_title = match[1]
+          end
+        end
+
+        intent_prompt = image_config["prompt"] || slide["file"] || slide_title
 
         orchestrator.add_task(slide_id, outputs: outputs, intent_prompt: intent_prompt) do
           update_slide_status(idx, "in_progress")
@@ -116,7 +129,7 @@ module Arneis
           if has_image
             # Run image generation
             aspect_ratio = image_config["aspect_ratio"] || "3:4"
-            prompt = image_config["prompt"] || "Illustration for slide: #{File.basename(slide['file'], '.*')}"
+            prompt = image_config["prompt"] || (slide["file"] ? "Illustration for slide: #{File.basename(slide['file'], '.*')}" : "Illustration for slide: #{slide_title}")
 
             # Check for dryrun or mock mode
             if dryrun || !Config.no_mock?
@@ -176,10 +189,10 @@ module Arneis
       html_file = File.join(@output_path, "presentation.html")
       
       slides_html = @slides.map.with_index do |slide, idx|
-        slide_title = "Slide #{idx + 1}"
-        slide_content = ""
+        slide_title = slide["title"] || "Slide #{idx + 1}"
+        slide_content = slide["content"] || ""
         
-        if File.exist?(slide["file"])
+        if slide["file"] && File.exist?(slide["file"])
           markdown_content = File.read(slide["file"])
           if match = markdown_content.match(/^#\s+(.*)$/)
             slide_title = match[1]
@@ -243,10 +256,10 @@ module Arneis
     def generate_export_metadata
       export_file = File.join(@output_path, "slides_export.json")
       slides_export = @slides.map.with_index do |slide, idx|
-        slide_title = "Slide #{idx + 1}"
-        slide_content = ""
+        slide_title = slide["title"] || "Slide #{idx + 1}"
+        slide_content = slide["content"] || ""
         
-        if File.exist?(slide["file"])
+        if slide["file"] && File.exist?(slide["file"])
           markdown_content = File.read(slide["file"])
           if match = markdown_content.match(/^#\s+(.*)$/)
             slide_title = match[1]
@@ -298,6 +311,84 @@ module Arneis
         state["status"] = status
         File.write(state_file, state.to_yaml)
       end
+    end
+
+    def ideate_slides!
+      topic = @data["topic"] || @presentation_title
+      num_slides = @data["slides_count"] || 5
+      is_fun = @data["fun"] || false
+
+      puts Rainbow("🧠 [GEMINI] Running inline ideation for topic: '#{topic}'...").magenta
+
+      idea = nil
+      if Config.dryrun?
+        idea = {
+          "presentation_title" => topic,
+          "slides" => (1..num_slides).map do |i|
+            style = (i == 1) ? "title_slide" : ((i == 2) ? "left_image" : "default")
+            {
+              "style" => style,
+              "title" => "Slide #{i} Title",
+              "content" => "- Bullet 1\n- Bullet 2",
+              "image" => style == "left_image" ? { "prompt" => "Illustration", "aspect_ratio" => "3:4" } : nil
+            }
+          end
+        }
+      else
+        gemini = Generator::Gemini.new
+        prompt = <<~PROMPT
+          You are an expert presentation designer. Create a slide deck outline on the topic: "#{topic}" with exactly #{num_slides} slides.
+          The tone should be #{is_fun ? "fun, humorous, and engaging" : "professional and informative"}.
+
+          For each slide, specify:
+          1. Title
+          2. Style (must be one of: 'title_slide', 'chapter', 'default', 'left_image')
+          3. Markdown content (bullet points, etc.)
+          4. Optional image details (prompt, aspect_ratio e.g. 3:4 if style is left_image)
+
+          Output the response strictly as a JSON object of this structure (raw JSON text, NO markdown formatting block around it):
+          {
+            "presentation_title": "Title of presentation",
+            "slides": [
+              {
+                "style": "title_slide",
+                "title": "Title",
+                "content": "Subtitle or content"
+              },
+              {
+                "style": "left_image",
+                "title": "Title",
+                "content": "- Bullet point 1\\n- Bullet point 2",
+                "image": {
+                  "prompt": "Description of image",
+                  "aspect_ratio": "3:4"
+                }
+              }
+            ]
+          }
+        PROMPT
+
+        resp = gemini.generate(prompt)
+        clean_content = resp[:content].gsub(/```json/, "").gsub(/```/, "").strip
+        begin
+          idea = JSON.parse(clean_content)
+        rescue => e
+          puts Rainbow("❌ Failed to parse Gemini response inside PowerColon ideation: #{e.message}").red
+          # Fallback
+          idea = {
+            "presentation_title" => topic,
+            "slides" => [
+              { "style" => "title_slide", "title" => topic, "content" => "Failed to ideate" }
+            ]
+          }
+        end
+      end
+
+      @slides = idea["slides"]&.map do |slide|
+        s = {}
+        slide.each { |k, v| s[k.to_s] = v }
+        s
+      end || []
     end
   end
 end

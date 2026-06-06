@@ -65,6 +65,81 @@ RSpec.describe Arneis::PowerColon do
       expect(project.slides.size).to eq(2)
       expect(project.slides.first["style"]).to eq("title_slide")
     end
+
+    context "with a grounded presentation (inline title and content)" do
+      let(:grounded_yaml_content) do
+        {
+          "apiVersion" => "media-arneis.palladius.it/v1",
+          "kind" => "PowerColon",
+          "metadata" => {
+            "name" => "grounded-pres",
+            "template" => "PowerColon"
+          },
+          "spec" => {
+            "presentation_title" => "Grounded Deck",
+            "slides" => [
+              {
+                "title" => "Slide 1 Title",
+                "content" => "- Point A\n- Point B",
+                "style" => "default"
+              }
+            ]
+          }
+        }.to_yaml
+      end
+
+      let(:temp_grounded_yaml) do
+        file = Tempfile.new(["grounded", ".yaml"])
+        file.write(grounded_yaml_content)
+        file.close
+        file
+      end
+
+      after { temp_grounded_yaml.unlink }
+
+      it "successfully parses without requiring external slide markdown files" do
+        project = described_class.new(temp_grounded_yaml.path)
+        expect(project.presentation_title).to eq("Grounded Deck")
+        expect(project.slides.size).to eq(1)
+        expect(project.slides.first["title"]).to eq("Slide 1 Title")
+        expect(project.slides.first["content"]).to eq("- Point A\n- Point B")
+      end
+    end
+
+    context "with an ideation presentation (topic-based, no slides array)" do
+      let(:ideation_yaml_content) do
+        {
+          "apiVersion" => "media-arneis.palladius.it/v1",
+          "kind" => "PowerColon",
+          "metadata" => {
+            "name" => "ideation-pres",
+            "template" => "PowerColon"
+          },
+          "spec" => {
+            "presentation_title" => "Ideation Deck",
+            "topic" => "Agentic AI workflows",
+            "slides_count" => 3
+          }
+        }.to_yaml
+      end
+
+      let(:temp_ideation_yaml) do
+        file = Tempfile.new(["ideation", ".yaml"])
+        file.write(ideation_yaml_content)
+        file.close
+        file
+      end
+
+      after { temp_ideation_yaml.unlink }
+
+      it "runs inline ideation in dry-run mode and populates slides" do
+        allow(Arneis::Config).to receive(:dryrun?).and_return(true)
+        project = described_class.new(temp_ideation_yaml.path)
+        expect(project.presentation_title).to eq("Ideation Deck")
+        expect(project.slides.size).to eq(3)
+        expect(project.slides.first["title"]).to eq("Slide 1 Title")
+      end
+    end
   end
 
   describe "#initialize_output" do

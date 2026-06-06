@@ -79,8 +79,13 @@ module Arneis
       params(BaseContract.schema) do
         required(:spec).hash do
           required(:presentation_title).filled(:string)
-          required(:slides).array(:hash) do
-            required(:file).filled(:string)
+          optional(:topic).maybe(:string)
+          optional(:slides_count).maybe(:integer)
+          optional(:fun).maybe(:bool)
+          optional(:slides).array(:hash) do
+            optional(:file).maybe(:string)
+            optional(:title).maybe(:string)
+            optional(:content).maybe(:string)
             required(:style).filled(:string, included_in?: ["title_slide", "chapter", "default", "left_image"])
             optional(:image).hash do
               optional(:filename).filled(:string)
@@ -98,11 +103,26 @@ module Arneis
       end
 
       rule(:spec) do
-        if value && value[:slides].is_a?(Array)
-          value[:slides].each_with_index do |slide, idx|
-            file_path = slide[:file]
-            if file_path && !File.exist?(file_path)
-              key([:spec, :slides, idx, :file]).failure("file does not exist: #{file_path}")
+        if value
+          slides = value[:slides]
+          topic = value[:topic]
+
+          if (!slides || slides.empty?) && (!topic || topic.empty?)
+            key([:spec]).failure("must specify either a list of slides or a topic for ideation")
+          end
+
+          if slides.is_a?(Array)
+            slides.each_with_index do |slide, idx|
+              file_path = slide[:file]
+              title = slide[:title]
+
+              if file_path
+                if !File.exist?(file_path)
+                  key([:spec, :slides, idx, :file]).failure("file does not exist: #{file_path}")
+                end
+              elsif !title
+                key([:spec, :slides, idx]).failure("must provide either file or title and content")
+              end
             end
           end
         end
