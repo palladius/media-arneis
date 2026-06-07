@@ -74,6 +74,9 @@ if result[:success]
   puts "  - Files skipped (identical): #{stats[:skipped]}"
   puts "  - Files overwritten (changed size): #{stats[:overwritten]}"
   
+  dest_desc = options[:dry_run] ? "Files would be saved to" : "Files saved to"
+  puts "  - #{dest_desc}: #{options[:outputs].join(', ')}"
+  
   if stats[:errors] > 0
     puts Rainbow("  - Errors encountered: #{stats[:errors]}").red
   end
