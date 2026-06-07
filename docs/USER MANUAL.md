@@ -1,7 +1,7 @@
 # 📖 Arneis User Manual
 
 > [!NOTE]
-> **Arneis (Media Harness) Version: 0.2.7**
+> **Arneis (Media Harness) Version: 0.2.8**
 > This manual serves as the primary user reference for Arneis. To prevent documentation drift, the version above is automatically tested against the system version file.
 
 Welcome to the **Arneis (Media Harness)** User Manual. Arneis is a powerful orchestration tool designed to bridge the gap between high-level creative vision and low-level AI media generation. 
