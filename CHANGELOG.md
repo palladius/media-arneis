@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - 📸 feat: Added `just extract-bestof` script and engine to scrape both images and videos from `out/` and copy them to type-specific directories (`pics/` and `videos/`).
 - ⚙️ feat: Implemented flat category-based subfolders (`rubycon/` and `family/`) under target directories to simplify organization and prevent deep nesting.
-- 🧹 feat: Supported rotation cleanup (`--clean` / `-c` and `--rotate-days`) to safely delete old project runs after preserving files.
+- 🧹 feat: Supported rotation cleanup (`--clean` / `-c` and `--rotate-days`) to safely move old project runs to `out/.trash/` after preserving files.
 - 🧪 test: Added comprehensive RSpec unit tests validating video routing, flat categorization, duplicate skipping, and rotation.
 - 🧪 test: Clean up testing semantics. Pointed `just test` (unit tests) to `just unit-test` (<5s runtime, using mocks), added `just integration-test` (real API calls) and `just e2e-test` (real API calls with evaluator).
 - ⚙️ feat: Add timestamps to logging output by overriding `Kernel#puts` globally for non-vendored project files.
