@@ -95,9 +95,9 @@ module Arneis
 
       # Prompt if not auto-approved
       unless auto_approve
-        puts "\n" + Rainbow("⚠️  The following #{folders_to_delete.size} folder(s) in '#{source_dir}' are older than #{rotate_days} days and will be DELETED:").yellow
+        puts "\n" + Rainbow("⚠️  The following #{folders_to_delete.size} folder(s) in '#{source_dir}' are older than #{rotate_days} days and will be moved to the trash:").yellow
         folders_to_delete.each { |dir| puts "  - #{dir}" }
-        print "Are you sure you want to delete them? [y/N]: "
+        print "Are you sure you want to move them to trash? [y/N]: "
         response = begin
           if ENV["RSPEC_RUNNING"] == "true"
             "y" # Auto-approve in tests to prevent blocking
@@ -108,22 +108,27 @@ module Arneis
           nil
         end
         unless %w[y yes].include?(response&.downcase)
-          puts Rainbow("❌ Deletion cancelled by user.").red
+          puts Rainbow("❌ Operation cancelled by user.").red
           return { success: false, deleted: [], error: "Cancelled by user" }
         end
       end
 
-      # Perform deletion
+      # Create timestamped trash directory under [source_dir]/.trash/
+      trash_base = File.join(source_dir, ".trash")
+      trash_dir = File.join(trash_base, Time.now.strftime("%Y%m%d_%H%M%S"))
+
+      # Perform trashing (moving folders)
       deleted_folders = []
       folders_to_delete.each do |dir_path|
         begin
           if verbose
-            puts "  🗑️  Deleting #{dir_path}..."
+            puts "  🗑️  Trashing #{dir_path} -> #{trash_dir}/"
           end
-          FileUtils.rm_rf(dir_path)
+          FileUtils.mkdir_p(trash_dir) unless Dir.exist?(trash_dir)
+          FileUtils.mv(dir_path, File.join(trash_dir, File.basename(dir_path)))
           deleted_folders << dir_path
         rescue => e
-          warn "Error deleting #{dir_path}: #{e.message}" if verbose
+          warn "Error trashing #{dir_path}: #{e.message}" if verbose
         end
       end
 

@@ -138,7 +138,7 @@ RSpec.describe Arneis::ExtractBestOf do
       File.write(File.join(new_dir, "illustration.png"), "dummy")
     end
 
-    it "only deletes folders older than the rotate_days threshold when clean is true" do
+    it "only trashes folders older than the rotate_days threshold when clean is true" do
       extractor = described_class.new(
         source_dir: source_dir,
         targets: targets,
@@ -153,6 +153,11 @@ RSpec.describe Arneis::ExtractBestOf do
 
       expect(Dir.exist?(old_dir)).to be false
       expect(Dir.exist?(new_dir)).to be true
+
+      # Check that it exists inside the .trash directory
+      trash_dir = File.join(source_dir, ".trash")
+      trashed_folders = Dir.glob(File.join(trash_dir, "**/20200101_000000_old_project"))
+      expect(trashed_folders.any? { |f| Dir.exist?(f) }).to be true
     end
 
     it "does not delete folders if dry_run is true" do
