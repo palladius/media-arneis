@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.6] - 2026-06-07
+
+### Added
+- 📽️ feat: Append a hidden/skipped credit slide to PowerPoint presentations containing version, GitHub link, and the PowerColon logo.
+- ⚙️ chore: Dynamically load project version from the `VERSION` file in `lib/arneis.rb`.
+
 ## [0.2.5] - 2026-06-07
 
 ### Added

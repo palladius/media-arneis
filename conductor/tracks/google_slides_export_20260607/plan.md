@@ -19,6 +19,7 @@
   - [ ] Implement mapping for `title_slide` layout.
   - [ ] Implement mapping for `default` and text-only layouts (parsing and writing bullet points).
   - [ ] Implement mapping for `left_image` layouts (uploading slide illustration image to Google Drive and inserting it).
+  - [ ] Implement skipped/hidden credit slide appending at the end of the presentation (with github link and logo).
   - [ ] Run exporter tests and verify they pass.
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Google Slides Creation & Formatting' (Protocol in workflow.md)
 

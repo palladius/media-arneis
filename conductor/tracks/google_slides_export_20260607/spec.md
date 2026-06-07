@@ -17,6 +17,8 @@ Introduce the ability to export presentations directly to Google Slides, maintai
    - Save the created presentation ID/URL in the output folder's `.state.yaml` file under `google_slides_id` and `google_slides_url`.
 6. **In-place Updating (Idempotency)**:
    - If `google_slides_id` is present in `.state.yaml`, fetch the existing presentation and update its slide contents (updating text text-runs and replacing images) in-place instead of creating a new slide deck.
+7. **Skipped/Hidden Credit Slide**:
+   - Add a skipped/hidden slide at the end of the Google Slides presentation containing the text "Created with media-arneis v$VERSION", a link to `https://github.com/palladius/media-arneis`, and the PowerColon logo.
 
 ## Non-Functional/Technical Requirements
 * Ruby library: Use the official Google API client gem (`google-apis-slides_v1`, `googleauth`).
@@ -27,3 +29,4 @@ Introduce the ability to export presentations directly to Google Slides, maintai
 - [ ] Exports a presentation to a new Google Slides deck.
 - [ ] Writes `google_slides_id` and `google_slides_url` to `.state.yaml`.
 - [ ] Subsequent exports to the same directory update the existing slide deck in-place instead of creating a new one.
+- [ ] Creates a skipped/hidden credit slide at the end of the Google Slides presentation.

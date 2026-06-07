@@ -338,10 +338,63 @@ module Arneis
         end
       end
 
+      # Add the final credit/skipped slide
+      credit_title = "Created with media-arneis v#{Arneis::VERSION}"
+      logo_path = "assets/power-colon/images/logo.png"
+      logo_path = "logo.png" unless File.exist?(logo_path)
+      bullets = ["GitHub: https://github.com/palladius/media-arneis"]
+
+      if File.exist?(logo_path)
+        deck.add_text_picture_slide(credit_title, logo_path, bullets)
+      else
+        deck.add_textual_slide(credit_title, bullets)
+      end
+
       deck.save(pptx_file)
+
+      # Mark the final slide as hidden/skipped in PPTX
+      hide_last_slide_in_pptx(pptx_file, @slides.size + 1)
+
       puts Rainbow("✅ PowerPoint presentation saved to #{pptx_file}").green
     rescue => e
       puts Rainbow("⚠️ Failed to generate PPTX: #{e.message}").yellow
+    end
+
+    def hide_last_slide_in_pptx(pptx_path, total_slides)
+      require "zip"
+
+      temp_xml = nil
+      Zip::File.open(pptx_path) do |zip_file|
+        entry = zip_file.find_entry("ppt/presentation.xml")
+        if entry
+          content = entry.get_input_stream.read
+
+          target_id = 255 + total_slides
+          target_rid = "rId#{total_slides + 5}"
+          pattern = /<p:sldId\s+id="#{target_id}"\s+r:id="#{target_rid}"\/>/
+          if content.match?(pattern)
+            content.gsub!(pattern, "<p:sldId id=\"#{target_id}\" r:id=\"#{target_rid}\" show=\"0\"/>")
+            temp_xml = content
+          else
+            pattern2 = /<p:sldId\s+id="#{target_id}"\s+r:id="#{target_rid}"\s*\/?>/
+            if content.match?(pattern2)
+              content.gsub!(pattern2, "<p:sldId id=\"#{target_id}\" r:id=\"#{target_rid}\" show=\"0\"/>")
+              temp_xml = content
+            end
+          end
+        end
+      end
+
+      if temp_xml
+        Zip::File.open(pptx_path) do |zip_file|
+          zip_file.get_output_stream("ppt/presentation.xml") do |f|
+            f.write(temp_xml)
+          end
+        end
+        puts Rainbow("🔒 Marked the final credit slide as skipped/hidden in PPTX").green
+      end
+    rescue => e
+      puts Rainbow("⚠️ Failed to hide the final slide in PPTX: #{e.message}").yellow
     end
 
     def parse_bullets(content_string)
