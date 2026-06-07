@@ -14,16 +14,16 @@
 
 
 ## Phase 2: LLM-as-Judge & Semantic Assertion Framework
-- [ ] Task: Create LLM-as-Judge helper/matcher
-    - [ ] Create `spec/support/llm_judge_helper.rb` (included in `spec_helper.rb`).
-    - [ ] Implement a helper using Gemini to evaluate generated media assets.
-    - [ ] Implement a custom RSpec matcher `meet_media_criteria` that leverages this helper.
-- [ ] Task: Create integration tests under spec/integration/
-    - [ ] Create `spec/integration/media_generation_spec.rb`.
-    - [ ] Add integration test for Imagen (image generation) checking generated output via LLM-as-judge.
-    - [ ] Add integration test for Lyria (music generation) checking generated output via LLM-as-judge.
-    - [ ] Add integration test for Veo (video generation) checking generated output via LLM-as-judge.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: LLM-as-Judge & Semantic Assertion Framework' (Protocol in workflow.md)
+- [x] Task: Create LLM-as-Judge helper/matcher [6bed687]
+    - [x] Create `spec/support/llm_judge_helper.rb` (included in `spec_helper.rb`).
+    - [x] Implement a helper using Gemini to evaluate generated media assets.
+    - [x] Implement a custom RSpec matcher `meet_media_criteria` that leverages this helper.
+- [x] Task: Create integration tests under spec/integration/ [6bed687]
+    - [x] Create `spec/integration/media_generation_spec.rb`.
+    - [x] Add integration test for Imagen (image generation) checking generated output via LLM-as-judge.
+    - [x] Add integration test for Lyria (music generation) checking generated output via LLM-as-judge.
+    - [x] Add integration test for Veo (video generation) checking generated output via LLM-as-judge.
+- [~] Task: Conductor - User Manual Verification 'Phase 2: LLM-as-Judge & Semantic Assertion Framework' (Protocol in workflow.md)
 
 ## Phase 3: Documentation & Verification
 - [ ] Task: Update GEMINI.md and verify suite
