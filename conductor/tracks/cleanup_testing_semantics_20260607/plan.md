@@ -10,7 +10,7 @@
 - [x] Task: Ensure all unit tests are mocked and fast [6d96454]
     - [x] Identify any unit tests in `spec/arneis/` executing real calls or taking too long.
     - [x] Refactor or add mocks to keep unit test suite running in <5s.
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Fast Unit Tests Optimization & Justfile Target Streamlining' (Protocol in workflow.md)
+- [~] Task: Conductor - User Manual Verification 'Phase 1: Fast Unit Tests Optimization & Justfile Target Streamlining' (Protocol in workflow.md)
 
 ## Phase 2: LLM-as-Judge & Semantic Assertion Framework
 - [ ] Task: Create LLM-as-Judge helper/matcher
