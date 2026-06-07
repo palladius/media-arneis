@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.9] - 2026-06-07
+
+### Added
+- 🧹 feat: Restored Thor CLI subcommands `cleanup` and `check-fake-media`.
+- 🗑️ feat: Implemented conservative archiving for `cleanup` using `out/.trash/` instead of permanent deletion.
+- 🧪 test: Added dedicated unit spec `spec/arneis/cli_cleanup_spec.rb` to cover the subcommands with fast mocking.
+
 ## [0.2.8] - 2026-06-07
 
 ### Added

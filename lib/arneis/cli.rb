@@ -531,6 +531,96 @@ module Arneis
       end
     end
 
+    desc "cleanup", "Archive projects with zero real media"
+    method_option :dryrun, type: :boolean, aliases: "-n", desc: "Show what would be archived without performing actions"
+    def cleanup
+      dry_run = options[:dryrun]
+      action_word = dry_run ? "Would archive" : "Archiving"
+      puts Rainbow("🧹 Scanning out/ for junk projects...").cyan
+      puts "Dry-run: #{dry_run ? 'ENABLED' : 'DISABLED'}"
+
+      subfolders = Dir.glob("out/*").select { |f| File.directory?(f) }
+      archived_count = 0
+
+      trash_base = "out/.trash"
+      trash_dir = File.join(trash_base, Time.now.strftime("%Y%m%d_%H%M%S"))
+
+      subfolders.each do |path|
+        dir_name = File.basename(path)
+        # Exclude special/control folders
+        next if %w[archived best-of .trash].include?(dir_name)
+        next if dir_name.start_with?(".")
+
+        # Check if project has real media files recursively
+        media_files = Dir.glob(File.join(path, "**", "*.{mp4,mov,avi,mkv,webm,png,jpg,jpeg,webp,gif,wav,mp3}"))
+        real_media = media_files.reject { |f| File.exist?("#{f}.mock") || File.exist?("#{f}.NOT_GOOD") }
+
+        if real_media.empty?
+          puts "  📦 #{action_word} project with ZERO real media: #{path}"
+          archived_count += 1
+          next if dry_run
+
+          begin
+            FileUtils.mkdir_p(trash_dir) unless Dir.exist?(trash_dir)
+            FileUtils.mv(path, File.join(trash_dir, dir_name))
+          rescue => e
+            puts Rainbow("    ⚠️  Failed to move #{path}: #{e.message}").yellow
+          end
+        end
+      end
+
+      result_word = dry_run ? "Would archive" : "Archived"
+      puts Rainbow("✅ Cleanup complete. #{result_word} #{archived_count} junk projects.").green
+    end
+
+    desc "check-fake-media [FOLDER_PATH]", "Rigorously verify all media files in a project or all projects"
+    def check_fake_media(folder_path = nil)
+      folder_path = begin
+        resolve_media_folder([folder_path], options)
+      rescue
+        "out"
+      end
+      search_path = folder_path ? File.join(folder_path, "**", "*.{mp4,mov,avi,mkv,webm,png,jpg,jpeg,webp,gif,wav,mp3}") : "out/**/*.{mp4,mov,avi,mkv,webm,png,jpg,jpeg,webp,gif,wav,mp3}"
+      puts Rainbow("🛡️  Rigorously checking media artifacts in #{search_path}...").cyan.bold
+
+      files = Dir.glob(search_path).reject do |f|
+        f.include?(".mock") || f.include?(".NOT_GOOD") || f.include?("archived/") || f.include?(".trash/")
+      end
+
+      if files.empty?
+        puts "No media files found to check."
+        return
+      end
+
+      found_fakes = 0
+      files.each do |file|
+        ext = File.extname(file).downcase
+        type = if %w[.mp4 .mov .avi .mkv .webm].include?(ext)
+          :video
+        elsif %w[.png .jpg .jpeg .webp .gif].include?(ext)
+          :image
+        elsif %w[.wav .mp3].include?(ext)
+          :audio
+        else
+          next
+        end
+
+        result = Validator.validate_and_rename!(file, type)
+        if result[:success]
+          puts "  ✅ #{file}: #{Rainbow("REAL").green} (#{result[:info]})"
+        else
+          puts "  ❌ #{file}: #{Rainbow("FAKE").red} (#{result[:info]}) -> Renamed to .NOT_GOOD"
+          found_fakes += 1
+        end
+      end
+
+      if found_fakes > 0
+        puts Rainbow("\n⚠️  Found and neutralized #{found_fakes} fake media files!").yellow.bold
+      else
+        puts Rainbow("\n✨ All checked media files are genuine.").green.bold
+      end
+    end
+
     no_commands do
       def open_file(path)
         return unless File.exist?(path)

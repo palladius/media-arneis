@@ -1,7 +1,7 @@
 ---
 name: how-to-use-media-arneis
 description: Guides AI agents in running, updating, and writing specs for the media-arneis orchestration harness.
-version: 0.2.8
+version: 0.2.9
 ---
 
 # Skill: Using and Maintaining media-arneis
