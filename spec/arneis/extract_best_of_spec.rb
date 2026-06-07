@@ -19,10 +19,14 @@ RSpec.describe Arneis::ExtractBestOf do
     FileUtils.mkdir_p(File.join(source_dir, "20260601_project1/pages/page_1"))
     FileUtils.mkdir_p(File.join(source_dir, "20260601_project1/.trash"))
     FileUtils.mkdir_p(File.join(source_dir, "best-of/pics"))
+    FileUtils.mkdir_p(File.join(source_dir, "20260601_rubycon_talk"))
+    FileUtils.mkdir_p(File.join(source_dir, "20260601_sebastian_pokemon"))
 
     # Create dummy images
     File.write(File.join(source_dir, "20260601_project1/character_image.png"), "dummy content image 1")
     File.write(File.join(source_dir, "20260601_project1/pages/page_1/illustration.png"), "dummy content image 2")
+    File.write(File.join(source_dir, "20260601_rubycon_talk/logo.png"), "rubycon logo content")
+    File.write(File.join(source_dir, "20260601_sebastian_pokemon/character_image.png"), "seby pokemon content")
     
     # Create files that should be ignored
     File.write(File.join(source_dir, "20260601_project1/info.txt"), "some text info")
@@ -43,29 +47,35 @@ RSpec.describe Arneis::ExtractBestOf do
 
       expect(files).to contain_exactly(
         "tmp_test_src/20260601_project1/character_image.png",
-        "tmp_test_src/20260601_project1/pages/page_1/illustration.png"
+        "tmp_test_src/20260601_project1/pages/page_1/illustration.png",
+        "tmp_test_src/20260601_rubycon_talk/logo.png",
+        "tmp_test_src/20260601_sebastian_pokemon/character_image.png"
       )
     end
   end
 
   describe "#run" do
-    it "copies files with deterministic collision-preventing names and populates stats" do
+    it "copies files with deterministic collision-preventing names and populates stats with subfolder categorization" do
       extractor = described_class.new(source_dir: source_dir, targets: targets)
       result = extractor.run
 
       expect(result[:success]).to be true
-      expect(result[:stats][:found]).to eq(2)
-      expect(result[:stats][:copied]).to eq(4) # 2 files * 2 target directories
+      expect(result[:stats][:found]).to eq(4)
+      expect(result[:stats][:copied]).to eq(8) # 4 files * 2 target directories
       expect(result[:stats][:skipped]).to eq(0)
       expect(result[:stats][:overwritten]).to eq(0)
 
       # Check target dir 1
       expect(File.exist?(File.join(dest_dir1, "20260601_project1_character_image.png"))).to be true
       expect(File.exist?(File.join(dest_dir1, "20260601_project1_pages_page_1_illustration.png"))).to be true
+      expect(File.exist?(File.join(dest_dir1, "rubycon/20260601_rubycon_talk_logo.png"))).to be true
+      expect(File.exist?(File.join(dest_dir1, "family/20260601_sebastian_pokemon_character_image.png"))).to be true
 
       # Check target dir 2
       expect(File.exist?(File.join(dest_dir2, "20260601_project1_character_image.png"))).to be true
       expect(File.exist?(File.join(dest_dir2, "20260601_project1_pages_page_1_illustration.png"))).to be true
+      expect(File.exist?(File.join(dest_dir2, "rubycon/20260601_rubycon_talk_logo.png"))).to be true
+      expect(File.exist?(File.join(dest_dir2, "family/20260601_sebastian_pokemon_character_image.png"))).to be true
     end
 
     it "skips files if they exist and are of identical size" do
@@ -77,7 +87,7 @@ RSpec.describe Arneis::ExtractBestOf do
       result = extractor.run
 
       expect(result[:stats][:copied]).to eq(0)
-      expect(result[:stats][:skipped]).to eq(4)
+      expect(result[:stats][:skipped]).to eq(8)
       expect(result[:stats][:overwritten]).to eq(0)
     end
 
@@ -93,16 +103,15 @@ RSpec.describe Arneis::ExtractBestOf do
       result = extractor.run
 
       expect(result[:stats][:copied]).to eq(0)
-      expect(result[:stats][:skipped]).to eq(2) # The page_1 illustration remains identical (skipped on 2 targets)
-      expect(result[:stats][:overwritten]).to eq(2) # The character_image has a different size (overwritten on 2 targets)
-
+      expect(result[:stats][:skipped]).to eq(6) # 3 unchanged files * 2 targets
+      expect(result[:stats][:overwritten]).to eq(2) # 1 changed file * 2 targets
     end
 
     it "respects the dry_run flag" do
       extractor = described_class.new(source_dir: source_dir, targets: targets, dry_run: true)
       result = extractor.run
 
-      expect(result[:stats][:copied]).to eq(4) # Stats still count it as planned copy
+      expect(result[:stats][:copied]).to eq(8) # Stats still count it as planned copy
       expect(File.exist?(dest_dir1)).to be false
       expect(File.exist?(dest_dir2)).to be false
     end

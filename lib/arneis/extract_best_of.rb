@@ -35,9 +35,11 @@ module Arneis
         # Deterministic safe name
         relative_path = src_path.sub(/^#{Regexp.escape(source_dir)}\//, "")
         safe_name = relative_path.gsub(/[\/\\]/, "_")
+        subfolder = subfolder_for(src_path)
 
         targets.each do |target_dir|
-          dest_path = File.join(target_dir, safe_name)
+          dest_dir = subfolder ? File.join(target_dir, subfolder) : target_dir
+          dest_path = File.join(dest_dir, safe_name)
 
           if File.exist?(dest_path)
             if File.size(dest_path) == File.size(src_path)
@@ -53,7 +55,7 @@ module Arneis
           next if dry_run
 
           begin
-            FileUtils.mkdir_p(target_dir) unless Dir.exist?(target_dir)
+            FileUtils.mkdir_p(dest_dir) unless Dir.exist?(dest_dir)
             FileUtils.cp(src_path, dest_path)
           rescue => e
             stats[:errors] += 1
@@ -64,6 +66,18 @@ module Arneis
 
       { success: true, stats: stats }
     end
+
+    def subfolder_for(path)
+      path_lower = path.downcase
+      if path_lower.include?("rubycon") || path_lower.include?("yukihiro")
+        "rubycon"
+      elsif %w[alessandro sebastian riccardo ale seby kids family].any? { |kw| path_lower.include?(kw) }
+        "family"
+      else
+        nil
+      end
+    end
+
 
     def find_files
       all_files = Dir.glob(File.join(source_dir, "**/*"))
