@@ -5,6 +5,7 @@ require "time"
 module Arneis
   class ExtractBestOf
     IMAGE_EXTENSIONS = %w[.png .jpg .jpeg .webp .gif].freeze
+    VIDEO_EXTENSIONS = %w[.mp4 .mov .avi .mkv .webm].freeze
     
     attr_reader :source_dir, :targets, :dry_run, :verbose, :clean, :rotate_days, :auto_approve
 
@@ -38,10 +39,18 @@ module Arneis
         # Deterministic safe name
         relative_path = src_path.sub(/^#{Regexp.escape(source_dir)}\//, "")
         safe_name = relative_path.gsub(/[\/\\]/, "_")
-        subfolder = subfolder_for(src_path)
+        
+        # Determine asset type subdirectory (pics or videos)
+        ext = File.extname(src_path).downcase
+        type_sub = IMAGE_EXTENSIONS.include?(ext) ? "pics" : "videos"
+        
+        # Determine category subfolder (rubycon, family, or nil)
+        cat_sub = subfolder_for(src_path)
 
-        targets.each do |target_dir|
-          dest_dir = subfolder ? File.join(target_dir, subfolder) : target_dir
+        targets.each do |target_base|
+          # Build target directory structure: [target_base]/[pics|videos]/[rubycon|family]?
+          dest_dir = File.join(target_base, type_sub)
+          dest_dir = File.join(dest_dir, cat_sub) if cat_sub
           dest_path = File.join(dest_dir, safe_name)
 
           if File.exist?(dest_path)
@@ -171,52 +180,25 @@ module Arneis
 
     def subfolder_for(path)
       path_lower = path.downcase
-      category = if path_lower.include?("rubycon") || path_lower.include?("yukihiro")
+      if %w[rubycon yukihiro antigravity openclaw hermes].any? { |kw| path_lower.include?(kw) }
         "rubycon"
       elsif %w[alessandro sebastian riccardo ale seby kids family].any? { |kw| path_lower.include?(kw) }
         "family"
       else
-        "misc"
-      end
-
-      # Determine template kind from the run directory's spec YAML
-      parts = path.split('/')
-      run_dir_name = parts[1]
-      template = nil
-
-      if run_dir_name && run_dir_name != "best-of"
-        run_dir_path = File.join(source_dir, run_dir_name)
-        if Dir.exist?(run_dir_path)
-          yaml_files = Dir.glob(File.join(run_dir_path, "*.yaml")).reject { |f| File.basename(f) == ".state.yaml" }
-          if yaml_files.any?
-            begin
-              data = YAML.load_file(yaml_files.first)
-              template = data["kind"] if data.is_a?(Hash)
-            rescue
-              # Ignore parsing errors
-            end
-          end
-        end
-      end
-
-      if template
-        File.join(category, template)
-      else
-        category
+        nil
       end
     end
 
-
-
     def find_files
       all_files = Dir.glob(File.join(source_dir, "**/*"))
+      allowed_extensions = IMAGE_EXTENSIONS + VIDEO_EXTENSIONS
       
       all_files.select do |path|
         next false unless File.file?(path)
 
         # Check extension
         ext = File.extname(path).downcase
-        next false unless IMAGE_EXTENSIONS.include?(ext)
+        next false unless allowed_extensions.include?(ext)
 
         # Exclude target directories to prevent infinite loops / double copies
         abs_path = File.expand_path(path)

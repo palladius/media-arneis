@@ -28,10 +28,9 @@ RSpec.describe Arneis::ExtractBestOf do
     File.write(File.join(source_dir, "20260601_rubycon_talk/logo.png"), "rubycon logo content")
     File.write(File.join(source_dir, "20260601_sebastian_pokemon/character_image.png"), "seby pokemon content")
 
-    # Create project spec YAMLs to specify template kinds
-    File.write(File.join(source_dir, "20260601_project1/project1.yaml"), {"apiVersion" => "v1", "kind" => "KidsStory"}.to_yaml)
-    File.write(File.join(source_dir, "20260601_rubycon_talk/rubycon_presentation.yaml"), {"apiVersion" => "v1", "kind" => "PowerColon"}.to_yaml)
-    File.write(File.join(source_dir, "20260601_sebastian_pokemon/pokemon_game.yaml"), {"apiVersion" => "v1", "kind" => "CharacterImage"}.to_yaml)
+    # Create dummy videos
+    File.write(File.join(source_dir, "20260601_project1/video.mp4"), "dummy video content")
+    File.write(File.join(source_dir, "20260601_rubycon_talk/presentation_video.webm"), "rubycon video content")
     
     # Create files that should be ignored
     File.write(File.join(source_dir, "20260601_project1/info.txt"), "some text info")
@@ -46,7 +45,7 @@ RSpec.describe Arneis::ExtractBestOf do
   end
 
   describe "#find_files" do
-    it "finds only images and respects exclusions" do
+    it "finds only images and videos and respects exclusions" do
       extractor = described_class.new(source_dir: source_dir, targets: targets)
       files = extractor.find_files
 
@@ -54,33 +53,37 @@ RSpec.describe Arneis::ExtractBestOf do
         "tmp_test_src/20260601_project1/character_image.png",
         "tmp_test_src/20260601_project1/pages/page_1/illustration.png",
         "tmp_test_src/20260601_rubycon_talk/logo.png",
-        "tmp_test_src/20260601_sebastian_pokemon/character_image.png"
+        "tmp_test_src/20260601_sebastian_pokemon/character_image.png",
+        "tmp_test_src/20260601_project1/video.mp4",
+        "tmp_test_src/20260601_rubycon_talk/presentation_video.webm"
       )
     end
   end
 
   describe "#run" do
-    it "copies files with deterministic collision-preventing names and populates stats with subfolder categorization" do
+    it "copies images to pics/ and videos to videos/ with flat subfolder categorization" do
       extractor = described_class.new(source_dir: source_dir, targets: targets)
       result = extractor.run
 
       expect(result[:success]).to be true
-      expect(result[:stats][:found]).to eq(4)
-      expect(result[:stats][:copied]).to eq(8) # 4 files * 2 target directories
+      expect(result[:stats][:found]).to eq(6)
+      expect(result[:stats][:copied]).to eq(12) # 6 files * 2 target directories
       expect(result[:stats][:skipped]).to eq(0)
       expect(result[:stats][:overwritten]).to eq(0)
 
-      # Check target dir 1
-      expect(File.exist?(File.join(dest_dir1, "misc/KidsStory/20260601_project1_character_image.png"))).to be true
-      expect(File.exist?(File.join(dest_dir1, "misc/KidsStory/20260601_project1_pages_page_1_illustration.png"))).to be true
-      expect(File.exist?(File.join(dest_dir1, "rubycon/PowerColon/20260601_rubycon_talk_logo.png"))).to be true
-      expect(File.exist?(File.join(dest_dir1, "family/CharacterImage/20260601_sebastian_pokemon_character_image.png"))).to be true
+      # Check target dir 1 (Images)
+      expect(File.exist?(File.join(dest_dir1, "pics/20260601_project1_character_image.png"))).to be true
+      expect(File.exist?(File.join(dest_dir1, "pics/20260601_project1_pages_page_1_illustration.png"))).to be true
+      expect(File.exist?(File.join(dest_dir1, "pics/rubycon/20260601_rubycon_talk_logo.png"))).to be true
+      expect(File.exist?(File.join(dest_dir1, "pics/family/20260601_sebastian_pokemon_character_image.png"))).to be true
+
+      # Check target dir 1 (Videos)
+      expect(File.exist?(File.join(dest_dir1, "videos/20260601_project1_video.mp4"))).to be true
+      expect(File.exist?(File.join(dest_dir1, "videos/rubycon/20260601_rubycon_talk_presentation_video.webm"))).to be true
 
       # Check target dir 2
-      expect(File.exist?(File.join(dest_dir2, "misc/KidsStory/20260601_project1_character_image.png"))).to be true
-      expect(File.exist?(File.join(dest_dir2, "misc/KidsStory/20260601_project1_pages_page_1_illustration.png"))).to be true
-      expect(File.exist?(File.join(dest_dir2, "rubycon/PowerColon/20260601_rubycon_talk_logo.png"))).to be true
-      expect(File.exist?(File.join(dest_dir2, "family/CharacterImage/20260601_sebastian_pokemon_character_image.png"))).to be true
+      expect(File.exist?(File.join(dest_dir2, "pics/20260601_project1_character_image.png"))).to be true
+      expect(File.exist?(File.join(dest_dir2, "videos/20260601_project1_video.mp4"))).to be true
     end
 
     it "skips files if they exist and are of identical size" do
@@ -92,7 +95,7 @@ RSpec.describe Arneis::ExtractBestOf do
       result = extractor.run
 
       expect(result[:stats][:copied]).to eq(0)
-      expect(result[:stats][:skipped]).to eq(8)
+      expect(result[:stats][:skipped]).to eq(12)
       expect(result[:stats][:overwritten]).to eq(0)
     end
 
@@ -108,7 +111,7 @@ RSpec.describe Arneis::ExtractBestOf do
       result = extractor.run
 
       expect(result[:stats][:copied]).to eq(0)
-      expect(result[:stats][:skipped]).to eq(6) # 3 unchanged files * 2 targets
+      expect(result[:stats][:skipped]).to eq(10) # 5 unchanged files * 2 targets
       expect(result[:stats][:overwritten]).to eq(2) # 1 changed file * 2 targets
     end
 
@@ -116,7 +119,7 @@ RSpec.describe Arneis::ExtractBestOf do
       extractor = described_class.new(source_dir: source_dir, targets: targets, dry_run: true)
       result = extractor.run
 
-      expect(result[:stats][:copied]).to eq(8) # Stats still count it as planned copy
+      expect(result[:stats][:copied]).to eq(12) # Stats still count it as planned copy
       expect(File.exist?(dest_dir1)).to be false
       expect(File.exist?(dest_dir2)).to be false
     end

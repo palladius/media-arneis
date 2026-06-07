@@ -58,15 +58,15 @@ end.parse!
 
 # Add default output folder if none specified
 if options[:outputs].empty?
-  options[:outputs] << "out/best-of/pics"
+  options[:outputs] << "out/best-of"
 end
 
 if options[:desktop]
-  desktop_dir = File.expand_path("~/Desktop/media-arneis/best-of/pics")
-  options[:outputs] << desktop_dir
+  desktop_base = File.expand_path("~/Desktop/media-arneis/best-of")
+  options[:outputs] << desktop_base
 end
 
-puts Rainbow("🔍 Scraping out/ folders for images...").cyan
+puts Rainbow("🔍 Scraping out/ folders for images and videos...").cyan
 puts "Targets: #{options[:outputs].join(', ')}"
 puts "Dry-run: #{options[:dry_run] ? 'ENABLED' : 'DISABLED'}"
 if options[:clean]
@@ -90,7 +90,7 @@ if result[:success]
   action_word = options[:dry_run] ? "Would copy" : "Processed"
   
   puts Rainbow("\n✨ Done!").green
-  puts "  - Total source images found: #{stats[:found]}"
+  puts "  - Total source files found: #{stats[:found]}"
   puts "  - #{action_word} new files: #{stats[:copied]}"
   puts "  - Files skipped (identical): #{stats[:skipped]}"
   puts "  - Files overwritten (changed size): #{stats[:overwritten]}"
