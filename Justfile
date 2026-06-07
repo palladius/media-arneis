@@ -14,6 +14,12 @@ test:
         @echo "🟢 Running fast tests..."
         {{BUNDLE}} exec ruby -S rspec --tag ~expensive
 
+# Run gcloud and authentication verification tests
+gcloud-test:
+        @echo "🟢 Running gcloud and auth tests..."
+        {{BUNDLE}} exec ruby -S rspec spec/arneis/google_auth_manager_spec.rb
+        {{BUNDLE}} exec ruby -e "require './lib/arneis'; puts 'Default credentials: ' + Arneis::GoogleAuthManager.get_credentials.inspect"
+
 # Run long tests (e2e and expensive tests)
 long-tests:
         @echo "🟢 Running long tests..."
