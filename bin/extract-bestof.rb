@@ -13,7 +13,10 @@ options = {
   outputs: [],
   desktop: false,
   dry_run: false,
-  verbose: false
+  verbose: false,
+  clean: false,
+  rotate_days: 7,
+  auto_approve: false
 }
 
 OptionParser.new do |opts|
@@ -27,7 +30,19 @@ OptionParser.new do |opts|
     options[:desktop] = true
   end
 
-  opts.on("-n", "--dry-run", "Show what would be copied without copying") do
+  opts.on("-c", "--clean", "Clean up (delete) old folders in out/ after extraction") do
+    options[:clean] = true
+  end
+
+  opts.on("--rotate-days DAYS", Integer, "Threshold age in days for deleting old folders (default: 7)") do |days|
+    options[:rotate_days] = days
+  end
+
+  opts.on("-y", "--yes", "Auto-approve deletion prompts (non-interactive)") do
+    options[:auto_approve] = true
+  end
+
+  opts.on("-n", "--dry-run", "Show what would be copied and deleted without performing actions") do
     options[:dry_run] = true
   end
 
@@ -54,12 +69,18 @@ end
 puts Rainbow("🔍 Scraping out/ folders for images...").cyan
 puts "Targets: #{options[:outputs].join(', ')}"
 puts "Dry-run: #{options[:dry_run] ? 'ENABLED' : 'DISABLED'}"
+if options[:clean]
+  puts "Rotation: ENABLED (deleting folders older than #{options[:rotate_days]} days)"
+end
 
 extractor = Arneis::ExtractBestOf.new(
   source_dir: "out",
   targets: options[:outputs],
   dry_run: options[:dry_run],
-  verbose: options[:verbose]
+  verbose: options[:verbose],
+  clean: options[:clean],
+  rotate_days: options[:rotate_days],
+  auto_approve: options[:auto_approve]
 )
 
 result = extractor.run
@@ -77,6 +98,12 @@ if result[:success]
   dest_desc = options[:dry_run] ? "Files would be saved to" : "Files saved to"
   puts "  - #{dest_desc}: #{options[:outputs].join(', ')}"
   
+  if options[:clean]
+    del_desc = options[:dry_run] ? "Folders would be deleted" : "Folders deleted"
+    deleted_names = (result[:deleted] || []).map { |d| File.basename(d) }
+    puts "  - #{del_desc} (older than #{options[:rotate_days]} days): #{deleted_names.size} #{deleted_names.any? ? '(' + deleted_names.join(', ') + ')' : ''}"
+  end
+
   if stats[:errors] > 0
     puts Rainbow("  - Errors encountered: #{stats[:errors]}").red
   end

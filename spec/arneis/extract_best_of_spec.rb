@@ -121,4 +121,53 @@ RSpec.describe Arneis::ExtractBestOf do
       expect(File.exist?(dest_dir2)).to be false
     end
   end
+
+  describe "rotation and cleanup" do
+    let(:current_prefix) { Time.now.strftime("%Y%m%d_%H%M%S") }
+    let(:old_dir) { File.join(source_dir, "20200101_000000_old_project") }
+    let(:new_dir) { File.join(source_dir, "#{current_prefix}_new_project") }
+
+    before do
+      FileUtils.mkdir_p(old_dir)
+      File.write(File.join(old_dir, "illustration.png"), "dummy")
+
+      FileUtils.mkdir_p(new_dir)
+      File.write(File.join(new_dir, "illustration.png"), "dummy")
+    end
+
+    it "only deletes folders older than the rotate_days threshold when clean is true" do
+      extractor = described_class.new(
+        source_dir: source_dir,
+        targets: targets,
+        clean: true,
+        rotate_days: 7,
+        auto_approve: true
+      )
+      result = extractor.run
+
+      expect(result[:success]).to be true
+      expect(result[:deleted].map { |d| File.basename(d) }).to contain_exactly("20200101_000000_old_project")
+
+      expect(Dir.exist?(old_dir)).to be false
+      expect(Dir.exist?(new_dir)).to be true
+    end
+
+    it "does not delete folders if dry_run is true" do
+      extractor = described_class.new(
+        source_dir: source_dir,
+        targets: targets,
+        clean: true,
+        rotate_days: 7,
+        dry_run: true,
+        auto_approve: true
+      )
+      result = extractor.run
+
+      expect(result[:success]).to be true
+      expect(result[:deleted].map { |d| File.basename(d) }).to contain_exactly("20200101_000000_old_project")
+
+      expect(Dir.exist?(old_dir)).to be true
+      expect(Dir.exist?(new_dir)).to be true
+    end
+  end
 end
