@@ -1,0 +1,10 @@
+apiVersion: media-arneis.palladius.it/v1
+kind: PowerColon
+metadata:
+  name: PowerColonTech
+spec:
+  presentation_title: "A Technical Presentation"
+  topic: "Technical Systems"
+  fun: false
+  slides_count: 5
+  slides: []

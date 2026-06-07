@@ -1,0 +1,21 @@
+apiVersion: media-arneis.palladius.it/v1
+kind: PowerColon
+metadata:
+  name: antigravity-tech
+  template: PowerColonTech
+spec:
+  presentation_title: "Antigravity AI Assistant Architecture"
+  slides:
+    - title: "Introducing Antigravity"
+      content: "Antigravity is a state-of-the-art coding assistant designed by Google DeepMind.\n- Pair programming at scale\n- Agentic workflow orchestration"
+      style: "title_slide"
+    - title: "The Core Architecture"
+      content: "- Uses Gemini 2.5 Flash for rapid iterations\n- Modular tool usage for terminal & file tasks"
+      style: "default"
+    - title: "Multimodal Visual Logic"
+      content: "- Evaluation feedback loop handles retry automatically\n- Uses NanoBanana for visual asset generation"
+      style: "left_image"
+      image:
+        filename: "antigravity_vision.png"
+        aspect_ratio: "4:3"
+        prompt: "A futuristic AI assistant with glowing blue lights and floating gears"

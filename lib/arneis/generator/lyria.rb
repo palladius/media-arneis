@@ -14,7 +14,7 @@ module Arneis
 
       def generate(prompt, output_file, timeout: 300, asset_id: nil)
         return maybe_mock(output_file, :audio, prompt) if dryrun?
-        
+
         puts Rainbow("  🎵 [LYRIA] Starting real music generation via Python script...").magenta
         receipt = AssetReceipt.new(asset_id: asset_id || "music_#{Time.now.to_i}", model: @model, prompt: prompt)
         start_time = Time.now

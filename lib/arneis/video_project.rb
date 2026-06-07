@@ -123,7 +123,7 @@ module Arneis
           end
         end
 
-        orchestrator.add_task(scene_id, outputs: { veo_output => :video }, intent_prompt: scene["description"], check_status_block: check_status_proc) do
+        orchestrator.add_task(scene_id, outputs: {veo_output => :video}, intent_prompt: scene["description"], check_status_block: check_status_proc) do
           scene_dir = File.dirname(veo_output)
           FileUtils.mkdir_p(scene_dir)
 
@@ -160,7 +160,7 @@ module Arneis
       music_id = "background_music"
       if @data["background_music"]
         music_output = File.join(@output_path, "audio", "background_music.wav")
-        orchestrator.add_task(music_id, outputs: { music_output => :audio }, intent_prompt: @data["background_music"]["prompt"]) do
+        orchestrator.add_task(music_id, outputs: {music_output => :audio}, intent_prompt: @data["background_music"]["prompt"]) do
           update_task_status("background_music", "in_progress")
           FileUtils.mkdir_p(File.dirname(music_output))
 
@@ -174,8 +174,8 @@ module Arneis
       montage_id = "montage"
       output_filename = @data["output_filename"] || "final_video.mp4"
       final_video_output = File.join(@output_path, output_filename)
-      
-      orchestrator.add_task(montage_id, dependencies: scene_task_ids, outputs: { final_video_output => :video }, intent_prompt: "A montage of all scenes: #{@project_title}") do
+
+      orchestrator.add_task(montage_id, dependencies: scene_task_ids, outputs: {final_video_output => :video}, intent_prompt: "A montage of all scenes: #{@project_title}") do
         update_project_status("in_progress")
         puts Rainbow("🎬 [MONTAGE] Generating final movie using LLM-driven ffmpeg command...").magenta
 
@@ -226,7 +226,7 @@ module Arneis
       # 5. GIF Post-Production Task
       gif_id = "post_production_gif"
       gif_output = final_video_output.sub(/\.mp4$/, ".gif")
-      orchestrator.add_task(gif_id, dependencies: [montage_id], outputs: { gif_output => :image }) do
+      orchestrator.add_task(gif_id, dependencies: [montage_id], outputs: {gif_output => :image}) do
         gif_generator.generate(final_video_output, gif_output)
       end
 

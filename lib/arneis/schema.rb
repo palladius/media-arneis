@@ -202,9 +202,9 @@ module Arneis
         return {success: false, message: "No template specified in #{sample_path}"}
       end
 
-      template_path = File.join("data/templates", "#{template_name}.yaml")
-      unless File.exist?(template_path)
-        return {success: false, message: "Template not found: #{template_path}"}
+      template_path = Dir.glob(File.join("data/templates", "**", "#{template_name}.yaml")).first
+      if template_path.nil?
+        return {success: false, message: "Template not found: #{template_name}"}
       end
 
       template_data = YAML.load_file(template_path)

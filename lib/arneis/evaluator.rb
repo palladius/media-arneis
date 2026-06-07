@@ -10,11 +10,11 @@ module Arneis
     def check_json(content)
       if Config.dryrun?
         puts Rainbow("  🌵 [DRYRUN] Mocking JSON Eval...").yellow
-        return { success: true, message: "Mock JSON success", evaluated: true }
+        return {success: true, message: "Mock JSON success", evaluated: true}
       end
       puts Rainbow("  ⚖️  [EVAL] Checking JSON logic and consistency (Tier 1)...").cyan
-      
-      system_instruction = "You are a logic auditor for JSON artifacts. Analyze the provided JSON content for any logical inconsistencies, schema violations, or contradictions between descriptive fields. 
+
+      system_instruction = "You are a logic auditor for JSON artifacts. Analyze the provided JSON content for any logical inconsistencies, schema violations, or contradictions between descriptive fields.
       Output format:
       SUCCESS: <true/false>
       REASON: <brief explanation>"
@@ -22,28 +22,28 @@ module Arneis
       begin
         res = @gemini.generate(content, system_instruction: system_instruction)
         text = res[:content]
-        
+
         success = text.match(/SUCCESS:\s*(true|false)/i)&.captures&.first&.downcase == "true"
         reason = text.match(/REASON:\s*(.*)/m)&.captures&.first&.strip || "No reason provided"
-        
-        { success: success, message: reason, evaluated: true }
+
+        {success: success, message: reason, evaluated: true}
       rescue => e
-        { success: false, message: "JSON Eval failed: #{e.message}", evaluated: false }
+        {success: false, message: "JSON Eval failed: #{e.message}", evaluated: false}
       end
     end
 
     def check_multimodal(artifact_path, intent_prompt)
       if Config.dryrun?
         puts Rainbow("  🌵 [DRYRUN] Mocking Multimodal Eval...").yellow
-        return { success: true, message: "Mock Multimodal success", evaluated: true }
+        return {success: true, message: "Mock Multimodal success", evaluated: true}
       end
       puts Rainbow("  ⚖️  [EVAL] Verifying intent matching for #{File.basename(artifact_path)} (Tier 2)...").cyan
 
       prompt = "You are a multimodal intent auditor. Compare the provided artifact (image or video) with the user's initial intent prompt.
       INTENT PROMPT: \"#{intent_prompt}\"
-      
+
       Does the visual output accurately represent the prompt? Check for subject matter, mood, and specific details mentioned.
-      
+
       Output format:
       SUCCESS: <true/false>
       REASON: <brief explanation>"
@@ -51,20 +51,20 @@ module Arneis
       begin
         res = @gemini.generate(prompt, images: [artifact_path])
         text = res[:content]
-        
+
         success = text.match(/SUCCESS:\s*(true|false)/i)&.captures&.first&.downcase == "true"
         reason = text.match(/REASON:\s*(.*)/m)&.captures&.first&.strip || "No reason provided"
-        
-        { success: success, message: reason, evaluated: true }
+
+        {success: success, message: reason, evaluated: true}
       rescue => e
-        { success: false, message: "Multimodal Eval failed: #{e.message}", evaluated: false }
+        {success: false, message: "Multimodal Eval failed: #{e.message}", evaluated: false}
       end
     end
 
     def evaluate_character_consistency(generated_image_path, character)
       if Config.dryrun?
         puts Rainbow("  🌵 [DRYRUN] Mocking Character Consistency Eval...").yellow
-        return { success: true, score: 9, message: "Mock Character consistency success", evaluated: true }
+        return {success: true, score: 9, message: "Mock Character consistency success", evaluated: true}
       end
       puts Rainbow("  ⚖️  [EVAL] Checking character consistency for #{character.name}...").cyan
 
@@ -106,18 +106,18 @@ module Arneis
 
     def detailed_probability_eval(generated_image_path, reference_image_path, character_name)
       if Config.dryrun?
-        return { probability: 95, message: "Mock similarity success" }
+        return {probability: 95, message: "Mock similarity success"}
       end
       puts Rainbow("  ⚖️  [EVAL] Calculating similarity probability for #{character_name}...").cyan
-      
-      prompt = "You are a professional facial recognition and identity verification expert. 
-      Compare these two images. 
+
+      prompt = "You are a professional facial recognition and identity verification expert.
+      Compare these two images.
       Image A (the first one) is the GROUND TRUTH reference of the person '#{character_name}'.
       Image B (the second one) is an AI-generated image.
-      
-      Are they the same person? 
+
+      Are they the same person?
       Be extremely critical. AI often misses subtle facial structures, ear shapes, or eye nuances.
-      
+
       Output format:
       PROBABILITY: <0-100>
       REASON: <brief explanation of your confidence score>"
@@ -125,23 +125,23 @@ module Arneis
       begin
         res = @gemini.generate(prompt, images: [reference_image_path, generated_image_path])
         content = res[:content]
-        
+
         prob = content.match(/PROBABILITY:\s*(\d+)/)&.captures&.first&.to_i || 0
         reason = content.match(/REASON:\s*(.*)/m)&.captures&.first&.strip || "No reason provided"
-        
-        { 
+
+        {
           probability: prob,
           message: reason
         }
       rescue => e
         puts Rainbow("  ⚠️ [EVAL] Failed: #{e.message}").yellow
-        { probability: 0, message: "Eval failed: #{e.message}" }
+        {probability: 0, message: "Eval failed: #{e.message}"}
       end
     end
 
     def evaluate_video_text(video_path, expected_text)
       if Config.dryrun?
-        return { success: true, score: 10, message: "Mock video text success", evaluated: true }
+        return {success: true, score: 10, message: "Mock video text success", evaluated: true}
       end
       puts "  👀 [EVAL] Verifying text in #{File.basename(video_path)}..."
 
@@ -164,7 +164,7 @@ module Arneis
     def evaluate_audio_intelligibility(audio_path, expected_text)
       if Config.dryrun?
         puts Rainbow("  🌵 [DRYRUN] Mocking Audio Intelligibility Eval...").yellow
-        return { success: true, score: 9, similarity: 95, transcription: "Mock transcription", message: "Mock audio success", evaluated: true }
+        return {success: true, score: 9, similarity: 95, transcription: "Mock transcription", message: "Mock audio success", evaluated: true}
       end
       puts Rainbow("  ⚖️  [EVAL] Checking audio intelligibility for #{File.basename(audio_path)}...").cyan
 
@@ -174,7 +174,7 @@ module Arneis
       EXPECTED TEXT:
       \"#{expected_text}\"
 
-      Assess how well the audio matches the expected text. 
+      Assess how well the audio matches the expected text.
       The transcription should be at least 90% the same as the expected text.
       Consider: Pronunciation, Clarity, and Accuracy.
 
@@ -207,6 +207,5 @@ module Arneis
         {success: false, score: 0, message: "Eval failed: #{e.message}", evaluated: false}
       end
     end
-
   end
 end

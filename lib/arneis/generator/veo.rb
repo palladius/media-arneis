@@ -31,21 +31,19 @@ module Arneis
           stdin.close
 
           t_err = Thread.new do
-            begin
-              while line = stderr.gets
-                puts "    [VEO SCRIPT] #{line.strip}"
-              end
-            rescue IOError; end
+            while line = stderr.gets
+              puts "    [VEO SCRIPT] #{line.strip}"
+            end
+          rescue IOError
           end
 
           t_out = Thread.new do
-            begin
-              while line = stdout.gets
-                if /^MEDIA:(.*)$/.match?(line)
-                  success = true
-                end
+            while line = stdout.gets
+              if /^MEDIA:(.*)$/.match?(line)
+                success = true
               end
-            rescue IOError; end
+            end
+          rescue IOError
           end
 
           t_err.join
@@ -63,7 +61,7 @@ module Arneis
 
       def generate(prompt, output_file, timeout: 600, asset_id: nil, async: false)
         return maybe_mock(output_file, :video, prompt) if dryrun?
-        
+
         receipt = AssetReceipt.new(asset_id: asset_id || "video_#{Time.now.to_i}", model: @model, prompt: prompt)
 
         # Throttling
@@ -100,30 +98,28 @@ module Arneis
 
             # Print stderr to show progress
             t_err = Thread.new do
-              begin
-                while line = stderr.gets
-                  puts "    [VEO SCRIPT] #{line.strip}"
-                end
-              rescue IOError; end
+              while line = stderr.gets
+                puts "    [VEO SCRIPT] #{line.strip}"
+              end
+            rescue IOError
             end
 
             # Script outputs MEDIA:path on success or OPERATION_ID:id
             t_out = Thread.new do
-              begin
-                while line = stdout.gets
-                  if line =~ /^MEDIA:(.*)$/
-                    media_path = $1.strip
-                    unless File.expand_path(media_path) == File.expand_path(output_file)
-                      FileUtils.mkdir_p(File.dirname(output_file))
-                      FileUtils.mv(media_path, output_file)
-                    end
-                    success = true
-                  elsif line =~ /^OPERATION_ID:(.*)$/
-                    operation_id = $1.strip
-                    success = true
+              while line = stdout.gets
+                if line =~ /^MEDIA:(.*)$/
+                  media_path = $1.strip
+                  unless File.expand_path(media_path) == File.expand_path(output_file)
+                    FileUtils.mkdir_p(File.dirname(output_file))
+                    FileUtils.mv(media_path, output_file)
                   end
+                  success = true
+                elsif line =~ /^OPERATION_ID:(.*)$/
+                  operation_id = $1.strip
+                  success = true
                 end
-              rescue IOError; end
+              end
+            rescue IOError
             end
 
             t_err.join

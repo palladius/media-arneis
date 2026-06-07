@@ -13,24 +13,24 @@ RSpec.describe Arneis::Evaluator do
     it "identifies logic errors in a JSON artifact" do
       json_path = "spec/fixtures/invalid_story.json"
       content = File.read(json_path)
-      
+
       allow(evaluator.instance_variable_get(:@gemini)).to receive(:generate).and_return({
         content: "SUCCESS: false\nREASON: Prompt mentions sunset but detected objects are moon/snow."
       })
-      
+
       # This will fail initially because the method doesn't exist
       result = evaluator.check_json(content)
       expect(result[:success]).to be false
       expect(result[:message]).to include("sunset")
     end
   end
-  
+
   describe "#check_multimodal" do
     it "identifies intent mismatches in media" do
       allow(evaluator.instance_variable_get(:@gemini)).to receive(:generate).and_return({
         content: "SUCCESS: false\nREASON: Image shows a desert but prompt was 'underwater city'."
       })
-      
+
       # This will fail initially because the method doesn't exist
       result = evaluator.check_multimodal("dummy.png", "underwater city")
       expect(result[:success]).to be false

@@ -27,7 +27,7 @@ module Arneis
       full_data = h_result[:data]
       @data = full_data["spec"]
       @metadata = full_data["metadata"]
-      
+
       @project_title = @data["project_title"]
       @character_ids = @data["characters"]
       @prompt = @data["prompt"]
@@ -73,12 +73,12 @@ module Arneis
 
       image_output = File.join(@output_path, "character_image.png")
 
-      orchestrator.add_task(:generate_image, outputs: { image_output => :image }, intent_prompt: "#{@character_ids.join(", ")}: #{@prompt}") do
+      orchestrator.add_task(:generate_image, outputs: {image_output => :image}, intent_prompt: "#{@character_ids.join(", ")}: #{@prompt}") do
         update_task_status("image", "in_progress")
 
         # Combine character contexts
         char_contexts = @characters.map(&:prompt_context).join("\n")
-        
+
         system_instruction = <<~PROMPT
           You are an expert Image Prompt Engineer. 
           Your goal is to enhance the user's requested SCENARIO into a highly descriptive, artistic image prompt.
@@ -169,7 +169,7 @@ module Arneis
 
         @characters.each do |char|
           e_result = evaluator.evaluate_character_consistency(image_output, char)
-          
+
           # Merge results into asset json
           asset_json = "#{image_output}.asset.json"
           if File.exist?(asset_json)

@@ -96,7 +96,7 @@ RSpec.describe Arneis::Schema do
           ]
         }
       }
-      
+
       # Mock slide files existence for validation
       allow(File).to receive(:exist?).with("data/presentations/slides/slide01.md").and_return(true)
       allow(File).to receive(:exist?).with("data/presentations/slides/slide05.md").and_return(true)
@@ -155,8 +155,8 @@ RSpec.describe Arneis::Hydrator do
       # Mock file system for test
       allow(File).to receive(:exist?).with("data/samples/pitch.yaml").and_return(true)
       allow(YAML).to receive(:load_file).with("data/samples/pitch.yaml").and_return(sample)
-      allow(File).to receive(:exist?).with("data/templates/VideoProject.yaml").and_return(true)
-      allow(YAML).to receive(:load_file).with("data/templates/VideoProject.yaml").and_return(template)
+      allow(Dir).to receive(:glob).with(File.join("data/templates", "**", "VideoProject.yaml")).and_return(["data/templates/VideoProject/VideoProject.yaml"])
+      allow(YAML).to receive(:load_file).with("data/templates/VideoProject/VideoProject.yaml").and_return(template)
 
       result = described_class.hydrate("data/samples/pitch.yaml")
       expect(result[:success]).to be true

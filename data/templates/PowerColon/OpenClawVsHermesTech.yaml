@@ -1,0 +1,29 @@
+apiVersion: media-arneis.palladius.it/v1
+kind: PowerColon
+metadata:
+  name: OpenClawVsHermesTech
+spec:
+  presentation_title: "Architectural Comparison: OpenClaw and Hermes"
+  fun: false
+  slides_count: 5
+  slides:
+    - title: "OpenClaw vs Hermes"
+      content: "A Deep-Dive Technical Comparison of Agentic Frameworks"
+      style: "title_slide"
+    - title: "Orchestration Models"
+      content: "- OpenClaw uses autonomous loops and tools\n- Hermes is built on message-driven queues"
+      style: "default"
+    - title: "OpenClaw Node System"
+      content: "- Node-based agent routing\n- State serialization\n- Dynamic tool execution"
+      style: "left_image"
+      image:
+        filename: "openclaw_nodes.png"
+        aspect_ratio: "4:3"
+        prompt: "A sleek technical diagram showing connected glowing nodes in a network with gears"
+    - title: "Hermes Delivery Pipeline"
+      content: "- Structured message payloads\n- Reliable delivery guarantees\n- Sub-millisecond routing latency"
+      style: "left_image"
+      image:
+        filename: "hermes_pipeline.png"
+        aspect_ratio: "4:3"
+        prompt: "A high-tech digital pipeline carrying glowing envelopes and data packets"

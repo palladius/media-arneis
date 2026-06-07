@@ -1,0 +1,10 @@
+apiVersion: media-arneis.palladius.it/v1
+kind: PowerColon
+metadata:
+  name: PowerColonFun
+spec:
+  presentation_title: "A Hilarious Presentation"
+  topic: "Fun Stuff"
+  fun: true
+  slides_count: 3
+  slides: []

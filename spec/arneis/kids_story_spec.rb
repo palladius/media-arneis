@@ -52,24 +52,24 @@ RSpec.describe Arneis::KidsStory do
 
       # Mock validation to avoid real file checks
       allow(Arneis::Validator).to receive(:validate_and_rename!).and_return({success: true})
-    # Mock evaluation to return a low score (3/10)
-    allow_any_instance_of(Arneis::Evaluator).to receive(:evaluate_character_consistency).and_return({ success: false, score: 3, message: "Too different" })
+      # Mock evaluation to return a low score (3/10)
+      allow_any_instance_of(Arneis::Evaluator).to receive(:evaluate_character_consistency).and_return({success: false, score: 3, message: "Too different"})
     end
 
-    it 'orchestrates the story generation correctly' do
-    project = described_class.new(sample_yaml)
-    project.initialize_output(output_dir)
+    it "orchestrates the story generation correctly" do
+      project = described_class.new(sample_yaml)
+      project.initialize_output(output_dir)
 
-    # Run sync for testing
-    project.process(async: false)
+      # Run sync for testing
+      project.process(async: false)
 
-    expect(File.exist?(File.join(output_dir, 'STORY.md'))).to be true
+      expect(File.exist?(File.join(output_dir, "STORY.md"))).to be true
 
-    state = YAML.load_file(File.join(output_dir, '.state.yaml'))
-    expect(state['status']).to eq('done')
-    expect(state['final_story_assembly']['status']).to eq('done')
-    # Since we mocked a low score, they should be done_with_warnings
-    expect(state['pages'].all? { |p| p['status'] == 'done_with_warnings' }).to be true
+      state = YAML.load_file(File.join(output_dir, ".state.yaml"))
+      expect(state["status"]).to eq("done")
+      expect(state["final_story_assembly"]["status"]).to eq("done")
+      # Since we mocked a low score, they should be done_with_warnings
+      expect(state["pages"].all? { |p| p["status"] == "done_with_warnings" }).to be true
     end
   end
 end

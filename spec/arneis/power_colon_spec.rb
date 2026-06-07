@@ -207,9 +207,9 @@ RSpec.describe Arneis::PowerColon do
     end
 
     it "ideates and drafts slides correctly" do
-      cli.options = { topic: "Hermes vs Openclaw", slides: 1, fun: true }
+      cli.options = {topic: "Hermes vs Openclaw", slides: 1, fun: true}
       expect(cli).to receive(:apply).with("data/presentations/hermes_vs_openclaw.yaml")
-      
+
       cli.generate("PowerColon")
     end
   end

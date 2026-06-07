@@ -70,12 +70,12 @@ module Arneis
         "background_music" => @data["background_music"] ? {"status" => "pending", "prompt" => @data["background_music"]["prompt"]} : nil,
         "final_story_assembly" => {"status" => "pending"}
       }
-      
+
       # Add individual audio concatenation tasks
       @story_audio.each do |lang|
         state["final_audio_#{lang}"] = {"status" => "pending"}
       end
-      
+
       File.write(state_file, state.to_yaml)
     end
 
@@ -116,7 +116,7 @@ module Arneis
           next
         end
 
-        orchestrator.add_task(page_id, outputs: { image_output => :image }, intent_prompt: page["description"]) do
+        orchestrator.add_task(page_id, outputs: {image_output => :image}, intent_prompt: page["description"]) do
           page_dir = File.dirname(image_output)
           FileUtils.mkdir_p(page_dir)
 
@@ -144,7 +144,7 @@ module Arneis
             # GENERATE AUDIO for each language
             @story_audio.each do |lang|
               audio_output = File.join(page_dir, "audio_#{lang}.wav")
-              
+
               target_text = enriched_text
               if lang != "en"
                 puts Rainbow("    🌐 [GEMINI] Translating Page #{page["page"]} to #{lang}...").cyan
@@ -172,7 +172,7 @@ module Arneis
           puts Rainbow("  ⏭️  Skipping Background Music (already done)").blue
         else
           music_output = File.join(@output_path, "audio", "background_music.wav")
-          orchestrator.add_task(music_id, outputs: { music_output => :audio }, intent_prompt: @data["background_music"]["prompt"]) do
+          orchestrator.add_task(music_id, outputs: {music_output => :audio}, intent_prompt: @data["background_music"]["prompt"]) do
             update_task_status("background_music", "in_progress")
             FileUtils.mkdir_p(File.dirname(music_output))
 
@@ -188,7 +188,7 @@ module Arneis
         audio_id = "final_audio_#{lang}"
         audio_output = File.join(@output_path, "audio", "final_story_#{lang}.wav")
         # Dependencies are all page tasks (which now include audio generation)
-        orchestrator.add_task(audio_id, dependencies: @pages.map { |p| "page_#{p["page"]}" }, outputs: { audio_output => :audio }, intent_prompt: "Full story audio in #{lang} for #{@story_title}") do
+        orchestrator.add_task(audio_id, dependencies: @pages.map { |p| "page_#{p["page"]}" }, outputs: {audio_output => :audio}, intent_prompt: "Full story audio in #{lang} for #{@story_title}") do
           update_task_status(audio_id, "in_progress")
           puts Rainbow("  🔊 [AUDIO] Concatenating final audio for #{lang}...").magenta
           concatenate_audio(lang)
@@ -204,7 +204,7 @@ module Arneis
         puts Rainbow("  ⏭️  Skipping Final Story Assembly (already done)").blue
       else
         story_file = File.join(@output_path, "STORY.md")
-        orchestrator.add_task(story_md_id, dependencies: page_task_ids, outputs: { story_file => :markdown }, intent_prompt: "Final Markdown storybook for #{@story_title}") do
+        orchestrator.add_task(story_md_id, dependencies: page_task_ids, outputs: {story_file => :markdown}, intent_prompt: "Final Markdown storybook for #{@story_title}") do
           update_task_status("final_story_assembly", "in_progress")
           puts Rainbow("📖 Assembling final story Markdown...").magenta
           generate_final_story
@@ -329,11 +329,11 @@ module Arneis
             # Find the text for this page in this language
             text_file = File.join(File.dirname(image_output), "story_text_#{lang}.txt")
             text_file = File.join(File.dirname(image_output), "story_text.txt") if lang == "en" && !File.exist?(text_file)
-            
+
             if File.exist?(text_file)
               expected_text = File.read(text_file)
               a_result = evaluator.evaluate_audio_intelligibility(audio_file, expected_text)
-              
+
               # Save audio eval to asset json
               audio_asset_json = "#{audio_file}.asset.json"
               if File.exist?(audio_asset_json) && a_result

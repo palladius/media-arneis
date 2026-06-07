@@ -24,8 +24,8 @@ RSpec.describe Arneis::VideoProject do
 
       allow(File).to receive(:exist?).with(invalid_yaml).and_return(true)
       allow(YAML).to receive(:load_file).with(invalid_yaml).and_return(content)
-      allow(File).to receive(:exist?).with("data/templates/VideoProject.yaml").and_return(true)
-      allow(YAML).to receive(:load_file).with("data/templates/VideoProject.yaml").and_return(template)
+      allow(Dir).to receive(:glob).with(File.join("data/templates", "**", "VideoProject.yaml")).and_return(["data/templates/VideoProject/VideoProject.yaml"])
+      allow(YAML).to receive(:load_file).with("data/templates/VideoProject/VideoProject.yaml").and_return(template)
 
       expect { described_class.new(invalid_yaml) }.to raise_error(/Unknown project kind/)
     end

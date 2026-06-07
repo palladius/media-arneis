@@ -19,7 +19,7 @@ RSpec.describe "KidsStory End-to-End", :expensive do
     # Run the arnectl apply command
     cmd = "bundle exec bin/arnectl apply #{sample_yaml} -o #{output_dir} --no-async"
     puts "\n🚀 Running E2E command: #{cmd}"
-    
+
     success = system(cmd)
     expect(success).to be true
 
@@ -33,12 +33,12 @@ RSpec.describe "KidsStory End-to-End", :expensive do
     (1..3).each do |i|
       page_dir = File.join(output_dir, "pages", "page_#{i}")
       expect(Dir.exist?(page_dir)).to be true
-      
+
       # Images
       img_file = File.join(page_dir, "illustration.png")
       expect(File.exist?(img_file)).to be true
       expect(File.exist?("#{img_file}.mock")).to be false
-      
+
       # Check asset json for evaluation
       asset_json = "#{img_file}.asset.json"
       expect(File.exist?(asset_json)).to be true
@@ -51,7 +51,7 @@ RSpec.describe "KidsStory End-to-End", :expensive do
         audio_file = File.join(page_dir, "audio_#{lang}.wav")
         expect(File.exist?(audio_file)).to be true
         expect(File.exist?("#{audio_file}.mock")).to be false
-        
+
         # Audio Eval
         audio_asset_json = "#{audio_file}.asset.json"
         expect(File.exist?(audio_asset_json)).to be true
@@ -65,7 +65,7 @@ RSpec.describe "KidsStory End-to-End", :expensive do
     expect(File.exist?(File.join(output_dir, "audio", "final_story_it.wav"))).to be true
     expect(File.exist?(File.join(output_dir, "audio", "final_story_en.wav"))).to be true
     expect(File.exist?(File.join(output_dir, "STORY.md"))).to be true
-    
+
     story_content = File.read(File.join(output_dir, "STORY.md"))
     expect(story_content).to include("Riccardo")
     expect(story_content).to include("audio/final_story_it.wav")

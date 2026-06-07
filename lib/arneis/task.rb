@@ -26,15 +26,15 @@ module Arneis
         result = @block.call if @block
         if result.is_a?(Hash) && result[:status] == "polling"
           @status = :polling
-          return result
+          result
         else
           @status = :done
-          return {status: "done"}
+          {status: "done"}
         end
       rescue => e
         @status = :failed
         puts Rainbow("  ❌ Task #{@id} failed: #{e.message}").red
-        return {status: "failed", message: e.message}
+        {status: "failed", message: e.message}
       end
     end
 

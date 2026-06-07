@@ -1,0 +1,29 @@
+apiVersion: media-arneis.palladius.it/v1
+kind: PowerColon
+metadata:
+  name: OpenClawVsHermesFun
+spec:
+  presentation_title: "The Ultimate Agentic Showdown: OpenClaw vs Hermes"
+  fun: true
+  slides_count: 5
+  slides:
+    - title: "OpenClaw vs Hermes: Battle of the Agents"
+      content: "Welcome to the ultimate architectural showdown.\n- In one corner: OpenClaw, the agentic lobster!\n- In the other: Hermes, the lightning-fast messenger god!"
+      style: "title_slide"
+    - title: "OpenClaw: The Agentic Lobster"
+      content: "- Claw-some autonomous capabilities\n- Obsessive Obsidian note syncing\n- Built on pure agentic power"
+      style: "left_image"
+      image:
+        filename: "openclaw_lobster.png"
+        aspect_ratio: "3:4"
+        prompt: "A fun, cartoonish mechanical lobster typing furiously on a glowing keyboard in an office"
+    - title: "Hermes: The Speed Demon"
+      content: "- Wings on its heels and messages in its hands\n- Fast message-driven architecture\n- Low latency, high throughput"
+      style: "left_image"
+      image:
+        filename: "hermes_messenger.png"
+        aspect_ratio: "3:4"
+        prompt: "A cartoonish Greek god Hermes with winged sandals holding a letter and running at lightspeed"
+    - title: "The Verdict"
+      content: "- OpenClaw for deep agentic reasoning\n- Hermes for lightning-fast delivery\n- Why not both?"
+      style: "default"

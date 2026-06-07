@@ -12,7 +12,7 @@ RSpec.describe "VideoProject End-to-End", :expensive do
   it "successfully generates a full video project without mocks" do
     cmd = "bundle exec bin/arnectl apply #{sample_yaml} -o #{output_dir} --no-async"
     puts "\n🚀 Running E2E command: #{cmd}"
-    
+
     success = system(cmd)
     expect(success).to be true
 
@@ -26,7 +26,7 @@ RSpec.describe "VideoProject End-to-End", :expensive do
     (1..5).each do |i|
       scene_dir = File.join(output_dir, "video", "scene_#{i}")
       expect(Dir.exist?(scene_dir)).to be true
-      
+
       video_file = File.join(scene_dir, "video.mp4")
       expect(File.exist?(video_file)).to be true
       expect(File.exist?("#{video_file}.mock")).to be false

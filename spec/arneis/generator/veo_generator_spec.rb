@@ -38,7 +38,7 @@ RSpec.describe Arneis::Generator::Veo do
     context "with a complex prompt" do
       it "escapes the prompt correctly for the shell command" do
         generator = Arneis::Generator::Veo.new
-        
+
         # We need to capture the Open3.popen3 call to inspect the actual command
         expect(Open3).to receive(:popen3) do |env, cmd_str|
           expect(cmd_str).to include("uv run #{mock_veo_script_path}")
@@ -49,13 +49,13 @@ RSpec.describe Arneis::Generator::Veo do
           expect(cmd_str).not_to include("\"#{expected_escaped_prompt}\"")
 
           # Simulate successful execution for the purpose of this test
-          [double('stdin', close: nil), double('stdout', gets: nil), double('stderr', gets: nil), double('wait_thr', value: double(success?: true), join: nil)]
+          [double("stdin", close: nil), double("stdout", gets: nil), double("stderr", gets: nil), double("wait_thr", value: double(success?: true), join: nil)]
         end.and_call_original # allow other calls to popen3 if any
 
         generator.generate(prompt, output_file)
       end
     end
-    
+
     context "when Config.no_mock? is true and not dryrun" do
       before do
         allow(Arneis::Config).to receive(:no_mock?).and_return(true)

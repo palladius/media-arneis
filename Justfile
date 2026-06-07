@@ -50,6 +50,11 @@ list:
 
 test-story:
         just arnectl apply data/samples/KidsStory/riccardo_story.yaml -f out/riccardo-manhouse/
+
+# Run sticky PowerColon presentation test
+test-power-colon:
+        just arnectl apply data/samples/PowerColon/mock_presentation.yaml --output out/sticky-power-colon/ --force-clean
+
 # Run expensive LLM integration tests (opt-in via ARNEIS_EXPENSIVE_TESTS=true)
 test-expensive:
         {{BUNDLE}} exec bin/test_llm_expensive.rb

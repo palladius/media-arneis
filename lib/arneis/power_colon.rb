@@ -46,16 +46,17 @@ module Arneis
       @metadata = full_data["metadata"]
       @presentation_title = @data["presentation_title"]
       @slides = @data["slides"]
-      
+
       if @slides.nil? || @slides.empty?
         ideate_slides!
       end
-      
+
       @mutex = Thread::Mutex.new
     end
 
     def initialize_output(output_path)
       FileUtils.mkdir_p(output_path) unless Dir.exist?(output_path)
+      FileUtils.mkdir_p(File.join(output_path, "assets"))
       @output_path = output_path
 
       # Copy YAML to output folder
@@ -110,14 +111,14 @@ module Arneis
         # Identify if slide has an image task
         has_image = slide["style"] == "left_image" || slide["image"]
         image_config = slide["image"] || {}
-        target_filename = image_config["filename"] || "slide_#{sprintf('%02d', idx + 1)}_illustration.png"
+        target_filename = image_config["filename"] || "slide_#{sprintf("%02d", idx + 1)}_illustration.png"
         image_output = File.join(@output_path, "assets", target_filename)
 
-        outputs = has_image ? { image_output => :image } : {}
+        outputs = has_image ? {image_output => :image} : {}
         slide_title = slide["title"] || "Slide #{idx + 1}"
         if slide["file"] && File.exist?(slide["file"])
           markdown_content = File.read(slide["file"])
-          if match = markdown_content.match(/^#\s+(.*)$/)
+          if (match = markdown_content.match(/^#\s+(.*)$/))
             slide_title = match[1]
           end
         end
@@ -130,20 +131,20 @@ module Arneis
           if has_image
             # Run image generation
             aspect_ratio = image_config["aspect_ratio"] || "3:4"
-            prompt = image_config["prompt"] || (slide["file"] ? "Illustration for slide: #{File.basename(slide['file'], '.*')}" : "Illustration for slide: #{slide_title}")
+            prompt = image_config["prompt"] || (slide["file"] ? "Illustration for slide: #{File.basename(slide["file"], ".*")}" : "Illustration for slide: #{slide_title}")
 
             # Check for dryrun or mock mode
             if dryrun || !Config.no_mock?
               puts Rainbow("  🤡 [MOCK] Copying cute placeholder image for slide #{idx + 1}...").yellow
               FileUtils.mkdir_p(File.dirname(image_output))
-              
+
               mock_src = if aspect_ratio == "3:4"
-                           "assets/power-colon/images/mock/coming_soon_3x4.png"
-                         elsif aspect_ratio == "4:3"
-                           "assets/power-colon/images/mock/coming_soon_4x3.png"
-                         else
-                           "assets/power-colon/images/mock/coming_soon_1x1.png"
-                         end
+                "assets/power-colon/images/mock/coming_soon_3x4.png"
+              elsif aspect_ratio == "4:3"
+                "assets/power-colon/images/mock/coming_soon_4x3.png"
+              else
+                "assets/power-colon/images/mock/coming_soon_1x1.png"
+              end
 
               if File.exist?(mock_src)
                 FileUtils.cp(mock_src, image_output)
@@ -170,7 +171,7 @@ module Arneis
 
       # Final Assembly Task
       assembly_id = "final_assembly"
-      orchestrator.add_task(assembly_id, dependencies: slide_task_ids, outputs: { File.join(@output_path, "presentation.html") => :text }) do
+      orchestrator.add_task(assembly_id, dependencies: slide_task_ids, outputs: {File.join(@output_path, "presentation.html") => :text}) do
         puts Rainbow("📖 Assembling final HTML presentation...").magenta
         generate_html_presentation
         generate_export_metadata
@@ -188,14 +189,14 @@ module Arneis
 
     def generate_html_presentation
       html_file = File.join(@output_path, "presentation.html")
-      
+
       slides_html = @slides.map.with_index do |slide, idx|
         slide_title = slide["title"] || "Slide #{idx + 1}"
         slide_content = slide["content"] || ""
-        
+
         if slide["file"] && File.exist?(slide["file"])
           markdown_content = File.read(slide["file"])
-          if match = markdown_content.match(/^#\s+(.*)$/)
+          if (match = markdown_content.match(/^#\s+(.*)$/))
             slide_title = match[1]
           end
           slide_content = markdown_content.gsub(/^#\s+.*$/, "").strip
@@ -206,7 +207,7 @@ module Arneis
 
         if style_class == "left_image" || slide["image"]
           image_config = slide["image"] || {}
-          target_filename = image_config["filename"] || "slide_#{sprintf('%02d', idx + 1)}_illustration.png"
+          target_filename = image_config["filename"] || "slide_#{sprintf("%02d", idx + 1)}_illustration.png"
           image_path = File.join("assets", target_filename)
           image_html = "<div class='slide-image'><img src='#{image_path}' alt='Illustration'></div>"
         end
@@ -259,17 +260,17 @@ module Arneis
       slides_export = @slides.map.with_index do |slide, idx|
         slide_title = slide["title"] || "Slide #{idx + 1}"
         slide_content = slide["content"] || ""
-        
+
         if slide["file"] && File.exist?(slide["file"])
           markdown_content = File.read(slide["file"])
-          if match = markdown_content.match(/^#\s+(.*)$/)
+          if (match = markdown_content.match(/^#\s+(.*)$/))
             slide_title = match[1]
           end
           slide_content = markdown_content.gsub(/^#\s+.*$/, "").strip
         end
 
         image_config = slide["image"] || {}
-        target_filename = image_config["filename"] || "slide_#{sprintf('%02d', idx + 1)}_illustration.png"
+        target_filename = image_config["filename"] || "slide_#{sprintf("%02d", idx + 1)}_illustration.png"
         image_path = File.join("assets", target_filename) if slide["style"] == "left_image" || slide["image"]
 
         {
@@ -326,12 +327,16 @@ module Arneis
         idea = {
           "presentation_title" => topic,
           "slides" => (1..num_slides).map do |i|
-            style = (i == 1) ? "title_slide" : ((i == 2) ? "left_image" : "default")
+            style = if i == 1
+              "title_slide"
+            else
+              ((i == 2) ? "left_image" : "default")
+            end
             {
               "style" => style,
               "title" => "Slide #{i} Title",
               "content" => "- Bullet 1\n- Bullet 2",
-              "image" => style == "left_image" ? { "prompt" => "Illustration", "aspect_ratio" => "3:4" } : nil
+              "image" => (style == "left_image") ? {"prompt" => "Illustration", "aspect_ratio" => "3:4"} : nil
             }
           end
         }
@@ -370,7 +375,7 @@ module Arneis
         PROMPT
 
         resp = gemini.generate(prompt)
-        clean_content = resp[:content].gsub(/```json/, "").gsub(/```/, "").strip
+        clean_content = resp[:content].gsub("```json", "").gsub("```", "").strip
         begin
           idea = JSON.parse(clean_content)
         rescue => e
@@ -379,7 +384,7 @@ module Arneis
           idea = {
             "presentation_title" => topic,
             "slides" => [
-              { "style" => "title_slide", "title" => topic, "content" => "Failed to ideate" }
+              {"style" => "title_slide", "title" => topic, "content" => "Failed to ideate"}
             ]
           }
         end

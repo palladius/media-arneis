@@ -7,7 +7,7 @@ module Arneis
     def self.load!
       return if @loaded
       Dotenv.load(".env")
-      
+
       detections = []
       detections << "ARNEIS_OPEN_ENABLED/OPEN detected: --open is enabled for all calls" if ENV["ARNEIS_OPEN_ENABLED"] == "true" || ENV["ARNEIS_OPEN"] == "true" || ENV["OPEN"] == "true"
       detections << "ARNEIS_EVAL_ENABLED/EVAL detected: --eval is enabled for all calls" if ENV["ARNEIS_EVAL_ENABLED"] == "true" || ENV["ARNEIS_EVAL"] == "true" || ENV["EVAL"] == "true"

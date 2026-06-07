@@ -50,7 +50,7 @@ RSpec.describe Arneis::KidsStory do
       allow(gemini_mock).to receive(:generate).and_return({content: "Mocked content", tokens: 10, cost: 0.01})
       allow(imagen_mock).to receive(:generate).and_return({status: "done", cost: 0.05, time: 1.0})
       allow(lyria_mock).to receive(:generate).and_return({status: "done", cost: 0.10, time: 1.0})
-      
+
       # Mock chirp to write the file
       allow(chirp_mock).to receive(:generate) do |text, output_file, options|
         FileUtils.mkdir_p(File.dirname(output_file))
@@ -59,25 +59,25 @@ RSpec.describe Arneis::KidsStory do
       end
 
       allow(Arneis::Validator).to receive(:validate_and_rename!).and_return({success: true})
-      allow(evaluator_mock).to receive(:evaluate_character_consistency).and_return({ success: true, score: 8 })
-      allow(evaluator_mock).to receive(:evaluate_audio_intelligibility).and_return({ success: true, score: 9, similarity: 95 })
+      allow(evaluator_mock).to receive(:evaluate_character_consistency).and_return({success: true, score: 8})
+      allow(evaluator_mock).to receive(:evaluate_audio_intelligibility).and_return({success: true, score: 9, similarity: 95})
     end
 
     it "triggers audio generation, evaluation and includes links in STORY.md" do
       project = described_class.new(sample_yaml) # has [it, en]
       project.initialize_output(output_dir)
-      
+
       # 3 for enrichment + 3 for prompt enhancement + 3 for translation
       expect(gemini_mock).to receive(:generate).exactly(9).times
-      
+
       # 3 pages * 2 languages = 6 audio evaluation calls
       expect(evaluator_mock).to receive(:evaluate_audio_intelligibility).exactly(6).times
 
       project.process(async: false)
-      
+
       expect(File.exist?(File.join(output_dir, "pages/page_1/audio_it.wav"))).to be true
       expect(File.exist?(File.join(output_dir, "pages/page_1/audio_en.wav"))).to be true
-      
+
       # Final audio files
       expect(File.exist?(File.join(output_dir, "audio/final_story_it.wav"))).to be true
       expect(File.exist?(File.join(output_dir, "audio/final_story_en.wav"))).to be true

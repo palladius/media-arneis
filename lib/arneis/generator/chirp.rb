@@ -14,7 +14,7 @@ module Arneis
 
       def generate(text, output_file, language_code: "en-US", voice_id: nil, asset_id: nil)
         return maybe_mock(output_file, :audio, text) if dryrun?
-        
+
         puts Rainbow("  🗣️  [CHIRP] Generating audio for language #{language_code}...").magenta
         receipt = AssetReceipt.new(asset_id: asset_id || "audio_#{Time.now.to_i}", model: @model, prompt: text[0..100])
         start_time = Time.now
@@ -34,7 +34,7 @@ module Arneis
           puts Rainbow("    ⚠️  Text exceeds 5000 byte limit. Chunking into multiple requests...").yellow
           chunks = chunk_text(text, 4000)
           chunk_files = []
-          
+
           chunks.each_with_index do |chunk, i|
             chunk_file = "#{output_file}.chunk#{i}.wav"
             res = call_script(chunk, chunk_file, language_code, voice_id)
@@ -69,7 +69,7 @@ module Arneis
       rescue => e
         sanitized_msg = Config.sanitize(e.message)
         puts Rainbow("  ⚠️ [CHIRP] Failed: #{sanitized_msg}").yellow
-        
+
         if Config.no_mock?
           puts Rainbow("  🚫 Mocking disabled. Raising error.").red
           raise e
@@ -106,7 +106,8 @@ module Arneis
           stdin.close
           t_err = Thread.new { begin; while line = stderr.gets; puts "    [CHIRP SCRIPT] #{line.strip}"; end; rescue IOError; end }
           t_out = Thread.new { begin; while line = stdout.gets; success = true if /^MEDIA:(.*)$/.match?(line); end; rescue IOError; end }
-          t_err.join; t_out.join
+          t_err.join
+          t_out.join
           success = wait_thr.value.success? if success.nil?
         end
         {success: success}
@@ -144,7 +145,7 @@ module Arneis
         cmd = "ffmpeg -f concat -safe 0 -i #{list_file} -c copy #{output_file} -y"
         puts "    [FFMPEG] Concatenating chunks: #{cmd}"
         system(cmd)
-        
+
         # Cleanup
         files.each { |f| FileUtils.rm(f) if File.exist?(f) }
         FileUtils.rm(list_file) if File.exist?(list_file)
