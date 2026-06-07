@@ -70,8 +70,10 @@ module Arneis
             elapsed = Time.now - @@last_launch_at
             if elapsed < 2.0
               wait_time = 2.0 - elapsed
-              puts Rainbow("  ⏳ [THROTTLE] Waiting #{wait_time.round(2)}s for next video launch...").yellow
-              sleep(wait_time)
+              unless ENV["RSPEC_RUNNING"] == "true"
+                puts Rainbow("  ⏳ [THROTTLE] Waiting #{wait_time.round(2)}s for next video launch...").yellow
+                sleep(wait_time)
+              end
             end
           end
           @@last_launch_at = Time.now

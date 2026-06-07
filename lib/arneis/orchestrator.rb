@@ -82,7 +82,7 @@ module Arneis
           end
         end
 
-        sleep 1 # Small delay to avoid busy-waiting
+        sleep(ENV["RSPEC_RUNNING"] == "true" ? 0.001 : 1)
       end
     end
 
@@ -114,7 +114,7 @@ module Arneis
                     @polling_tasks.delete(id)
                     break # Exit polling loop for this task
                   end
-                  sleep 5 # Poll every 5 seconds
+                  sleep(ENV["RSPEC_RUNNING"] == "true" ? 0.001 : 5)
                 end
               end
             end
@@ -163,7 +163,7 @@ module Arneis
             break
           end
 
-          sleep 0.1 # Small delay to avoid busy-waiting
+          sleep(ENV["RSPEC_RUNNING"] == "true" ? 0.001 : 0.1)
         end
       end
     end
