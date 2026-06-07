@@ -9,15 +9,19 @@ default:
 install:
         {{BUNDLE}} install
 
-# Run fast tests (unit tests)
-test:
-        @echo "🟢 Running fast tests..."
-        {{BUNDLE}} exec ruby -S rspec --tag ~expensive
+# Run fast tests (unit-test)
+test: unit-test
 
-# Run long tests (e2e and expensive tests)
-long-tests:
-        @echo "🟢 Running long tests..."
-        {{BUNDLE}} exec ruby -S rspec --tag expensive
+# Run quick unit tests (no LLM, fast)
+unit-test:
+        @echo "🟢 Running unit tests..."
+        {{BUNDLE}} exec rspec --tag ~expensive --pattern "spec/arneis/**/*_spec.rb"
+
+# Run integration tests (LLM-as-judge specs)
+integration-test:
+        @echo "🟢 Running integration tests..."
+        {{BUNDLE}} exec rspec spec/integration/
+
 
 # Run linter
 lint:
@@ -55,14 +59,10 @@ test-story:
 test-power-colon:
         just arnectl apply data/samples/PowerColon/mock_presentation.yaml --output out/sticky-power-colon/ --force-clean
 
-# Run expensive LLM integration tests (opt-in via ARNEIS_EXPENSIVE_TESTS=true)
-test-expensive:
-        {{BUNDLE}} exec bin/test_llm_expensive.rb
-
-# Run full End-to-End expensive tests
-test-e2e:
-	@echo "🚀 Running expensive E2E tests..."
-	ARNEIS_NO_MOCK=true {{BUNDLE}} exec ruby -S rspec spec/e2e/
+# Run full End-to-End expensive tests (no mocks)
+e2e-test:
+        @echo "🚀 Running expensive E2E tests..."
+        ARNEIS_NO_MOCK=true {{BUNDLE}} exec rspec spec/e2e/
 
 
 ricc-story:
