@@ -1,5 +1,7 @@
 
-Use Conductor extension to manage the BDD and SW dev
+Use Conductor extension to manage the BDD and SW dev.
+
+Ensure to ask Acceptance Criteria before starting the coding. After a track is done, you should be able to test and iterate over ACCETANCE_CRITERIA.md you created before! It could be something as simple as "the user is going to try this new feature". But it needs to be somewhere in a PLAN checkboc which needs checking out before declaring victory!
 
 ## Gemini models
 
@@ -40,8 +42,10 @@ Use Conductor extension to manage the BDD and SW dev
 * Use <git worktree> for multi-agent parallel working on same computer.
 * For every feature being worke dby conductor, create a feature branch called "YYYYMM-featurename".
 * move to `~/git/media-arneis/worktree/BRANCHNAME` and do the changes there.
+* Copy `.env` in there (better: symlink from main!).
+* Keep it lean, we dont want to explode exponentially the disk size from 10 worktrees each 1Gb!
 * When happy, do the usual VERSION/CHANGELOG change.
-* [a few times] Ensure user is happy, and confirm with user when its DONE. Iterate until user is happy.
+* [a few times] Ensure user is happy, and confirm with user when its DONE. Iterate until user is happy. Ask them for Acceptance Criteria.
 * Now user is happy: final commit/version/changelog.
 * merge with main.
 * delete the branch.
