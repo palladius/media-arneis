@@ -12,12 +12,12 @@ install:
 # Run fast tests (unit tests)
 test:
         @echo "🟢 Running fast tests..."
-        {{BUNDLE}} exec rspec --tag ~expensive
+        {{BUNDLE}} exec ruby -S rspec --tag ~expensive
 
 # Run long tests (e2e and expensive tests)
 long-tests:
         @echo "🟢 Running long tests..."
-        {{BUNDLE}} exec rspec --tag expensive
+        {{BUNDLE}} exec ruby -S rspec --tag expensive
 
 # Run linter
 lint:
@@ -62,7 +62,7 @@ test-expensive:
 # Run full End-to-End expensive tests
 test-e2e:
 	@echo "🚀 Running expensive E2E tests..."
-	ARNEIS_NO_MOCK=true {{BUNDLE}} exec rspec spec/e2e/
+	ARNEIS_NO_MOCK=true {{BUNDLE}} exec ruby -S rspec spec/e2e/
 
 
 ricc-story:

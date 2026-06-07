@@ -16,6 +16,13 @@
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 ENV["RSPEC_RUNNING"] = "true"
 
+# Disable mock-abolition (ARNEIS_NO_MOCK) during regular unit tests to prevent bleeding from developer's .env file.
+# We only allow it if the current rspec run is targeting e2e or expensive specs.
+is_expensive = ARGV.any? { |arg| arg.include?("spec/e2e") || (arg.include?("expensive") && !arg.include?("~expensive")) }
+unless is_expensive
+  ENV["ARNEIS_NO_MOCK"] = "false"
+end
+
 RSpec.configure do |config|
   # rspec-expectations config goes here. You can use an alternate
   # assertion/expectation library such as wrong or the stdlib/minitest

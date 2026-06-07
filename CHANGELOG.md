@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.7] - 2026-06-07
+
+### Added
+- 📖 doc: Created comprehensive `docs/USER MANUAL.md` covering all engines (VideoProject, KidsStory, CharacterImage, ComicStrip, and PowerColon), characters configuration, and CLI invocations.
+- ⚙️ feat: Created AI-focused skill folder `docs/skills/how-to-use-media-arneis/SKILL.md` to guide agents in running and updating the framework.
+- 🧪 test: Added RSpec unit test `spec/arneis/documentation_spec.rb` to prevent version drift between `VERSION` and documentation.
+- 🛠️ chore: Safe-guarded unit tests against local `.env` mock-abolition bleeding, and updated `Justfile` recipe commands to run via `ruby -S rspec` to avoid broken local shebangs.
+
 ## [0.2.6] - 2026-06-07
 
 ### Added
