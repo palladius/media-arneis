@@ -1,0 +1,93 @@
+# frozen_string_literal: true
+
+require "fileutils"
+
+module Arneis
+  class ExtractBestOf
+    IMAGE_EXTENSIONS = %w[.png .jpg .jpeg .webp .gif].freeze
+    
+    attr_reader :source_dir, :targets, :dry_run, :verbose
+
+    def initialize(source_dir: "out", targets: [], dry_run: false, verbose: false)
+      @source_dir = source_dir
+      @targets = targets.map { |t| File.expand_path(t) }
+      @dry_run = dry_run
+      @verbose = verbose
+    end
+
+    def run
+      unless Dir.exist?(source_dir)
+        return { success: false, error: "Source directory '#{source_dir}' does not exist." }
+      end
+
+      # Find matching files
+      matching_files = find_files
+
+      stats = {
+        found: matching_files.size,
+        copied: 0,
+        skipped: 0,
+        overwritten: 0,
+        errors: 0
+      }
+
+      matching_files.each do |src_path|
+        # Deterministic safe name
+        relative_path = src_path.sub(/^#{Regexp.escape(source_dir)}\//, "")
+        safe_name = relative_path.gsub(/[\/\\]/, "_")
+
+        targets.each do |target_dir|
+          dest_path = File.join(target_dir, safe_name)
+
+          if File.exist?(dest_path)
+            if File.size(dest_path) == File.size(src_path)
+              stats[:skipped] += 1
+              next
+            else
+              stats[:overwritten] += 1
+            end
+          else
+            stats[:copied] += 1
+          end
+
+          next if dry_run
+
+          begin
+            FileUtils.mkdir_p(target_dir) unless Dir.exist?(target_dir)
+            FileUtils.cp(src_path, dest_path)
+          rescue => e
+            stats[:errors] += 1
+            warn "Error copying #{src_path} to #{dest_path}: #{e.message}" if verbose
+          end
+        end
+      end
+
+      { success: true, stats: stats }
+    end
+
+    def find_files
+      all_files = Dir.glob(File.join(source_dir, "**/*"))
+      
+      all_files.select do |path|
+        next false unless File.file?(path)
+
+        # Check extension
+        ext = File.extname(path).downcase
+        next false unless IMAGE_EXTENSIONS.include?(ext)
+
+        # Exclude target directories to prevent infinite loops / double copies
+        abs_path = File.expand_path(path)
+        next false if targets.any? { |td| abs_path.start_with?(td) }
+
+        # Also explicitly exclude default best-of path in case it is relative or resolved differently
+        next false if path.start_with?("#{source_dir}/best-of/") || path.include?("/best-of/")
+
+        # Exclude hidden directories (like .trash)
+        parts = path.split('/')
+        next false if parts.any? { |part| part.start_with?('.') && part != '.' && part != '..' }
+
+        true
+      end
+    end
+  end
+end

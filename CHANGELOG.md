@@ -8,11 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.8] - 2026-06-07
 
 ### Added
+- 📸 feat: Added `just extract-bestof` script and engine to scrape generated images from `out/` with collision-prevention naming.
+- ⚙️ feat: Supported customizable target directories and desktop-copy option via flags (`--output` and `--desktop`).
+- 🧪 test: Added comprehensive RSpec unit tests for `Arneis::ExtractBestOf` validating filtering, copying, and duplicate skipping.
 - 🧪 test: Clean up testing semantics. Pointed `just test` (unit tests) to `just unit-test` (<5s runtime, using mocks), added `just integration-test` (real API calls) and `just e2e-test` (real API calls with evaluator).
 - ⚙️ feat: Add timestamps to logging output by overriding `Kernel#puts` globally for non-vendored project files.
 - 🐛 fix: Map `.mp4` video files to correct MIME-type `video/mp4` during multimodal intent check evaluations.
 
+
 ## [0.2.7] - 2026-06-07
+
 
 ### Added
 - 📖 doc: Created comprehensive `docs/USER MANUAL.md` covering all engines (VideoProject, KidsStory, CharacterImage, ComicStrip, and PowerColon), characters configuration, and CLI invocations.

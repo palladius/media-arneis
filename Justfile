@@ -51,6 +51,11 @@ arnectl *args:
 list:
         just arnectl list
 
+# Extract best images from out/ folders to prevent collisions
+extract-bestof *args:
+        @cd {{justfile_directory()}} && {{BUNDLE}} exec ruby bin/extract-bestof.rb {{args}}
+
+
 
 test-story:
         just arnectl apply data/samples/KidsStory/riccardo_story.yaml -f out/riccardo-manhouse/

@@ -76,3 +76,5 @@ require_relative "arneis/feedback_loader"
 require_relative "arneis/characters_cli"
 require_relative "arneis/cli"
 require_relative "arneis/character_image"
+require_relative "arneis/extract_best_of"
+
