@@ -15,6 +15,8 @@
 # See https://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 ENV["RSPEC_RUNNING"] = "true"
+require_relative "support/llm_judge_helper"
+
 
 # Disable mock-abolition (ARNEIS_NO_MOCK) during regular unit tests to prevent bleeding from developer's .env file.
 # We only allow it if the current rspec run is targeting e2e or expensive specs.
