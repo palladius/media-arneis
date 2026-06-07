@@ -15,3 +15,5 @@ gem "async"
 gem "async-http"
 
 gem "ruby_llm"
+
+gem "powerpoint"

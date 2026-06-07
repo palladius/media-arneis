@@ -6,6 +6,7 @@ require "fileutils"
 require "rainbow"
 require "json"
 require "time"
+require "powerpoint"
 
 module Arneis
   class PowerColon
@@ -171,10 +172,14 @@ module Arneis
 
       # Final Assembly Task
       assembly_id = "final_assembly"
-      orchestrator.add_task(assembly_id, dependencies: slide_task_ids, outputs: {File.join(@output_path, "presentation.html") => :text}) do
-        puts Rainbow("📖 Assembling final HTML presentation...").magenta
+      orchestrator.add_task(assembly_id, dependencies: slide_task_ids, outputs: {
+        File.join(@output_path, "presentation.html") => :text,
+        File.join(@output_path, "presentation.pptx") => :text
+      }) do
+        puts Rainbow("📖 Assembling final presentation artifacts...").magenta
         generate_html_presentation
         generate_export_metadata
+        generate_pptx_presentation
       end
 
       orchestrator.run
@@ -291,6 +296,59 @@ module Arneis
 
       File.write(export_file, JSON.pretty_generate(data))
       puts Rainbow("✅ Exported presentation metadata to #{export_file}").green
+    end
+
+    def generate_pptx_presentation
+      pptx_file = File.join(@output_path, "presentation.pptx")
+      deck = Powerpoint::Presentation.new
+
+      @slides.each_with_index do |slide, idx|
+        slide_title = slide["title"] || "Slide #{idx + 1}"
+        slide_content = slide["content"] || ""
+        style_class = slide["style"]
+
+        if slide["file"] && File.exist?(slide["file"])
+          markdown_content = File.read(slide["file"])
+          if (match = markdown_content.match(/^#\s+(.*)$/))
+            slide_title = match[1]
+          end
+          slide_content = markdown_content.gsub(/^#\s+.*$/, "").strip
+        end
+
+        bullets = parse_bullets(slide_content)
+
+        if style_class == "title_slide"
+          deck.add_intro(slide_title, bullets.join("\n"))
+        elsif style_class == "left_image" || slide["image"]
+          image_config = slide["image"] || {}
+          target_filename = image_config["filename"] || "slide_#{sprintf("%02d", idx + 1)}_illustration.png"
+          image_path = File.join(@output_path, "assets", target_filename)
+
+          if File.exist?(image_path)
+            if bullets.any?
+              deck.add_text_picture_slide(slide_title, image_path, bullets)
+            else
+              deck.add_pictorial_slide(slide_title, image_path)
+            end
+          else
+            deck.add_textual_slide(slide_title, bullets)
+          end
+        else
+          deck.add_textual_slide(slide_title, bullets)
+        end
+      end
+
+      deck.save(pptx_file)
+      puts Rainbow("✅ PowerPoint presentation saved to #{pptx_file}").green
+    rescue => e
+      puts Rainbow("⚠️ Failed to generate PPTX: #{e.message}").yellow
+    end
+
+    def parse_bullets(content_string)
+      return [] if content_string.nil? || content_string.to_s.strip.empty?
+      content_string.split("\n").map do |line|
+        line.strip.gsub(/^[-*+]\s+|^[0-9]+\.\s+/, "").strip
+      end.reject(&:empty?)
     end
 
     def update_slide_status(slide_idx, status, error_msg = nil)
