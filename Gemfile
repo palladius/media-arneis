@@ -17,3 +17,6 @@ gem "async-http"
 gem "ruby_llm"
 
 gem "powerpoint"
+
+gem "google-apis-slides_v1"
+gem "google-apis-drive_v3"

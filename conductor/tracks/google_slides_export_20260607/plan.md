@@ -1,9 +1,9 @@
 # Implementation Plan - Google Slides Export (feature_google_slides_export)
 
 ## Phase 1: Setup & Google Authentication
-- [ ] Task: Gem dependency setup
-  - [ ] Add `google-apis-slides_v1` and `google-apis-drive_v3` to `Gemfile` and run `bundle install`.
-- [ ] Task: Write failing tests for Authentication Manager
+- [x] Task: Gem dependency setup
+  - [x] Add `google-apis-slides_v1` and `google-apis-drive_v3` to `Gemfile` and run `bundle install`.
+- [~] Task: Write failing tests for Authentication Manager
   - [ ] Write tests verifying client instantiation, token loading, and support for both OAuth2 credentials and Service Account JSON keys.
 - [ ] Task: Implement Authentication Manager (`Arneis::GoogleAuthManager`)
   - [ ] Implement credential loading logic from environment variables (`GOOGLE_APPLICATION_CREDENTIALS` or `GOOGLE_WORKSPACE_CREDENTIALS`).
