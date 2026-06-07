@@ -7,9 +7,9 @@
     - [x] Define `integration-test` target running RSpec on `spec/integration/`.
     - [x] Define `e2e-test` target running RSpec on `spec/e2e/`.
     - [x] Align or remove redundant targets (`long-tests`, `test-expensive`).
-- [ ] Task: Ensure all unit tests are mocked and fast
-    - [ ] Identify any unit tests in `spec/arneis/` executing real calls or taking too long.
-    - [ ] Refactor or add mocks to keep unit test suite running in <5s.
+- [x] Task: Ensure all unit tests are mocked and fast [6d96454]
+    - [x] Identify any unit tests in `spec/arneis/` executing real calls or taking too long.
+    - [x] Refactor or add mocks to keep unit test suite running in <5s.
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Fast Unit Tests Optimization & Justfile Target Streamlining' (Protocol in workflow.md)
 
 ## Phase 2: LLM-as-Judge & Semantic Assertion Framework
