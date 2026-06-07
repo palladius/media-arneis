@@ -1,6 +1,6 @@
 # Plan: Clean up Testing Semantics & Implement LLM-as-Judge Integration Tests
 
-## Phase 1: Fast Unit Tests Optimization & Justfile Target Streamlining
+## Phase 1: Fast Unit Tests Optimization & Justfile Target Streamlining [checkpoint: 24ae768]
 - [x] Task: Streamline Justfile test targets [f61fc7a]
     - [x] Define `unit-test` target running RSpec with tag `~expensive` and excluding `spec/integration/` and `spec/e2e/`.
     - [x] Point `test` target to `unit-test`.
@@ -10,7 +10,8 @@
 - [x] Task: Ensure all unit tests are mocked and fast [6d96454]
     - [x] Identify any unit tests in `spec/arneis/` executing real calls or taking too long.
     - [x] Refactor or add mocks to keep unit test suite running in <5s.
-- [~] Task: Conductor - User Manual Verification 'Phase 1: Fast Unit Tests Optimization & Justfile Target Streamlining' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Fast Unit Tests Optimization & Justfile Target Streamlining' (Protocol in workflow.md)
+
 
 ## Phase 2: LLM-as-Judge & Semantic Assertion Framework
 - [ ] Task: Create LLM-as-Judge helper/matcher
