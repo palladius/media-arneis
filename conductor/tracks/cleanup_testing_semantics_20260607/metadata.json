@@ -1,7 +1,7 @@
 {
   "track_id": "cleanup_testing_semantics_20260607",
   "type": "feature",
-  "status": "new",
+  "status": "in_progress",
   "created_at": "2026-06-07T09:05:00Z",
   "updated_at": "2026-06-07T09:05:00Z",
   "description": "Clean up testing semantics: separate fast unit tests (<5s) from LLM-as-judge integration tests."

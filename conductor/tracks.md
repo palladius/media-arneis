@@ -67,6 +67,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Clean up testing semantics: separate fast unit tests (<5s) from LLM-as-judge integration tests.**
+- [~] **Track: Clean up testing semantics: separate fast unit tests (<5s) from LLM-as-judge integration tests.**
 *Link: [./tracks/cleanup_testing_semantics_20260607/](./tracks/cleanup_testing_semantics_20260607/)*
 
