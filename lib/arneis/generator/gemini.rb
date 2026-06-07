@@ -36,6 +36,11 @@ module Arneis
           mime_type = case ext
           when "png" then "image/png"
           when "jpg", "jpeg" then "image/jpeg"
+          when "webp" then "image/webp"
+          when "gif" then "image/gif"
+          when "mp4" then "video/mp4"
+          when "webm" then "video/webm"
+          when "mov" then "video/quicktime"
           else "image/png"
           end
           parts << {inline_data: {mime_type: mime_type, data: Base64.strict_encode64(File.read(img_path))}}

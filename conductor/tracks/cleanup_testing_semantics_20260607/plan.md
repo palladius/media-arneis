@@ -23,11 +23,11 @@
     - [x] Add integration test for Imagen (image generation) checking generated output via LLM-as-judge.
     - [x] Add integration test for Lyria (music generation) checking generated output via LLM-as-judge.
     - [x] Add integration test for Veo (video generation) checking generated output via LLM-as-judge.
-- [~] Task: Conductor - User Manual Verification 'Phase 2: LLM-as-Judge & Semantic Assertion Framework' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: LLM-as-Judge & Semantic Assertion Framework' (Protocol in workflow.md)
 
 ## Phase 3: Documentation & Verification
-- [ ] Task: Update GEMINI.md and verify suite
-    - [ ] Add a 2-3 line section to `GEMINI.md` explaining the strict testing semantics.
-    - [ ] Run `just test` to verify unit tests run fast (<5s).
-    - [ ] Run `just integration-test` to verify LLM-as-judge and real generations.
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Documentation & Verification' (Protocol in workflow.md)
+- [x] Task: Update GEMINI.md and verify suite
+    - [x] Add a 2-3 line section to `GEMINI.md` explaining the strict testing semantics.
+    - [x] Run `just test` to verify unit tests run fast (<5s).
+    - [x] Run `just integration-test` to verify LLM-as-judge and real generations.
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Documentation & Verification' (Protocol in workflow.md)

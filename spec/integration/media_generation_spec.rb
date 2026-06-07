@@ -24,7 +24,7 @@ RSpec.describe "Real Media Generation & LLM-as-Judge Evaluation", :expensive do
 
   describe "Imagen Image Generation" do
     let(:output_path) { File.join(output_dir, "test_sphere.png") }
-    let(:prompt) { "A small blue sphere on a black background" }
+    let(:prompt) { "A single, isolated blue sphere centered on a completely empty, solid black background. There must be no people, no hands, and no other objects in the image." }
 
     it "generates a real image and evaluates it using LLM-as-judge" do
       puts "\n🚀 [INTEGRATION] Starting Imagen Test..."
@@ -60,7 +60,7 @@ RSpec.describe "Real Media Generation & LLM-as-Judge Evaluation", :expensive do
 
   describe "Veo Video Generation" do
     let(:output_path) { File.join(output_dir, "test_bounce.mp4") }
-    let(:prompt) { "A red ball bouncing once on the floor" }
+    let(:prompt) { "A red ball bouncing on the floor" }
 
     it "generates a real video and evaluates it using LLM-as-judge" do
       puts "\n🚀 [INTEGRATION] Starting Veo Test..."

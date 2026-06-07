@@ -16,6 +16,8 @@
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 ENV["RSPEC_RUNNING"] = "true"
 require_relative "support/llm_judge_helper"
+Arneis::Config.load!
+
 
 
 # Disable mock-abolition (ARNEIS_NO_MOCK) during regular unit tests to prevent bleeding from developer's .env file.

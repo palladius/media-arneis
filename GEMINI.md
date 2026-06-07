@@ -59,10 +59,11 @@ Use Conductor extension to manage the BDD and SW dev
 ## Testing
 
 * Tests must be executable from `just test` command, using common naming conventions, and run with the latest Ruby version (for now).
+* **Division of Testing Semantics**:
+  * **Fast Unit Tests (`just test` / `just unit-test`)**: Must run in under 5 seconds (mocking all external LLM/generation calls).
+  * **Integration / E2E Tests (`just integration-test` / `just e2e-test`)**: Use real APIs (Imagen, Lyria, Veo) and perform LLM-as-judge (Gemini) visual/audio semantic evaluations via `meet_media_criteria`.
 * All tests should pass before `git commit` and `git push`.
 * If you're testing something like "test_if_llm_works.rb", do NOT add it to git. To make sure you don't, use .gitignore for these files.
     * Maybe use regexes like tmp_*.rb or test_llm_*.rb, etc. to ignore them.
-* I like my Unit tests **SHORT**, ensure all short tests are under <just test> and all long tests like this areALL executed under <just long-tests> .  If <just test> takes more than 5sec to execute, then we have a problem. Stop, ask user for help, and refactor the long tests so they're faster.
-    * Note that **ALL** LLM-based tests shouls fall under `just long-tests` part so ensure both families are kep distinct (maybe different folders, or some takes_long? method or boolean which prevents just test from existunging them? You pick the best soution. and invoked with two different ruby commands.
 * Keep all python files under util/ . Note they are supposed to be "external utilities" whereas ruby cant execute that logic for lack of good libraries.
 * Do NOT delete files without confirming prior with user.
