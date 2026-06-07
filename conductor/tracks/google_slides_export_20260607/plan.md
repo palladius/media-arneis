@@ -1,15 +1,15 @@
 # Implementation Plan - Google Slides Export (feature_google_slides_export)
 
-## Phase 1: Setup & Google Authentication
+## Phase 1: Setup & Google Authentication [checkpoint: 423c63b]
 - [x] Task: Gem dependency setup
   - [x] Add `google-apis-slides_v1` and `google-apis-drive_v3` to `Gemfile` and run `bundle install`.
-- [~] Task: Write failing tests for Authentication Manager
-  - [ ] Write tests verifying client instantiation, token loading, and support for both OAuth2 credentials and Service Account JSON keys.
-- [ ] Task: Implement Authentication Manager (`Arneis::GoogleAuthManager`)
-  - [ ] Implement credential loading logic from environment variables (`GOOGLE_APPLICATION_CREDENTIALS` or `GOOGLE_WORKSPACE_CREDENTIALS`).
-  - [ ] Implement client builder to return authenticated `Google::Apis::SlidesV1::SlidesService` and `Google::Apis::DriveV3::DriveService`.
-  - [ ] Run authentication tests and verify they pass.
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Setup & Google Authentication' (Protocol in workflow.md)
+- [x] Task: Write failing tests for Authentication Manager
+  - [x] Write tests verifying client instantiation, token loading, and support for both OAuth2 credentials and Service Account JSON keys.
+- [x] Task: Implement Authentication Manager (`Arneis::GoogleAuthManager`)
+  - [x] Implement credential loading logic from environment variables (`GOOGLE_APPLICATION_CREDENTIALS` or `GOOGLE_WORKSPACE_CREDENTIALS`).
+  - [x] Implement client builder to return authenticated `Google::Apis::SlidesV1::SlidesService` and `Google::Apis::DriveV3::DriveService`.
+  - [x] Run authentication tests and verify they pass.
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Setup & Google Authentication' (Protocol in workflow.md)
 
 ## Phase 2: Google Slides Creation & Formatting
 - [ ] Task: Write failing tests for Slides Exporter
