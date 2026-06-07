@@ -27,6 +27,11 @@ RSpec.describe Arneis::ExtractBestOf do
     File.write(File.join(source_dir, "20260601_project1/pages/page_1/illustration.png"), "dummy content image 2")
     File.write(File.join(source_dir, "20260601_rubycon_talk/logo.png"), "rubycon logo content")
     File.write(File.join(source_dir, "20260601_sebastian_pokemon/character_image.png"), "seby pokemon content")
+
+    # Create project spec YAMLs to specify template kinds
+    File.write(File.join(source_dir, "20260601_project1/project1.yaml"), {"apiVersion" => "v1", "kind" => "KidsStory"}.to_yaml)
+    File.write(File.join(source_dir, "20260601_rubycon_talk/rubycon_presentation.yaml"), {"apiVersion" => "v1", "kind" => "PowerColon"}.to_yaml)
+    File.write(File.join(source_dir, "20260601_sebastian_pokemon/pokemon_game.yaml"), {"apiVersion" => "v1", "kind" => "CharacterImage"}.to_yaml)
     
     # Create files that should be ignored
     File.write(File.join(source_dir, "20260601_project1/info.txt"), "some text info")
@@ -66,16 +71,16 @@ RSpec.describe Arneis::ExtractBestOf do
       expect(result[:stats][:overwritten]).to eq(0)
 
       # Check target dir 1
-      expect(File.exist?(File.join(dest_dir1, "20260601_project1_character_image.png"))).to be true
-      expect(File.exist?(File.join(dest_dir1, "20260601_project1_pages_page_1_illustration.png"))).to be true
-      expect(File.exist?(File.join(dest_dir1, "rubycon/20260601_rubycon_talk_logo.png"))).to be true
-      expect(File.exist?(File.join(dest_dir1, "family/20260601_sebastian_pokemon_character_image.png"))).to be true
+      expect(File.exist?(File.join(dest_dir1, "misc/KidsStory/20260601_project1_character_image.png"))).to be true
+      expect(File.exist?(File.join(dest_dir1, "misc/KidsStory/20260601_project1_pages_page_1_illustration.png"))).to be true
+      expect(File.exist?(File.join(dest_dir1, "rubycon/PowerColon/20260601_rubycon_talk_logo.png"))).to be true
+      expect(File.exist?(File.join(dest_dir1, "family/CharacterImage/20260601_sebastian_pokemon_character_image.png"))).to be true
 
       # Check target dir 2
-      expect(File.exist?(File.join(dest_dir2, "20260601_project1_character_image.png"))).to be true
-      expect(File.exist?(File.join(dest_dir2, "20260601_project1_pages_page_1_illustration.png"))).to be true
-      expect(File.exist?(File.join(dest_dir2, "rubycon/20260601_rubycon_talk_logo.png"))).to be true
-      expect(File.exist?(File.join(dest_dir2, "family/20260601_sebastian_pokemon_character_image.png"))).to be true
+      expect(File.exist?(File.join(dest_dir2, "misc/KidsStory/20260601_project1_character_image.png"))).to be true
+      expect(File.exist?(File.join(dest_dir2, "misc/KidsStory/20260601_project1_pages_page_1_illustration.png"))).to be true
+      expect(File.exist?(File.join(dest_dir2, "rubycon/PowerColon/20260601_rubycon_talk_logo.png"))).to be true
+      expect(File.exist?(File.join(dest_dir2, "family/CharacterImage/20260601_sebastian_pokemon_character_image.png"))).to be true
     end
 
     it "skips files if they exist and are of identical size" do

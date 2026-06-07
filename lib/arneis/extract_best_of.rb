@@ -69,14 +69,41 @@ module Arneis
 
     def subfolder_for(path)
       path_lower = path.downcase
-      if path_lower.include?("rubycon") || path_lower.include?("yukihiro")
+      category = if path_lower.include?("rubycon") || path_lower.include?("yukihiro")
         "rubycon"
       elsif %w[alessandro sebastian riccardo ale seby kids family].any? { |kw| path_lower.include?(kw) }
         "family"
       else
-        nil
+        "misc"
+      end
+
+      # Determine template kind from the run directory's spec YAML
+      parts = path.split('/')
+      run_dir_name = parts[1]
+      template = nil
+
+      if run_dir_name && run_dir_name != "best-of"
+        run_dir_path = File.join(source_dir, run_dir_name)
+        if Dir.exist?(run_dir_path)
+          yaml_files = Dir.glob(File.join(run_dir_path, "*.yaml")).reject { |f| File.basename(f) == ".state.yaml" }
+          if yaml_files.any?
+            begin
+              data = YAML.load_file(yaml_files.first)
+              template = data["kind"] if data.is_a?(Hash)
+            rescue
+              # Ignore parsing errors
+            end
+          end
+        end
+      end
+
+      if template
+        File.join(category, template)
+      else
+        category
       end
     end
+
 
 
     def find_files
