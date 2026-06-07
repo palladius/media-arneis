@@ -70,3 +70,9 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [~] **Track: Clean up testing semantics: separate fast unit tests (<5s) from LLM-as-judge integration tests.**
 *Link: [./tracks/cleanup_testing_semantics_20260607/](./tracks/cleanup_testing_semantics_20260607/)*
 
+---
+
+- [ ] **Track: Export presentations directly to Google Slides with sticky reference and in-place updates**
+*Link: [./tracks/google_slides_export_20260607/](./tracks/google_slides_export_20260607/)*
+
+
