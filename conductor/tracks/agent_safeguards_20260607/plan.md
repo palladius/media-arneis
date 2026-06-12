@@ -1,13 +1,13 @@
 # Plan: Agent Safeguards - Spec Failure Circuit Breaker & Context Warnings
 
-## Phase 1: Spec Run History & Circuit Breaker
+## Phase 1: Spec Run History & Circuit Breaker [checkpoint: 4ebf4bb]
 - [x] Task: Write failing unit tests for spec history tracking and circuit breaker [8238d37]
     - [x] Create `spec/arneis/spec_runner_safeguard_spec.rb`.
     - [x] Test that running the same spec 3 times consecutively with failures writes to history and raises a halt error.
 - [x] Task: Implement spec history tracking and halting logic [8238d37]
     - [x] Implement `Arneis::SpecRunnerSafeguard` tracking runs in `tmp/.spec_history.json`.
     - [x] Integrate this safeguard into the CLI / test helper so it intercepts test runs.
-- [~] Task: Conductor - User Manual Verification 'Phase 1: Spec Run History & Circuit Breaker' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Spec Run History & Circuit Breaker' (Protocol in workflow.md) [4ebf4bb]
 
 ## Phase 2: Context Size Monitor & CLI Warning
 - [ ] Task: Write unit tests for context size monitoring
