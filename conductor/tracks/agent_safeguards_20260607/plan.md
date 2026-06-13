@@ -18,9 +18,9 @@
     - [x] Print a colored warning banner in `arnectl` CLI on startup/runs if steps count exceeds 1000.
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Context Size Monitor & CLI Warning' (Protocol in workflow.md) [6a80d8e]
 
-## Phase 3: Auth Resolution & Documentation
+## Phase 3: Auth Resolution & Documentation [checkpoint: 56d0e09]
 - [x] Task: Document emergency auth resolution rules [5eaab09]
     - [x] Add strict instructions to `GEMINI.md` about halting on oauth permission errors rather than retrying.
 - [x] Task: Verify the entire safeguards suite [984b688]
     - [x] Run `just test` and ensure all unit tests pass.
-- [~] Task: Conductor - User Manual Verification 'Phase 3: Auth Resolution & Documentation' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Auth Resolution & Documentation' (Protocol in workflow.md) [56d0e09]
