@@ -71,3 +71,22 @@ Ensure to ask Acceptance Criteria before starting the coding. After a track is d
     * Maybe use regexes like tmp_*.rb or test_llm_*.rb, etc. to ignore them.
 * Keep all python files under util/ . Note they are supposed to be "external utilities" whereas ruby cant execute that logic for lack of good libraries.
 * Do NOT delete files without confirming prior with user.
+
+## Emergency Auth Resolution Rules
+
+**CRITICAL — Agents MUST follow these rules without exception:**
+
+* **HALT on OAuth/permission errors.** If any Google API call (Slides, Drive, Sheets, Chirp, etc.) fails due to:
+  * Missing or expired credentials
+  * Insufficient OAuth scopes
+  * `PERMISSION_DENIED`, `UNAUTHENTICATED`, or `403 Forbidden` responses
+  * Service account key not found (`GOOGLE_APPLICATION_CREDENTIALS` not set)
+
+  The agent MUST:
+  1. **Stop execution immediately.** Do NOT retry the failing API call.
+  2. **Report the error clearly** to the user with the exact error message and the API endpoint that failed.
+  3. **Suggest the fix**: instruct the user to re-run authentication (e.g., `gcloud auth application-default login` or set up the correct service account key).
+  4. **Wait for user confirmation** before resuming any work.
+
+* **Never retry auth failures autonomously.** Retrying a permission-denied error will always fail and wastes tokens/context. The fix is always a human action (re-login, grant scopes, set env vars).
+* **Never attempt to generate or fabricate credentials.** This is a security violation.
