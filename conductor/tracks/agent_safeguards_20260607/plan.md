@@ -21,6 +21,6 @@
 ## Phase 3: Auth Resolution & Documentation
 - [x] Task: Document emergency auth resolution rules [5eaab09]
     - [x] Add strict instructions to `GEMINI.md` about halting on oauth permission errors rather than retrying.
-- [~] Task: Verify the entire safeguards suite
-    - [ ] Run `just test` and ensure all unit tests pass.
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Auth Resolution & Documentation' (Protocol in workflow.md)
+- [x] Task: Verify the entire safeguards suite [984b688]
+    - [x] Run `just test` and ensure all unit tests pass.
+- [~] Task: Conductor - User Manual Verification 'Phase 3: Auth Resolution & Documentation' (Protocol in workflow.md)
