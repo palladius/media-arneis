@@ -9,14 +9,14 @@
     - [x] Integrate this safeguard into the CLI / test helper so it intercepts test runs.
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Spec Run History & Circuit Breaker' (Protocol in workflow.md) [4ebf4bb]
 
-## Phase 2: Context Size Monitor & CLI Warning
+## Phase 2: Context Size Monitor & CLI Warning [checkpoint: 6a80d8e]
 - [x] Task: Write unit tests for context size monitoring [1df9fde]
     - [x] Test reading of transcript file and steps count.
     - [x] Test that a warning is output to stdout when steps count > 1000.
 - [x] Task: Implement context step monitoring and CLI alert [1df9fde]
     - [x] Add helper to locate the current conversation transcript under `~/.gemini/antigravity-cli/brain/`.
     - [x] Print a colored warning banner in `arnectl` CLI on startup/runs if steps count exceeds 1000.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Context Size Monitor & CLI Warning' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Context Size Monitor & CLI Warning' (Protocol in workflow.md) [6a80d8e]
 
 ## Phase 3: Auth Resolution & Documentation
 - [ ] Task: Document emergency auth resolution rules
