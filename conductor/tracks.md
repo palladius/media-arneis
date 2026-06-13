@@ -77,7 +77,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [~] **Track: Agent Safeguards: Implement spec failure circuit breaker & context size warning**
+- [x] **Track: Agent Safeguards: Implement spec failure circuit breaker & context size warning**
 *Link: [./tracks/agent_safeguards_20260607/](./tracks/agent_safeguards_20260607/)*
 
 
