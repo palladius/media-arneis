@@ -19,8 +19,8 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Context Size Monitor & CLI Warning' (Protocol in workflow.md) [6a80d8e]
 
 ## Phase 3: Auth Resolution & Documentation
-- [ ] Task: Document emergency auth resolution rules
-    - [ ] Add strict instructions to `GEMINI.md` about halting on oauth permission errors rather than retrying.
-- [ ] Task: Verify the entire safeguards suite
+- [x] Task: Document emergency auth resolution rules [5eaab09]
+    - [x] Add strict instructions to `GEMINI.md` about halting on oauth permission errors rather than retrying.
+- [~] Task: Verify the entire safeguards suite
     - [ ] Run `just test` and ensure all unit tests pass.
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Auth Resolution & Documentation' (Protocol in workflow.md)
