@@ -75,9 +75,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [ ] **Track: Export presentations directly to Google Slides with sticky reference and in-place updates**
 *Link: [./tracks/google_slides_export_20260607/](./tracks/google_slides_export_20260607/)*
 
----
-
-- [x] **Track: Agent Safeguards: Implement spec failure circuit breaker & context size warning**
-*Link: [./tracks/agent_safeguards_20260607/](./tracks/agent_safeguards_20260607/)*
 
 
