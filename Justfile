@@ -105,3 +105,8 @@ ale-seby *prompt:
 
 character-consistency-with-2:
         just arnectl generate CharacterImage -c riccardo,sebastian --aspect_ratio 4:3 --open -p "Riccardo is lifting his foot and Sebastian is holding his nose saying 'OMG that stinks!'"
+
+# WOW visualize git source over time
+gource:
+	gource -s 0.5 --auto-skip-seconds 0.1 --camera-mode overview --hide files,filenames,mouse,users 
+
