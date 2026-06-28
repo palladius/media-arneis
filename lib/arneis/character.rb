@@ -39,7 +39,16 @@ module Arneis
       @visual_look = @data["visual_look"]
       @consistency_images_dir = @data["consistency_images"]
       @emoji = @data["emoji"] || "👤"
-      @nationality_emoji = @data["nationality_emoji"] || "🌍"
+      @nationality_emoji = @data["nationality_emoji"] ||
+        case @data["nationality"]&.downcase
+        when /ital/ then "🇮🇹"
+        when /french/, /france/ then "🇫🇷"
+        when /american/, /usa/, /united states/ then "🇺🇸"
+        when /south african/, /south africa/ then "🇿🇦"
+        when /japan/ then "🇯🇵"
+        when /swiss/, /switzerland/ then "🇨🇭"
+        else "🌍"
+        end
 
       @id = if yaml_path.end_with?("character.yaml")
         File.basename(File.dirname(yaml_path))

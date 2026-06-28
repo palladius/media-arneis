@@ -17,4 +17,11 @@ RSpec.describe Arneis::Character do
       expect(char.full_name).to include("Yukihiro")
     end
   end
+
+  describe "#nationality_emoji" do
+    it "resolves nationality to correct flag emoji" do
+      char = described_class.new(File.expand_path("../../data/characters/yukihiro/character.yaml", __dir__))
+      expect(char.nationality_emoji).to eq("🇯🇵")
+    end
+  end
 end
