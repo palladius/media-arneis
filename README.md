@@ -48,6 +48,8 @@ ARNEIS_NO_MOCK=true arnectl apply my_project.yaml
 
 For a deeper dive into how Arneis works, check out the [User Manual](docs/user_manual.md).
 
+> 🛠️ **Related Tools (August 2026):** For lightweight, standalone Python CLI tools powering character-consistent photo synthesis (`generate_photo.py`) and forensic video auditing (`judge_video.py`), see our companion repository [palladius/gemini-tools](https://github.com/palladius/gemini-tools).
+
 ## Usage
 
 ```bash

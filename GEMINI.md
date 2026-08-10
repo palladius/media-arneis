@@ -3,6 +3,8 @@ Use Conductor extension to manage the BDD and SW dev.
 
 Ensure to ask Acceptance Criteria before starting the coding. After a track is done, you should be able to test and iterate over ACCETANCE_CRITERIA.md you created before! It could be something as simple as "the user is going to try this new feature". But it needs to be somewhere in a PLAN checkboc which needs checking out before declaring victory!
 
+> **JFYI (August 2026):** Standalone Python CLI tools for Photo Synthesis (`generate_photo.py`) and Video Forensic Judging (`judge_video.py`) were created and published in `~/git/gemini-tools` (`palladius/gemini-tools`).
+
 ## Gemini models
 
 * Do **not** use any Gemini model before 2.5 (no 2. and no 1.5). So 2.5 is the minimum that I want to use.
